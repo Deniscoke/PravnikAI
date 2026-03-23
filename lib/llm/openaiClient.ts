@@ -10,9 +10,16 @@
 
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy singleton — instantiated on first use, not at build time.
+// This prevents Next.js build failures when OPENAI_API_KEY is absent
+// in the CI/build environment (e.g. Vercel build step).
+let _openai: OpenAI | null = null
+
+function getOpenAI(): OpenAI {
+  if (_openai) return _openai
+  _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  return _openai
+}
 
 /**
  * Model choice for legal drafting:
@@ -49,7 +56,7 @@ export interface LLMGenerateResult {
  * over module-level defaults without changing them for other callers.
  */
 export async function generateText(options: LLMGenerateOptions): Promise<LLMGenerateResult> {
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAI().chat.completions.create({
     model: MODEL,
     temperature: options.temperature ?? TEMPERATURE,
     max_tokens: options.maxTokens ?? MAX_TOKENS,
