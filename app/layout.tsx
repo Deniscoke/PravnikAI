@@ -5,9 +5,35 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { CookieConsent } from '@/components/CookieConsent'
 import { createClient } from '@/lib/supabase/server'
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pravnik-ai-five.vercel.app'
+
 export const metadata: Metadata = {
-  title: 'PrávníkAI — AI právní asistent',
-  description: 'AI generátor a kontrola právních smluv pro českou právní praxi',
+  title: {
+    default: 'PrávníkAI — AI právní asistent',
+    template: '%s — PrávníkAI',
+  },
+  description: 'AI generátor a kontrola právních smluv pro českou právní praxi. Vytvořte profesionální smlouvy za minuty.',
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    type: 'website',
+    locale: 'cs_CZ',
+    url: APP_URL,
+    siteName: 'PrávníkAI',
+    title: 'PrávníkAI — AI právní asistent',
+    description: 'Generujte a kontrolujte právní smlouvy pomocí AI. Profesionální výstup pro české právo.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PrávníkAI — AI právní asistent',
+    description: 'Generujte a kontrolujte právní smlouvy pomocí AI. Profesionální výstup pro české právo.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: APP_URL,
+  },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

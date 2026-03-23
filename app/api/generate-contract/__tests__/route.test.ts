@@ -27,11 +27,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
-// ── Mock must be declared BEFORE the route import ─────────────────────────────
+// ── Mocks must be declared BEFORE the route import ──────────────────────────
 // vi.mock is hoisted by Vitest — the factory runs before any module is evaluated,
 // so route.ts will receive the mock when it imports generateText.
 vi.mock('@/lib/llm/openaiClient', () => ({
   generateText: vi.fn(),
+}))
+
+// Mock billing guard — tests focus on business logic, not auth/billing
+vi.mock('@/lib/billing/guard', () => ({
+  assertBillingAccess: vi.fn().mockResolvedValue({ allowed: true, userId: 'test-user-id' }),
+}))
+
+// Mock rate limiter — tests should not be rate-limited
+vi.mock('@/lib/rateLimit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 9, resetAt: Date.now() + 60_000 }),
+  getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
 // Import after mock is registered
