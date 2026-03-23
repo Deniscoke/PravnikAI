@@ -85,9 +85,16 @@ export async function assertBillingAccess(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Unauthenticated: allow (backward compat — no billing to enforce)
+  // Unauthenticated: BLOCK — require login to use billable features.
+  // OpenAI calls cost real money; anonymous access = unlimited spend risk.
   if (!user) {
-    return { allowed: true, user: null, billing: null }
+    return {
+      allowed: false,
+      response: NextResponse.json(
+        { error: 'Pro použití této funkce se musíte přihlásit.', code: 'AUTH_REQUIRED' },
+        { status: 401 },
+      ),
+    }
   }
 
   const billing = await getBillingAccessForUser(supabase, user.id, action)

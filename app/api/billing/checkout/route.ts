@@ -22,6 +22,19 @@ import { stripe } from '@/lib/billing/stripe'
 import { getOrCreateStripeCustomerForUser } from '@/lib/billing/helpers'
 import { getStripePriceId, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
 
+/** Allowlist of valid Stripe price IDs from environment. Rejects arbitrary priceId injection. */
+function isAllowedPriceId(id: string): boolean {
+  const allowed = new Set([
+    process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+    process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+    process.env.STRIPE_TEAM_MONTHLY_PRICE_ID,
+  ].filter(Boolean))
+  return allowed.has(id)
+}
+
+/** Validate tier at runtime — TypeScript types are erased. */
+const VALID_PAID_TIERS = new Set<string>(['pro', 'team'])
+
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -47,6 +60,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
+  // Validate tier at runtime (TS types are erased)
+  if (body.tier && !VALID_PAID_TIERS.has(body.tier)) {
+    return NextResponse.json(
+      { error: 'Neplatný tarif. Povolené hodnoty: pro, team.' },
+      { status: 400 },
+    )
+  }
+
   // Accept either a direct priceId or a tier + interval → resolve to priceId
   const priceId = body.priceId
     ?? (body.tier ? getStripePriceId(body.tier, body.interval ?? 'monthly') : null)
@@ -54,6 +75,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!priceId) {
     return NextResponse.json(
       { error: 'Chybí priceId nebo tier v požadavku.' },
+      { status: 400 },
+    )
+  }
+
+  // Reject arbitrary priceIds — only allow our known product prices
+  if (!isAllowedPriceId(priceId)) {
+    return NextResponse.json(
+      { error: 'Neplatný cenový plán.' },
       { status: 400 },
     )
   }
