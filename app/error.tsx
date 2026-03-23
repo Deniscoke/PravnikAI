@@ -1,20 +1,26 @@
 'use client'
 
 /**
- * Global error boundary — PrávníkAI
+ * Route-level error boundary — PrávníkAI
  *
  * Catches unhandled runtime errors in any route segment.
- * Shows a friendly Czech error message with retry option
- * instead of a blank white screen.
+ * Reports to Sentry and shows a friendly Czech error message
+ * with retry option instead of a blank white screen.
  */
 
-export default function GlobalError({
+import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
+
+export default function ErrorBoundary({
   error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    Sentry.captureException(error)
+  }, [error])
   return (
     <div style={{
       minHeight: '100dvh',
