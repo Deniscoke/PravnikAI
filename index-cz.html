@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="cs" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrávníkAI — Inteligentní generátor smluv pro právníky</title>
+  <meta name="description" content="PrávníkAI pomáhá právníkům generovat smlouvy rychleji a přesněji. Automatizujte přípravu právních dokumentů s AI.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Italiana&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+
+  <!-- Base UI Kit CSS -->
+  <link rel="stylesheet" href="pure-css-glassmorphism-liquid-glass-ui-kit/src/style.css">
+
+  <!-- Custom overrides -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Animated background blobs -->
+<div class="scene" aria-hidden="true">
+  <div class="scene__blob scene__blob--1"></div>
+  <div class="scene__blob scene__blob--2"></div>
+  <div class="scene__blob scene__blob--3"></div>
+</div>
+
+<!-- Theme toggle -->
+<button class="glass glass-btn theme-toggle-btn" id="theme-toggle" aria-label="Přepnout barevné schéma" title="Přepnout světlý / tmavý režim">
+  <span class="icon-dark" aria-hidden="true">&#9728;&#65039;</span>
+  <span class="icon-light" aria-hidden="true">&#127769;</span>
+</button>
+
+<!-- Toast region -->
+<div class="glass-toast-region" id="toast-region" role="region" aria-label="Oznámení" aria-live="polite"></div>
+
+<main class="page">
+
+  <!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+  <header class="hero">
+    <span class="hero__kicker">AI asistent pro právníky</span>
+    <h1 class="hero__title">PrávníkAI</h1>
+    <p class="hero__sub">
+      Generujte právní smlouvy za minuty, ne hodiny. Inteligentní nástroj, který rozumí českému právu a pomáhá vám připravit přesné dokumenty bez zbytečné administrativy.
+    </p>
+
+    <div class="hero__cta">
+      <a href="#generator" class="glass glass-btn glass-btn--primary">Vytvořit smlouvu</a>
+      <a href="#ako-to-funguje" class="glass glass-btn glass-btn--ghost">Jak to funguje</a>
+    </div>
+
+    <div class="container stats">
+      <div class="glass stats__item">
+        <div class="stats__num">50+</div>
+        <div class="stats__desc">Typů smluv</div>
+      </div>
+      <div class="glass stats__item">
+        <div class="stats__num">3 min</div>
+        <div class="stats__desc">Průměrný čas</div>
+      </div>
+      <div class="glass stats__item">
+        <div class="stats__num">CZ</div>
+        <div class="stats__desc">České právo</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container page">
+
+    <!-- ─── FEATURES ───────────────────────────────────────────────────── -->
+    <section class="section" id="funkcie">
+      <div class="section__header">
+        <h2 class="section__title">Proč PrávníkAI</h2>
+        <span class="section__subtitle">Nástroj navržený právníky pro právníky</span>
+      </div>
+      <div class="card-grid">
+
+        <div class="glass glass-card feature-card">
+          <div class="feature-card__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3 class="glass-card__title">Automatizované smlouvy</h3>
+          <p class="glass-card__body">Vyberte typ smlouvy, vyplňte údaje stran a nechte AI vygenerovat kompletní právní dokument — v souladu s NOZ (zák. č. 89/2012 Sb.), zákoníkem práce (zák. č. 262/2006 Sb.) a ZOK (zák. č. 90/2012 Sb.).</p>
+        </div>
+
+        <div class="glass glass-card feature-card">
+          <div class="feature-card__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="glass-card__title">Úspora času</h3>
+          <p class="glass-card__body">Smlouva, která by vám zabrala hodiny manuální práce, je připravena za několik minut. Více času na to, co skutečně vyžaduje vaši expertízu.</p>
+        </div>
+
+        <div class="glass glass-card feature-card">
+          <div class="feature-card__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <h3 class="glass-card__title">Právní jistota</h3>
+          <p class="glass-card__body">Smlouvy jsou generovány výhradně podle platného českého práva — Nového občanského zákoníku, zákoníku práce a zákona o obchodních korporacích. Systém sleduje aktuální judikaturu a legislativní změny v ČR.</p>
+        </div>
+
+        <div class="glass glass-card feature-card">
+          <div class="feature-card__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 class="glass-card__title">Bezpečnost dat</h3>
+          <p class="glass-card__body">Veškerá data jsou šifrována a zpracovávána v souladu s GDPR. Vaše dokumenty a údaje klientů zůstávají důvěrné.</p>
+        </div>
+
+        <div class="glass glass-card feature-card">
+          <div class="feature-card__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 class="glass-card__title">Týmová spolupráce</h3>
+          <p class="glass-card__body">Sdílejte šablony v rámci kanceláře, spolupracujte na dokumentech v reálném čase a udržujte konzistentní standard.</p>
+        </div>
+
+        <div class="glass glass-card feature-card">
+          <div class="feature-card__icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3 class="glass-card__title">Export a integrace</h3>
+          <p class="glass-card__body">Exportujte smlouvy do PDF nebo DOCX. Integrace s oblíbenými právními systémy pro bezproblémový workflow.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── AKO TO FUNGUJE (Stepper) ──────────────────────────────────── -->
+    <section class="section" id="ako-to-funguje">
+      <div class="section__header">
+        <h2 class="section__title">Jak to funguje</h2>
+        <span class="section__subtitle">Smlouva ve 3 jednoduchých krocích</span>
+      </div>
+
+      <div class="steps-visual">
+        <div class="glass glass-card step-card">
+          <div class="step-card__number">1</div>
+          <h3 class="glass-card__title">Vyberte typ smlouvy</h3>
+          <p class="glass-card__body">Zvolte z více než 50 typů smluv — kupní, nájemní, pracovní, darovací, příkazní a další.</p>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="0" y1="12" x2="32" y2="12"/><polyline points="28 6 34 12 28 18"/></svg>
+        </div>
+        <div class="glass glass-card step-card">
+          <div class="step-card__number">2</div>
+          <h3 class="glass-card__title">Vyplňte údaje</h3>
+          <p class="glass-card__body">Zadejte údaje smluvních stran, předmět smlouvy a specifické podmínky. Formulář se dynamicky přizpůsobí typu smlouvy.</p>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="0" y1="12" x2="32" y2="12"/><polyline points="28 6 34 12 28 18"/></svg>
+        </div>
+        <div class="glass glass-card step-card">
+          <div class="step-card__number">3</div>
+          <h3 class="glass-card__title">Stáhněte smlouvu</h3>
+          <p class="glass-card__body">AI vygeneruje kompletní smlouvu. Zkontrolujte, upravte dle potřeby a exportujte do PDF nebo DOCX.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── CONTRACT GENERATOR FORM ────────────────────────────────────── -->
+    <section class="section" id="generator">
+      <div class="section__header">
+        <h2 class="section__title">Generátor smluv</h2>
+        <span class="section__subtitle">Vyplňte formulář a nechte AI pracovat za vás</span>
+      </div>
+
+      <!-- Legal basis notice -->
+      <div class="glass legal-basis-notice">
+        <div class="legal-basis-notice__icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+        <div class="legal-basis-notice__content">
+          <strong>Právní základ generování</strong>
+          <p>Smlouvy jsou generovány výhradně podle platného českého práva. Systém nikdy nepoužívá slovenskou právní terminologii, slovenské zákony ani slovenské smluvní vzory.</p>
+          <div class="legal-basis-notice__laws">
+            <span class="legal-badge">zák. č. 89/2012 Sb. — Občanský zákoník</span>
+            <span class="legal-badge">zák. č. 262/2006 Sb. — Zákoník práce</span>
+            <span class="legal-badge">zák. č. 90/2012 Sb. — Zákon o obchodních korporacích</span>
+          </div>
+        </div>
+      </div>
+
+      <form class="contract-form" id="contract-form" novalidate>
+
+        <!-- Step 1: Typ zmluvy -->
+        <div class="glass glass-card form-section">
+          <h3 class="form-section__title">
+            <span class="form-section__step">1</span>
+            Typ smlouvy
+          </h3>
+
+          <div class="form-grid">
+            <div class="glass-input-wrap form-field--full">
+              <label class="glass-input-label" for="contract-type">Vyberte typ smlouvy <span class="required-mark" aria-label="povinné">*</span></label>
+              <select class="glass-input glass-select" id="contract-type" name="contractType" required>
+                <option value="" disabled selected>Zvolte typ smlouvy...</option>
+                <optgroup label="Občanské právo">
+                  <option value="kupna-zmluva">Kupní smlouva</option>
+                  <option value="darovacia-zmluva">Darovací smlouva</option>
+                  <option value="zmluva-o-dielo">Smlouva o dílo</option>
+                  <option value="najomna-zmluva">Nájemní smlouva</option>
+                  <option value="zmluva-o-pozicke">Smlouva o zápůjčce</option>
+                  <option value="zmluva-o-vere">Smlouva o výpůjčce</option>
+                </optgroup>
+                <optgroup label="Obchodní právo (NOZ / ZOK)">
+                  <option value="mandatna-zmluva">Příkazní smlouva (§ 2430 NOZ)</option>
+                  <option value="zmluva-o-spolupraci">Smlouva o spolupráci</option>
+                  <option value="zmluva-o-mlcanlivosti">Smlouva o mlčenlivosti (NDA)</option>
+                  <option value="licencna-zmluva">Licenční smlouva</option>
+                  <option value="komisionarska-zmluva">Komisionářská smlouva (§ 2455 NOZ)</option>
+                  <option value="smlouva-o-vykonu-funkce">Smlouva o výkonu funkce (§ 59 ZOK)</option>
+                  <option value="smlouva-o-postoupeni-pohledavky">Smlouva o postoupení pohledávky (§ 1879 NOZ)</option>
+                  <option value="smlouva-o-prevodu-obchodniho-podilu">Smlouva o převodu obchodního podílu (ZOK)</option>
+                </optgroup>
+                <optgroup label="Pracovní právo (zákoník práce)">
+                  <option value="pracovna-zmluva">Pracovní smlouva (§ 33 ZP)</option>
+                  <option value="dohoda-o-pracovnej-cinnosti">Dohoda o pracovní činnosti (§ 76 ZP)</option>
+                  <option value="dohoda-o-vykonani-prace">Dohoda o provedení práce (§ 75 ZP)</option>
+                  <option value="konkurencna-dolozka">Konkurenční doložka (§ 310 ZP)</option>
+                  <option value="dohoda-o-hmotne-odpovednosti">Dohoda o odpovědnosti za svěřené hodnoty (§ 252 ZP)</option>
+                </optgroup>
+                <optgroup label="Nemovitosti (NOZ)">
+                  <option value="kupna-zmluva-nehnutelnost">Kupní smlouva na nemovitost (§ 2079 NOZ)</option>
+                  <option value="najomna-zmluva-byt">Nájemní smlouva na byt (§ 2235 NOZ)</option>
+                  <option value="najomna-zmluva-nebytovy">Nájemní smlouva na nebytový prostor (§ 2302 NOZ)</option>
+                  <option value="zmluva-o-vecnom-bremene">Smlouva o věcném břemenu (§ 1257 NOZ)</option>
+                  <option value="zastavni-smlouva">Zástavní smlouva (§ 1309 NOZ)</option>
+                </optgroup>
+              </select>
+              <span class="glass-input-helper">Všechny smlouvy jsou generovány výhradně podle platného českého práva (NOZ, ZP, ZOK). Formulář se přizpůsobí podle zvoleného typu.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Zmluvné strany -->
+        <div class="glass glass-card form-section">
+          <h3 class="form-section__title">
+            <span class="form-section__step">2</span>
+            Smluvní strany
+          </h3>
+
+          <!-- Strana 1 -->
+          <div class="party-block">
+            <h4 class="party-block__label">Strana 1 (Prodávající / Pronajímatel / Zaměstnavatel)</h4>
+            <div class="form-grid">
+              <div class="glass-input-wrap">
+                <label class="glass-input-label" for="party1-name">Jméno / Obchodní firma <span class="required-mark" aria-label="povinné">*</span></label>
+                <input class="glass-input" type="text" id="party1-name" name="party1Name" placeholder="Jan Novák / ABC s.r.o." required>
+              </div>
+              <div class="glass-input-wrap">
+                <label class="glass-input-label" for="party1-id">Rodné číslo / IČO</label>
+                <input class="glass-input" type="text" id="party1-id" name="party1Id" placeholder="12345678 nebo 850101/1234">
+              </div>
+              <div class="glass-input-wrap form-field--full">
+                <label class="glass-input-label" for="party1-address">Adresa trvalého bydliště / sídlo <span class="required-mark" aria-label="povinné">*</span></label>
+                <input class="glass-input" type="text" id="party1-address" name="party1Address" placeholder="Hlavní 1, 110 00 Praha 1" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strana 2 -->
+          <div class="party-block">
+            <h4 class="party-block__label">Strana 2 (Kupující / Nájemce / Zaměstnanec)</h4>
+            <div class="form-grid">
+              <div class="glass-input-wrap">
+                <label class="glass-input-label" for="party2-name">Jméno / Obchodní firma <span class="required-mark" aria-label="povinné">*</span></label>
+                <input class="glass-input" type="text" id="party2-name" name="party2Name" placeholder="Marie Nová / XYZ s.r.o." required>
+              </div>
+              <div class="glass-input-wrap">
+                <label class="glass-input-label" for="party2-id">Rodné číslo / IČO</label>
+                <input class="glass-input" type="text" id="party2-id" name="party2Id" placeholder="12345678 nebo 900505/5678">
+              </div>
+              <div class="glass-input-wrap form-field--full">
+                <label class="glass-input-label" for="party2-address">Adresa trvalého bydliště / sídlo <span class="required-mark" aria-label="povinné">*</span></label>
+                <input class="glass-input" type="text" id="party2-address" name="party2Address" placeholder="Obchodní 15, 602 00 Brno" required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Predmet zmluvy -->
+        <div class="glass glass-card form-section">
+          <h3 class="form-section__title">
+            <span class="form-section__step">3</span>
+            Předmět a podmínky smlouvy
+          </h3>
+
+          <div class="form-grid">
+            <div class="glass-input-wrap form-field--full">
+              <label class="glass-input-label" for="contract-subject">Předmět smlouvy <span class="required-mark" aria-label="povinné">*</span></label>
+              <textarea class="glass-input glass-textarea" id="contract-subject" name="contractSubject" rows="4" placeholder="Popište předmět smlouvy — např. prodávaná věc, rozsah služeb, popis nemovitosti, pracovní pozici..." required></textarea>
+              <span class="glass-input-helper">Čím přesnější popis, tím kvalitnější smlouvu AI vygeneruje</span>
+            </div>
+
+            <div class="glass-input-wrap">
+              <label class="glass-input-label" for="contract-price">Cena / Odměna</label>
+              <input class="glass-input" type="text" id="contract-price" name="contractPrice" placeholder="např. 3 750 000 Kč">
+            </div>
+
+            <div class="glass-input-wrap">
+              <label class="glass-input-label" for="contract-date">Datum uzavření smlouvy</label>
+              <input class="glass-input" type="date" id="contract-date" name="contractDate">
+            </div>
+
+            <div class="glass-input-wrap">
+              <label class="glass-input-label" for="contract-duration">Doba trvání</label>
+              <input class="glass-input" type="text" id="contract-duration" name="contractDuration" placeholder="např. 12 měsíců / na dobu neurčitou">
+            </div>
+
+            <div class="glass-input-wrap">
+              <label class="glass-input-label" for="contract-jurisdiction">Místo uzavření</label>
+              <input class="glass-input" type="text" id="contract-jurisdiction" name="contractJurisdiction" placeholder="např. Praha">
+            </div>
+
+            <div class="glass-input-wrap form-field--full">
+              <label class="glass-input-label" for="contract-notes">Zvláštní ujednání a poznámky</label>
+              <textarea class="glass-input glass-textarea" id="contract-notes" name="contractNotes" rows="3" placeholder="Doplňující podmínky, výjimky, smluvní pokuty, záruky..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="form-actions">
+          <button type="submit" class="glass glass-btn glass-btn--primary glass-btn--lg form-submit-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Vygenerovat smlouvu
+          </button>
+          <button type="reset" class="glass glass-btn glass-btn--ghost">Vymazat formulář</button>
+        </div>
+
+      </form>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── SUPPORTED CONTRACT TYPES ──────────────────────────────────── -->
+    <section class="section" id="typy-zmluv">
+      <div class="section__header">
+        <h2 class="section__title">Podporované typy smluv</h2>
+        <span class="section__subtitle">Neustále rozšiřujeme knihovnu</span>
+      </div>
+
+      <div class="chip-grid">
+        <span class="glass glass-chip"><span class="glass-chip__label">Kupní smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Nájemní smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Pracovní smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o dílo</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Darovací smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Příkazní smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">NDA</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Licenční smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o zápůjčce</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Dohoda o pracovní činnosti</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o spolupráci</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Konkurenční doložka</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Kupní smlouva na nemovitost</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o věcném břemenu</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Komisionářská smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o výpůjčce</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o výkonu funkce</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Smlouva o postoupení pohledávky</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Zástavní smlouva</span></span>
+        <span class="glass glass-chip"><span class="glass-chip__label">Dohoda o provedení práce</span></span>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── FAQ ─────────────────────────────────────────────────────────── -->
+    <section class="section" id="faq">
+      <div class="section__header">
+        <h2 class="section__title">Časté dotazy</h2>
+        <span class="section__subtitle">Vše, co potřebujete vědět</span>
+      </div>
+
+      <div class="glass-accordion faq-accordion">
+        <div class="glass-accordion-item">
+          <button class="glass-accordion-trigger" aria-expanded="false">
+            <span>Jsou vygenerované smlouvy právně závazné?</span>
+            <span class="glass-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="glass-accordion-panel">
+            <p>PrávníkAI generuje smlouvy výhradně podle platného českého práva — zejména zákona č. 89/2012 Sb. (Nový občanský zákoník), zákona č. 262/2006 Sb. (zákoník práce) a zákona č. 90/2012 Sb. (zákon o obchodních korporacích). Systém nezohledňuje slovenské ani jiné cizí právo. Vygenerovaný dokument slouží jako profesionální základ; doporučujeme jej před podpisem zkontrolovat. Právní závaznost závisí na splnění zákonných náležitostí a svobodném souhlasu smluvních stran.</p>
+          </div>
+        </div>
+
+        <div class="glass-accordion-item">
+          <button class="glass-accordion-trigger" aria-expanded="false">
+            <span>Jak jsou chráněna moje data a data mých klientů?</span>
+            <span class="glass-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="glass-accordion-panel">
+            <p>Bezpečnost je naší prioritou. Veškerá data jsou šifrována pomocí AES-256 při přenosu i uložení. Zpracování probíhá na serverech v EU v souladu s nařízením GDPR. Vaše dokumenty nejsou nikdy použity pro trénování AI modelů a po vygenerování je můžete kdykoli smazat.</p>
+          </div>
+        </div>
+
+        <div class="glass-accordion-item">
+          <button class="glass-accordion-trigger" aria-expanded="false">
+            <span>Mohu vygenerované smlouvy dále upravovat?</span>
+            <span class="glass-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="glass-accordion-panel">
+            <p>Samozřejmě. Každou vygenerovanou smlouvu můžete plně editovat přímo v systému nebo ji exportovat do formátu DOCX a upravit v libovolném textovém editoru. Smlouvy jsou vaše — máte nad nimi plnou kontrolu.</p>
+          </div>
+        </div>
+
+        <div class="glass-accordion-item">
+          <button class="glass-accordion-trigger" aria-expanded="false">
+            <span>Pro koho je PrávníkAI určen?</span>
+            <span class="glass-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="glass-accordion-panel">
+            <p>PrávníkAI je primárně navržen pro advokáty, advokátní kanceláře, podnikové právníky a notáře. Využít ho však může kdokoli, kdo potřebuje připravit právní dokumenty — od podnikatelů po správce nemovitostí.</p>
+          </div>
+        </div>
+
+        <div class="glass-accordion-item">
+          <button class="glass-accordion-trigger" aria-expanded="false">
+            <span>Jaké typy smluv PrávníkAI podporuje?</span>
+            <span class="glass-accordion-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="glass-accordion-panel">
+            <p>Momentálně podporujeme více než 50 typů smluv z oblasti českého občanského práva (NOZ), obchodního práva (ZOK), pracovního práva (zákoník práce) a práva nemovitostí. Všechny šablony jsou zpracovány výhradně podle české právní úpravy. Knihovnu neustále rozšiřujeme — pokud vám chybí konkrétní typ smlouvy, dejte nám vědět.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── CTA SECTION ────────────────────────────────────────────────── -->
+    <section class="section cta-section">
+      <div class="glass glass-card cta-card">
+        <h2 class="cta-card__title">Začněte generovat smlouvy ještě dnes</h2>
+        <p class="cta-card__body">Přidejte se ke stovkám právníků, kteří již ušetřili tisíce hodin práce s PrávníkAI.</p>
+        <div class="cta-card__actions">
+          <a href="#generator" class="glass glass-btn glass-btn--primary glass-btn--lg">Vyzkoušet zdarma</a>
+          <a href="#faq" class="glass glass-btn glass-btn--ghost">Mám dotazy</a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-logo">PrávníkAI</div>
+          <p class="footer-desc">Inteligentní generátor smluv pro právníky. České právo, moderní technologie.</p>
+        </div>
+        <div class="footer-links">
+          <h4 class="footer-links__title">Produkt</h4>
+          <a href="#funkcie">Funkce</a>
+          <a href="#generator">Generátor</a>
+          <a href="#typy-zmluv">Typy smluv</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="footer-links">
+          <h4 class="footer-links__title">Právní</h4>
+          <a href="#">Obchodní podmínky</a>
+          <a href="#">Ochrana osobních údajů</a>
+          <a href="#">GDPR</a>
+        </div>
+        <div class="footer-links">
+          <h4 class="footer-links__title">Kontakt</h4>
+          <a href="mailto:info@pravnikai.cz">info@pravnikai.cz</a>
+          <a href="#">Podpora</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 PrávníkAI. Všechna práva vyhrazena.</p>
+      </div>
+    </div>
+  </footer>
+
+</main>
+
+<!-- UI Kit JS (theme toggle, accordion, toast, etc.) -->
+<script src="pure-css-glassmorphism-liquid-glass-ui-kit/src/script.js"></script>
+
+<script>
+/**
+ * PrávníkAI — AI System Prompt
+ * Tento prompt je odesílán s každým požadavkem na generování smlouvy.
+ * Zakotven výhradně v českém právním řádu.
+ */
+const AI_SYSTEM_PROMPT = `Jsi právní asistent specializovaný na české právo. Generuješ právní smlouvy výhradně podle platného českého právního řádu.
+
+ZÁVAZNÁ PRAVIDLA:
+1. Generuj výhradně podle platného českého práva.
+2. Primárně vycházej z:
+   - zákona č. 89/2012 Sb., občanský zákoník (NOZ)
+   - zákona č. 262/2006 Sb., zákoník práce (ZP)
+   - zákona č. 90/2012 Sb., o obchodních korporacích (ZOK)
+3. Nikdy nepoužívej slovenskou právní terminologii, slovenské zákony ani slovenské smluvní vzory.
+4. Pokud typ smlouvy spadá do české právní úpravy pod jiným názvem nebo režimem než ve slovenském právu, použij českou úpravu a český termín.
+5. Cituj vždy příslušná ustanovení českého zákona (§, odst., písm.).
+6. Používej výhradně český právní jazyk a terminologii dle aktuální praxe českých soudů.
+7. Smlouva musí splňovat náležitosti dle NOZ nebo příslušného zvláštního zákona.
+8. Při nejasnostech vždy preferuj výklad dle judikatury Nejvyššího soudu ČR.
+
+VÝSTUP:
+- Kompletní text smlouvy ve správné české právní formě
+- Nadpis smlouvy dle českého práva
+- Označení smluvních stran dle typu smlouvy (Prodávající/Kupující, Pronajímatel/Nájemce, Zaměstnavatel/Zaměstnanec atd.)
+- Všechna povinná ustanovení dle příslušného zákona
+- Místo pro podpisy smluvních stran`;
+
+/**
+ * Form submit handler — připraven pro napojení na AI backend.
+ * Odesílá data formuláře spolu se systémovým promptem.
+ */
+document.getElementById('contract-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+
+  const submitBtn = e.target.querySelector('.form-submit-btn');
+  const originalHTML = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generuji smlouvu...';
+
+  try {
+    // TODO: Nahradit URL skutečným backendovým endpointem
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemPrompt: AI_SYSTEM_PROMPT,
+        contractData: data
+      })
+    });
+
+    if (!response.ok) throw new Error('API error ' + response.status);
+
+    const result = await response.json();
+    GlassToast.show('success', 'Smlouva vygenerována', 'Dokument je připraven ke stažení.');
+
+    // TODO: Zobrazit vygenerovaný text smlouvy (modal nebo nová sekce)
+    console.log('Generated contract:', result);
+
+  } catch (err) {
+    // Backend ještě není implementován — zobrazíme info toast
+    GlassToast.show('info', 'Backend se připravuje', 'Generování smluv bude brzy dostupné.');
+    console.info('Backend not yet connected. System prompt ready:', AI_SYSTEM_PROMPT);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalHTML;
+  }
+});
+</script>
+
+</body>
+</html>

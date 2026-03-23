@@ -1,0 +1,1090 @@
+/**
+ * @vitest-environment jsdom
+ */
+
+/**
+ * End-to-end style UI tests for the contract generator page.
+ *
+ * These tests render the real GeneratorPage component in a jsdom environment
+ * and drive it entirely through user interactions — clicks, typing, selects.
+ * The only thing mocked is global.fetch (the API boundary).
+ *
+ * Scenarios covered:
+ *  1.  Selecting state — contract type cards visible on load
+ *  2.  Navigation to form — clicking a card shows the form
+ *  3.  Happy path (Kupní smlouva) — fill → submit → complete result
+ *  4.  Client-side validation error — submit empty form, fetch never called
+ *  5.  Draft mode result — API returns mode='draft', badge + warning shown
+ *  6.  Review-needed result — API returns mode='review-needed', error badge shown
+ *  7.  API failure (502 / LLM_ERROR) — error state shown, retry buttons visible
+ *  8.  API 422 validation failure — error state surfaced from API error body
+ *  9.  Back-navigation from result to form
+ * 10.  Back-navigation from error state to selecting
+ * 11.  Conditional field — defectsDescription appears only for faulty item
+ * 12.  NDA contract type — selecting NDA renders NDA-specific form
+ * 13.  Unknown schema — DynamicContractForm throws on bad schemaId
+ * 14.  Reset / "Nová smlouva" — returns to selection screen
+ *
+ * Run:
+ *   npx vitest run app/generator/__tests__/page.test.tsx
+ * Watch:
+ *   npx vitest app/generator/__tests__/page.test.tsx
+ */
+
+import React from 'react'
+import { render, screen, within, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
+
+import GeneratorPage from '../page'
+import { DynamicContractForm } from '@/components/contract/DynamicContractForm'
+import type { GenerateContractResponse } from '@/lib/contracts/types'
+
+// ─── Mock fetch responses ──────────────────────────────────────────────────────
+
+const MOCK_CONTRACT_TEXT = `KUPNÍ SMLOUVA
+
+uzavřená dle § 2079 a násl. zák. č. 89/2012 Sb. (NOZ)
+
+Článek I. — Smluvní strany
+Prodávající: ACME Czech s.r.o., Václavské náměstí 1, Praha 1
+Kupující: Jan Novák, Husova 12, Brno
+
+Článek II. — Předmět koupě
+Notebook Dell Latitude 5540, stav: nový.
+
+Článek III. — Kupní cena
+Kupní cena: 150 000 Kč`
+
+const COMPLETE_API_RESPONSE: GenerateContractResponse = {
+  schemaId: 'kupni-smlouva-v1',
+  mode: 'complete',
+  contractText: MOCK_CONTRACT_TEXT,
+  warnings: [],
+  missingFields: [],
+  legalBasis: ['§ 2079–2183 zák. č. 89/2012 Sb. (NOZ)'],
+  generatedAt: '2026-06-01T12:00:00.000Z',
+}
+
+const DRAFT_API_RESPONSE: GenerateContractResponse = {
+  ...COMPLETE_API_RESPONSE,
+  mode: 'draft',
+  warnings: [
+    {
+      code: 'DRAFT_MODE',
+      message: 'Smlouva byla vygenerována jako návrh. 3 volitelných polí chybí — hledejte [DOPLNIT] v textu.',
+    },
+  ],
+  missingFields: ['predmet.defectsDescription', 'zaverecna.contractPlace', 'zaverecna.additionalNotes'],
+}
+
+const REVIEW_API_RESPONSE: GenerateContractResponse = {
+  ...COMPLETE_API_RESPONSE,
+  mode: 'review-needed',
+  warnings: [
+    {
+      code: 'REVIEW_NEEDED',
+      message: 'Smlouva vyžaduje kontrolu. Povinná pole chybí: kupujici.name, kupujici.address. Hledejte ⚠️ ZKONTROLOVAT v textu.',
+    },
+  ],
+  missingFields: ['kupujici.name', 'kupujici.address'],
+}
+
+/** Representative 200 response with a business-legal LEGAL_CONSTRAINT warning */
+const LEGAL_WARNING_API_RESPONSE: GenerateContractResponse = {
+  ...COMPLETE_API_RESPONSE,
+  mode: 'draft',
+  warnings: [
+    {
+      code: 'LEGAL_CONSTRAINT',
+      message: 'Datum předání je v minulosti. Ověřte, zda se nejedná o chybu.',
+      fieldId: 'predani.handoverDate',
+    },
+    {
+      code: 'DRAFT_MODE',
+      message: 'Smlouva vygenerována jako návrh.',
+    },
+  ],
+}
+
+const LLM_ERROR_RESPONSE = {
+  error: 'Chyba při komunikaci s AI. Zkuste to znovu.',
+  code: 'LLM_ERROR',
+}
+
+const VALIDATION_ERROR_RESPONSE = {
+  error: 'Formulář obsahuje příliš mnoho chyb. Opravte povinná pole před generováním.',
+  code: 'VALIDATION_FAILED',
+  issues: [],
+}
+
+// ─── Fetch mock helpers ───────────────────────────────────────────────────────
+
+function mockFetchSuccess(body: GenerateContractResponse) {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    json: async () => body,
+  } as Response)
+}
+
+function mockFetchError(status: number, body: object) {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    ok: false,
+    status,
+    json: async () => body,
+  } as Response)
+}
+
+function mockFetchNetworkFailure() {
+  vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('Network failure'))
+}
+
+// ─── Form filling helpers ─────────────────────────────────────────────────────
+
+/**
+ * Fills all 13 required fields for kupni-smlouva-v1 using real user interactions.
+ * Matches element IDs generated by DynamicContractForm / PartyBlock / FormField.
+ *
+ * Party fields:    id="${partyId}-${fieldId}"   e.g., "prodavajici-name"
+ * Section fields:  id="field-${fieldId}"        e.g., "field-subjectDescription"
+ */
+async function fillKupniSmlouvaRequired(user: ReturnType<typeof userEvent.setup>) {
+  // ── Party: Prodávající ──
+  await user.type(screen.getByLabelText(/Jméno \/ obchodní firma/i, { selector: '#prodavajici-name' }), 'ACME Czech s.r.o.')
+  await user.type(screen.getByLabelText(/Adresa \/ sídlo/i, { selector: '#prodavajici-address' }), 'Václavské náměstí 1, 110 00 Praha 1')
+
+  // ── Party: Kupující ──
+  await user.type(screen.getByLabelText(/Jméno \/ obchodní firma/i, { selector: '#kupujici-name' }), 'Jan Novák')
+  await user.type(screen.getByLabelText(/Adresa \/ sídlo/i, { selector: '#kupujici-address' }), 'Husova 12, 602 00 Brno')
+
+  // ── Section: Předmět koupě ──
+  // subjectDescription has minLength: 20 — provide enough chars
+  await user.type(
+    screen.getByLabelText(/Popis předmětu koupě/i),
+    'Notebook Dell Latitude 5540, stav: nový, sériová čísla dle protokolu',
+  )
+  await user.selectOptions(screen.getByLabelText(/Stav předmětu/i), 'novy')
+
+  // ── Section: Kupní cena ──
+  await user.type(screen.getByLabelText(/Kupní cena/i), '150000')
+  await user.selectOptions(screen.getByLabelText(/DPH/i), 'bez-dph')
+  await user.selectOptions(screen.getByLabelText(/Způsob úhrady/i), 'hotove')
+
+  // ── Section: Předání ──
+  await user.type(screen.getByLabelText(/Datum předání/i), '2026-07-01')
+  await user.type(screen.getByLabelText(/Místo předání/i), 'Praha 1')
+  await user.selectOptions(screen.getByLabelText(/Přechod vlastnického práva/i), 'predanim')
+
+  // ── Section: Závěrečná ustanovení ──
+  await user.type(screen.getByLabelText(/Datum uzavření smlouvy/i), '2026-06-01')
+}
+
+// ─── Setup ────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+  vi.restoreAllMocks()
+  // jsdom does not implement scrollTo or scrollIntoView — silence them
+  window.scrollTo = vi.fn()
+  Element.prototype.scrollIntoView = vi.fn()
+  // jsdom does not implement clipboard — silence it
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText: vi.fn().mockResolvedValue(undefined) },
+    writable: true,
+    configurable: true,
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 1. Selecting state — initial page load
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('1 — Selecting state (initial load)', () => {
+  it('shows the page title "PrávníkAI"', () => {
+    render(<GeneratorPage />)
+    expect(screen.getByText('PrávníkAI')).toBeInTheDocument()
+  })
+
+  it('shows the "Vyberte typ smlouvy" heading', () => {
+    render(<GeneratorPage />)
+    expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument()
+  })
+
+  it('shows the Kupní smlouva contract type card', () => {
+    render(<GeneratorPage />)
+    expect(screen.getByRole('button', { name: /kupní smlouva/i })).toBeInTheDocument()
+  })
+
+  it('shows the NDA contract type card', () => {
+    render(<GeneratorPage />)
+    expect(screen.getByRole('button', { name: /smlouva o mlčenlivosti/i })).toBeInTheDocument()
+  })
+
+  it('shows the Czech law legal notice', () => {
+    render(<GeneratorPage />)
+    expect(screen.getByText(/českého práva/i)).toBeInTheDocument()
+  })
+
+  it('does not show the form or result sections on initial load', () => {
+    render(<GeneratorPage />)
+    expect(screen.queryByRole('button', { name: /vygenerovat smlouvu/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/text smlouvy/i)).not.toBeInTheDocument()
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 2. Navigation: selecting → filling
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('2 — Navigation to form', () => {
+  it('clicking Kupní smlouva card shows the contract form', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.getByRole('heading', { name: /kupní smlouva/i, level: 2 })).toBeInTheDocument()
+  })
+
+  it('form has a "Smluvní strany" section heading', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.getByText(/smluvní strany/i)).toBeInTheDocument()
+  })
+
+  it('form has "Prodávající" party section', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.getByText('Prodávající')).toBeInTheDocument()
+  })
+
+  it('form has "Kupující" party section', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.getByText('Kupující')).toBeInTheDocument()
+  })
+
+  it('submit button "Vygenerovat smlouvu" is visible in the form', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument()
+  })
+
+  it('breadcrumb shows contract type name after selection', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.getByText('Kupní smlouva', { selector: 'span, li, button' })).toBeInTheDocument()
+  })
+
+  it('selecting state cards are hidden after clicking a type', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    expect(screen.queryByRole('heading', { name: /vyberte typ smlouvy/i })).not.toBeInTheDocument()
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 3. Happy path — Kupní smlouva → complete result
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('3 — Happy path: Kupní smlouva → complete result', () => {
+  it('calls fetch once with the correct schemaId', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1))
+    const [, options] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]
+    const body = JSON.parse(options.body)
+    expect(body.schemaId).toBe('kupni-smlouva-v1')
+  })
+
+  it('result section appears after successful generation', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: /kupní smlouva/i })).toBeInTheDocument(),
+    )
+  })
+
+  it('result shows the "Kompletní smlouva" badge for complete mode', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/kompletní smlouva/i, { selector: '.badge' })).toBeInTheDocument()
+    })
+  })
+
+  it('result displays the mocked contract text', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/Notebook Dell Latitude 5540/)).toBeInTheDocument()
+    })
+  })
+
+  it('result shows the legal basis chip from the response', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/§ 2079–2183/)).toBeInTheDocument()
+    })
+  })
+
+  it('result shows action buttons: Kopírovat, Upravit, Nová smlouva', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      // ContractResult has "Kopírovat" (top) + "Kopírovat do schránky" (bottom)
+      expect(within(resultSection).getAllByRole('button', { name: /kopírovat/i }).length).toBeGreaterThan(0)
+      expect(within(resultSection).getByRole('button', { name: /upravit$/i })).toBeInTheDocument()
+      expect(within(resultSection).getAllByRole('button', { name: /nová smlouva/i }).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('form submit button is hidden after result appears', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: /kupní smlouva/i })).toBeInTheDocument(),
+    )
+    // Form submit button should be hidden (form has display: none in result state)
+    expect(screen.queryByRole('button', { name: /vygenerovat smlouvu/i })).not.toBeInTheDocument()
+  })
+
+  /**
+   * Representative: fetch is called with body containing party and section data
+   *
+   * fetch('/api/generate-contract', {
+   *   method: 'POST',
+   *   headers: { 'Content-Type': 'application/json' },
+   *   body: JSON.stringify({
+   *     schemaId: 'kupni-smlouva-v1',
+   *     formData: {
+   *       schemaId: 'kupni-smlouva-v1',
+   *       parties: [
+   *         { partyId: 'prodavajici', fields: { name: 'ACME Czech s.r.o.', address: '...' } },
+   *         { partyId: 'kupujici',    fields: { name: 'Jan Novák',          address: '...' } },
+   *       ],
+   *       sections: {
+   *         predmet: { subjectDescription: '...', subjectCondition: 'novy' },
+   *         cena:    { price: '150000', vatNote: 'bez-dph', paymentMethod: 'hotove' },
+   *         predani: { handoverDate: '2026-07-01', handoverPlace: 'Praha 1', ownershipTransfer: 'predanim' },
+   *         zaverecna: { contractDate: '2026-06-01' },
+   *       },
+   *     },
+   *   }),
+   * })
+   */
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 4. Client-side validation error — submit empty form
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('4 — Validation error before submit', () => {
+  it('shows error summary banner when submitting empty form', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/formulář obsahuje/i)).toBeInTheDocument(),
+    )
+  })
+
+  it('error summary mentions the number of errors', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/\d+\s*(chyb|chyby)/)).toBeInTheDocument(),
+    )
+  })
+
+  it('fetch is never called when client validation fails', async () => {
+    const user = userEvent.setup()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => expect(screen.getByText(/formulář obsahuje/i)).toBeInTheDocument())
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('per-field error appears for a missing required party name field', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    // Per-field error messages have role="alert" too (there are multiple)
+    await waitFor(() => {
+      const alerts = screen.getAllByRole('alert')
+      expect(alerts.length).toBeGreaterThan(1) // summary + at least one field error
+    })
+  })
+
+  it('page stays in filling state after validation error (no page state change)', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => expect(screen.getByText(/formulář obsahuje/i)).toBeInTheDocument())
+    // Submit button still visible — still in form state
+    expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument()
+  })
+
+  it('filling a required field clears its error message', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => expect(screen.getByText(/formulář obsahuje/i)).toBeInTheDocument())
+
+    // Count field-level errors (role="alert") before typing
+    const errorsBefore = screen.getAllByRole('alert').length
+
+    // Type into the prodavajici name field
+    await user.type(
+      screen.getByLabelText(/Jméno \/ obchodní firma/i, { selector: '#prodavajici-name' }),
+      'ACME Czech s.r.o.',
+    )
+
+    // At least one fewer error after typing
+    await waitFor(() => {
+      const errorsAfter = screen.getAllByRole('alert').length
+      expect(errorsAfter).toBeLessThan(errorsBefore)
+    })
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 5. Draft mode result
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('5 — Draft mode result', () => {
+  it('shows "Pracovní návrh" badge for draft mode', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(DRAFT_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/pracovní návrh/i, { selector: '.badge' })).toBeInTheDocument()
+    })
+  })
+
+  it('shows draft mode description about [DOPLNIT] placeholders', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(DRAFT_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      // [DOPLNIT] appears in mode explanation + API warning — verify at least one is visible
+      expect(within(resultSection).getAllByText(/DOPLNIT/).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('shows the DRAFT_MODE warning message from the API', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(DRAFT_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/vygenerována jako návrh/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows missing fields count in the details element', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(DRAFT_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getAllByText(/3 volitelných polí/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('badge has draft CSS class', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(DRAFT_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      const badge = within(resultSection).getByText(/pracovní návrh/i, { selector: '.badge' })
+      expect(badge.className).toContain('badge--draft')
+    })
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 6. Review-needed result
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('6 — Review-needed result', () => {
+  it('shows "Vyžaduje kontrolu" badge for review-needed mode', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(REVIEW_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/vyžaduje kontrolu/i, { selector: '.badge' })).toBeInTheDocument()
+    })
+  })
+
+  it('shows review-needed description about ⚠️ ZKONTROLOVAT markers', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(REVIEW_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      // ZKONTROLOVAT appears in mode explanation + API warning — verify at least one is visible
+      expect(within(resultSection).getAllByText(/ZKONTROLOVAT/).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('shows REVIEW_NEEDED warning message from the API', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(REVIEW_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/vyžaduje kontrolu/i, { selector: '.alert *' })).toBeInTheDocument()
+    })
+  })
+
+  it('badge has review CSS class', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(REVIEW_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      const badge = within(resultSection).getByText(/vyžaduje kontrolu/i, { selector: '.badge' })
+      expect(badge.className).toContain('badge--review')
+    })
+  })
+
+  it('does NOT show missing fields details for review-needed (handled via ZKONTROLOVAT)', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(REVIEW_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/vyžaduje kontrolu/i, { selector: '.badge' })).toBeInTheDocument()
+    })
+    // ContractResult hides the missing-fields <details> for review-needed
+    expect(screen.queryByText(/volitelných polí nebylo vyplněno/i)).not.toBeInTheDocument()
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 7. API failure state (502 / LLM_ERROR)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('7 — API failure → error state', () => {
+  it('shows error state when API returns 502', async () => {
+    const user = userEvent.setup()
+    mockFetchError(502, LLM_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/chyba při generování/i)).toBeInTheDocument(),
+    )
+  })
+
+  it('shows the API error message in the error state', async () => {
+    const user = userEvent.setup()
+    mockFetchError(502, LLM_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/Chyba při komunikaci s AI/i)).toBeInTheDocument(),
+    )
+  })
+
+  it('shows "Zkusit znovu" button in error state', async () => {
+    const user = userEvent.setup()
+    mockFetchError(502, LLM_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /zkusit znovu/i })).toBeInTheDocument(),
+    )
+  })
+
+  it('shows "Změnit typ smlouvy" button in error state', async () => {
+    const user = userEvent.setup()
+    mockFetchError(502, LLM_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /změnit typ smlouvy/i })).toBeInTheDocument(),
+    )
+  })
+
+  it('form and result are hidden in error state', async () => {
+    const user = userEvent.setup()
+    mockFetchError(502, LLM_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => expect(screen.getByText(/chyba při generování/i)).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: /vygenerovat smlouvu/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/kompletní smlouva|pracovní návrh/i)).not.toBeInTheDocument()
+  })
+
+  it('shows generic error message when fetch throws a network error', async () => {
+    const user = userEvent.setup()
+    mockFetchNetworkFailure()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/síťová chyba/i)).toBeInTheDocument(),
+    )
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 8. API 422 validation failure
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('8 — API 422 validation failure', () => {
+  it('shows error state when API returns 422 VALIDATION_FAILED', async () => {
+    const user = userEvent.setup()
+    mockFetchError(422, VALIDATION_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/chyba při generování/i)).toBeInTheDocument(),
+    )
+  })
+
+  it('shows the 422 error message from the API body', async () => {
+    const user = userEvent.setup()
+    mockFetchError(422, VALIDATION_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/příliš mnoho chyb/i)).toBeInTheDocument(),
+    )
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 9. Back navigation from result to form
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('9 — Back navigation: result → form', () => {
+  async function reachResult(user: ReturnType<typeof userEvent.setup>) {
+    mockFetchSuccess(COMPLETE_API_RESPONSE)
+    render(<GeneratorPage />)
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+    // Use getByRole (which respects display:none) instead of getByText (which doesn't)
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: /kupní smlouva/i })).toBeInTheDocument(),
+    )
+  }
+
+  it('"Upravit" button returns to the form', async () => {
+    const user = userEvent.setup()
+    await reachResult(user)
+
+    // ContractResult has "Upravit" (top) and "Upravit a vygenerovat znovu" (bottom)
+    await user.click(screen.getByRole('button', { name: /^upravit$/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument(),
+    )
+  })
+
+  it('"Nová smlouva" returns to contract type selection', async () => {
+    const user = userEvent.setup()
+    await reachResult(user)
+
+    await user.click(screen.getAllByRole('button', { name: /nová smlouva/i })[0])
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument(),
+    )
+  })
+
+  it('breadcrumb "Typ smlouvy" returns to selection', async () => {
+    const user = userEvent.setup()
+    await reachResult(user)
+
+    // The breadcrumb shows "Typ smlouvy" as a clickable button when past selecting state
+    await user.click(screen.getByRole('button', { name: /typ smlouvy/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument(),
+    )
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 10. Back navigation from error state
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('10 — Back navigation: error → form / selecting', () => {
+  async function reachError(user: ReturnType<typeof userEvent.setup>) {
+    mockFetchError(502, LLM_ERROR_RESPONSE)
+    render(<GeneratorPage />)
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /zkusit znovu/i })).toBeInTheDocument())
+  }
+
+  it('"Zkusit znovu" goes back to the form', async () => {
+    const user = userEvent.setup()
+    await reachError(user)
+
+    await user.click(screen.getByRole('button', { name: /zkusit znovu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument(),
+    )
+  })
+
+  it('"Změnit typ smlouvy" returns to contract type selection', async () => {
+    const user = userEvent.setup()
+    await reachError(user)
+
+    await user.click(screen.getByRole('button', { name: /změnit typ smlouvy/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument(),
+    )
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 11. Conditional field — defectsDescription
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('11 — Conditional field visibility', () => {
+  it('defectsDescription (Popis vad) is NOT visible when subjectCondition is "novy"', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.selectOptions(screen.getByLabelText(/Stav předmětu/i), 'novy')
+
+    expect(screen.queryByLabelText(/Popis vad/i)).not.toBeInTheDocument()
+  })
+
+  it('defectsDescription appears when "Použitý — s vadami" is selected', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.selectOptions(screen.getByLabelText(/Stav předmětu/i), 'pouzity-vadny')
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Popis vad/i)).toBeInTheDocument(),
+    )
+  })
+
+  it('defectsDescription disappears again when switching back to "Nový"', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await user.selectOptions(screen.getByLabelText(/Stav předmětu/i), 'pouzity-vadny')
+    await waitFor(() => expect(screen.getByLabelText(/Popis vad/i)).toBeInTheDocument())
+
+    await user.selectOptions(screen.getByLabelText(/Stav předmětu/i), 'novy')
+
+    await waitFor(() =>
+      expect(screen.queryByLabelText(/Popis vad/i)).not.toBeInTheDocument(),
+    )
+  })
+
+  it('paymentDeadline and bankAccount appear only when paymentMethod is "prevod"', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+
+    // Initially hidden
+    expect(screen.queryByLabelText(/Datum splatnosti/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Číslo účtu/i)).not.toBeInTheDocument()
+
+    await user.selectOptions(screen.getByLabelText(/Způsob úhrady/i), 'prevod')
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Datum splatnosti/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/Číslo účtu prodávajícího/i)).toBeInTheDocument()
+    })
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 12. NDA contract type
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('12 — NDA contract type', () => {
+  it('selecting NDA shows the NDA form heading', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /smlouva o mlčenlivosti/i }))
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: /smlouva o mlčenlivosti/i, level: 2 }),
+      ).toBeInTheDocument(),
+    )
+  })
+
+  it('NDA form has a submit button', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /smlouva o mlčenlivosti/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument(),
+    )
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 13. Unknown schema — DynamicContractForm throws on invalid schemaId
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('13 — Unknown schema handling', () => {
+  it('DynamicContractForm throws when rendered with an unknown schemaId', () => {
+    // Suppress the React error boundary console output in tests
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    expect(() => {
+      render(<DynamicContractForm schemaId="totally-unknown-schema-v99" />)
+    }).toThrow()
+
+    consoleError.mockRestore()
+  })
+
+  it('the two page-level contract types are both valid schema IDs', async () => {
+    const user = userEvent.setup()
+    render(<GeneratorPage />)
+
+    // Both card buttons are rendered without throwing — schemas are valid
+    const kupniBtn = screen.getByRole('button', { name: /kupní smlouva/i })
+    const ndaBtn = screen.getByRole('button', { name: /smlouva o mlčenlivosti/i })
+
+    expect(kupniBtn).toBeInTheDocument()
+    expect(ndaBtn).toBeInTheDocument()
+
+    // Clicking each should render the form (getSchema succeeds)
+    await user.click(kupniBtn)
+    expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument()
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 14. Legal-constraint warning from API
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('14 — Legal-constraint (LEGAL_CONSTRAINT) warning display', () => {
+  it('shows business-legal warning from the API response', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(LEGAL_WARNING_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/datum předání je v minulosti/i)).toBeInTheDocument(),
+    )
+  })
+
+  it('legal warning is shown in an alert--warning element', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(LEGAL_WARNING_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const warningAlert = screen.getByText(/datum předání je v minulosti/i).closest('.alert--warning')
+      expect(warningAlert).toBeInTheDocument()
+    })
+  })
+
+  it('result still renders contract text despite legal warning', async () => {
+    const user = userEvent.setup()
+    mockFetchSuccess(LEGAL_WARNING_API_RESPONSE)
+    render(<GeneratorPage />)
+
+    await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
+    await fillKupniSmlouvaRequired(user)
+    await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+
+    await waitFor(() => {
+      const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
+      expect(within(resultSection).getByText(/Notebook Dell Latitude 5540/)).toBeInTheDocument()
+    })
+  })
+})
