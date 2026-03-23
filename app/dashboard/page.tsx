@@ -16,6 +16,8 @@ import { createClient } from '@/lib/supabase/server'
 import { HistoryList } from '@/components/dashboard/HistoryList'
 import { OnboardingView } from '@/components/dashboard/OnboardingView'
 import { UserMenu } from '@/components/auth/UserMenu'
+import { PricingSection } from '@/components/billing/PricingSection'
+import type { SubscriptionTier } from '@/lib/billing/plans'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -45,6 +47,15 @@ export default async function DashboardPage() {
       </main>
     )
   }
+
+  // ── Fetch current subscription tier (UI cache — guard enforces real tier) ──
+  const { data: prefs } = await supabase
+    .from('user_preferences')
+    .select('subscription_tier')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const currentTier: SubscriptionTier = (prefs?.subscription_tier as SubscriptionTier) ?? 'free'
 
   // ── Fetch history (lightweight — no contract_text or review_result) ────
   const { data: generations } = await supabase
@@ -90,6 +101,15 @@ export default async function DashboardPage() {
           <Link href="/review" className="glass-btn glass-btn--ghost" style={{ textDecoration: 'none' }}>
             Kontrola smlouvy
           </Link>
+        </div>
+
+        {/* Pricing section — upsell for free users, plan overview for paid */}
+        <div style={{
+          paddingTop: 'var(--space-3xl)',
+          borderTop: '1px solid var(--glass-border-subtle)',
+          marginTop: 'var(--space-3xl)',
+        }}>
+          <PricingSection currentTier={currentTier} />
         </div>
       </div>
     </main>
