@@ -234,9 +234,9 @@ export default function Home() {
           </div>
           <div className="footer-links">
             <h4 className="footer-links__title">Právní</h4>
-            <Link href="/dashboard">Obchodní podmínky</Link>
-            <Link href="/dashboard">Ochrana osobních údajů</Link>
-            <Link href="/dashboard">GDPR</Link>
+            <Link href="/terms">Obchodní podmínky</Link>
+            <Link href="/privacy">Ochrana osobních údajů</Link>
+            <Link href="/gdpr">GDPR</Link>
           </div>
           <div className="footer-links">
             <h4 className="footer-links__title">Kontakt</h4>

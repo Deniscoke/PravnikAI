@@ -19,13 +19,24 @@ import { buildReviewPrompt } from '@/lib/review/reviewPromptBuilder'
 import { generateText } from '@/lib/llm/openaiClient'
 import { saveReviewToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import type { ReviewContractRequest, ReviewContractResponse } from '@/lib/review/types'
 
 /** Maximum contract text length — ~50 pages of dense legal text */
 const MAX_CONTRACT_LENGTH = 100_000
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── 0. Billing guard ─────────────────────────────────────────────────────
+  // ── 0a. Rate limit ────────────────────────────────────────────────────────
+  const ip = getClientIp(req.headers)
+  const { allowed: rlAllowed, remaining, resetAt } = checkRateLimit(ip, { max: 10, windowMs: 60_000 })
+  if (!rlAllowed) {
+    return NextResponse.json(
+      { error: 'Příliš mnoho požadavků. Zkuste to za chvíli.', code: 'RATE_LIMITED' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)), 'X-RateLimit-Remaining': '0' } },
+    )
+  }
+
+  // ── 0b. Billing guard ─────────────────────────────────────────────────────
   const guard = await assertBillingAccess('review')
   if (!guard.allowed) return guard.response
 

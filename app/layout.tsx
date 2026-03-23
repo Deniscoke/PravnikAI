@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { CookieConsent } from '@/components/CookieConsent'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeToggle />
         <AuthProvider initialUser={user ?? null}>
           {children}
+          <CookieConsent />
         </AuthProvider>
       </body>
     </html>

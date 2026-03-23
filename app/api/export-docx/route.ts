@@ -23,6 +23,7 @@ import {
   NumberFormat,
 } from 'docx'
 import { assertBillingAccess, recordExport } from '@/lib/billing/guard'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 // Force Node.js runtime — docx library uses Buffer and Node-specific APIs
 export const runtime = 'nodejs'
@@ -37,7 +38,17 @@ interface ExportRequest {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── 0. Billing guard ─────────────────────────────────────────────────────
+  // ── 0a. Rate limit ────────────────────────────────────────────────────────
+  const ip = getClientIp(req.headers)
+  const { allowed: rlAllowed, resetAt } = checkRateLimit(ip, { max: 20, windowMs: 60_000 })
+  if (!rlAllowed) {
+    return NextResponse.json(
+      { error: 'Příliš mnoho požadavků. Zkuste to za chvíli.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)) } },
+    )
+  }
+
+  // ── 0b. Billing guard ─────────────────────────────────────────────────────
   const guard = await assertBillingAccess('export')
   if (!guard.allowed) return guard.response
 
