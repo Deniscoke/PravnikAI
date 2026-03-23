@@ -933,6 +933,7 @@ describe('10 — Placeholder format determinism', () => {
       schema: makeSchema(),
       data: makeMinimalData(),
       mode: 'draft',
+      visibleFields: [],
       missingFields: ['predmet.subjectDescription', 'predani.handoverDate'],
     }
     const first = buildPrompt(input)
