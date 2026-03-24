@@ -62,7 +62,11 @@ export async function middleware(request: NextRequest) {
 
   // ── Login: redirect to dashboard if already signed in ──────────────────
   if (pathname === '/login' && user) {
-    const redirect = request.nextUrl.searchParams.get('redirect') || '/dashboard'
+    const rawRedirect = request.nextUrl.searchParams.get('redirect') || '/dashboard'
+    // Validate redirect to prevent open-redirect attacks (e.g. ?redirect=//evil.com)
+    const redirect = (rawRedirect.startsWith('/') && !rawRedirect.startsWith('//'))
+      ? rawRedirect
+      : '/dashboard'
     const url = request.nextUrl.clone()
     url.pathname = redirect
     url.searchParams.delete('redirect')
@@ -74,7 +78,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all routes except static assets, images, and favicon
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    // Match all routes except static assets, images, favicon, and Sentry tunnel
+    '/((?!_next/static|_next/image|favicon\\.ico|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
