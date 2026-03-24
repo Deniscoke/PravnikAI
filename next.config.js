@@ -4,10 +4,8 @@ const path = require('path')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Fix Turbopack workspace root detection (multiple lockfiles warning)
-  experimental: {
-    turbo: {
-      root: path.resolve(__dirname),
-    },
+  turbopack: {
+    root: path.resolve(__dirname),
   },
 
   async headers() {
