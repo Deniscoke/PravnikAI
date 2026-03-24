@@ -88,6 +88,7 @@ export function HistoryList({ generations: initialGenerations, reviews: initialR
                 badge={g.mode}
                 badgeClass={g.mode === 'complete' ? 'complete' : g.mode === 'draft' ? 'draft' : 'review'}
                 timestamp={g.created_at}
+                viewHref={`/generator/${g.id}`}
                 onDelete={() => handleDelete(g.id, 'generation')}
                 isDeleting={deletingId === g.id}
               />
@@ -117,6 +118,7 @@ export function HistoryList({ generations: initialGenerations, reviews: initialR
                 badge={r.overall_risk}
                 badgeClass={r.overall_risk === 'low' ? 'complete' : r.overall_risk === 'medium' ? 'draft' : 'review'}
                 timestamp={r.created_at}
+                viewHref={`/review/${r.id}`}
                 onDelete={() => handleDelete(r.id, 'review')}
                 isDeleting={deletingId === r.id}
               />
@@ -176,6 +178,7 @@ function HistoryCard({
   badge,
   badgeClass,
   timestamp,
+  viewHref,
   onDelete,
   isDeleting,
 }: {
@@ -185,6 +188,7 @@ function HistoryCard({
   badge: string
   badgeClass: string
   timestamp: string
+  viewHref: string
   onDelete: () => void
   isDeleting: boolean
 }) {
@@ -223,27 +227,56 @@ function HistoryCard({
         </div>
       </div>
 
-      <button
-        onClick={onDelete}
-        disabled={isDeleting}
-        title="Smazat"
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: isDeleting ? 'default' : 'pointer',
-          color: 'var(--color-text-subtle)',
-          padding: 'var(--space-xs)',
-          borderRadius: 4,
-          opacity: 0.6,
-          transition: 'opacity 150ms',
-        }}
-        aria-label={`Smazat ${title}`}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="3 6 5 6 21 6" />
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
-      </button>
+      <div style={{ display: 'flex', gap: 'var(--space-xs)', alignItems: 'center' }}>
+        <a
+          href={viewHref}
+          title="Zobrazit detail"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--accent-aqua)',
+            padding: 'var(--space-xs)',
+            borderRadius: 4,
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            textDecoration: 'none',
+            opacity: 0.8,
+            transition: 'opacity 150ms',
+          }}
+          aria-label={`Zobrazit ${title}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Zobrazit
+        </a>
+        <button
+          onClick={onDelete}
+          disabled={isDeleting}
+          title="Smazat"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: isDeleting ? 'default' : 'pointer',
+            color: 'var(--color-text-subtle)',
+            padding: 'var(--space-xs)',
+            borderRadius: 4,
+            opacity: 0.6,
+            transition: 'opacity 150ms',
+          }}
+          aria-label={`Smazat ${title}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+        </button>
+      </div>
     </div>
   )
 }

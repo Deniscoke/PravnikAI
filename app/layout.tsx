@@ -42,7 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <html lang="cs" data-theme="dark" suppressHydrationWarning>
+    <html lang="cs" data-theme="light" suppressHydrationWarning>
       <head>
         {/* Prevent flash of wrong theme on load */}
         <script dangerouslySetInnerHTML={{ __html: `
@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           })();
         `}} />
         <link
-          href="https://fonts.googleapis.com/css2?family=Italiana&family=DM+Sans:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>

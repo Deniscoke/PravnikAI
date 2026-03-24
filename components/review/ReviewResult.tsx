@@ -5,7 +5,7 @@ import type { ReviewContractResponse, RiskLevel } from '@/lib/review/types'
 
 interface ReviewResultProps {
   result: ReviewContractResponse
-  onNewReview: () => void
+  onNewReview: string | (() => void)
 }
 
 export function ReviewResult({ result, onNewReview }: ReviewResultProps) {
@@ -220,9 +220,15 @@ export function ReviewResult({ result, onNewReview }: ReviewResultProps) {
         <button className="glass-btn glass-btn--primary" onClick={copyToClipboard}>
           {copied ? <><CheckIcon /> Zkopírováno</> : <><CopyIcon /> Kopírovat analýzu</>}
         </button>
-        <button className="glass-btn glass-btn--ghost" onClick={onNewReview}>
-          Nová kontrola
-        </button>
+        {typeof onNewReview === 'string' ? (
+          <a href={onNewReview} className="glass-btn glass-btn--ghost" style={{ textDecoration: 'none' }}>
+            Nová kontrola
+          </a>
+        ) : (
+          <button className="glass-btn glass-btn--ghost" onClick={onNewReview}>
+            Nová kontrola
+          </button>
+        )}
       </div>
 
       {/* ── Disclaimer ── */}

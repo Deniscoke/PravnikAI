@@ -7,7 +7,7 @@ type Theme = 'dark' | 'light'
 const STORAGE_KEY = 'glass-theme'
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const [theme, setTheme] = useState<Theme>('light')
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Theme | null

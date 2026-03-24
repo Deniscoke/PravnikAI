@@ -59,8 +59,8 @@
   --radius-full:        9999px;
 
   /* Typography */
-  --font-display:       'Italiana', Georgia, serif;
-  --font-body:          'DM Sans', system-ui, sans-serif;
+  --font-display:       'Playfair Display', Georgia, serif;
+  --font-body:          'Inter', system-ui, sans-serif;
 
   /* Easing & duration */
   --ease-glass:         cubic-bezier(0.22, 0.68, 0, 1.2);

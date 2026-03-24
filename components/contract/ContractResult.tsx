@@ -6,8 +6,8 @@ import type { GenerateContractResponse, GenerationMode } from '@/lib/contracts/t
 interface ContractResultProps {
   result: GenerateContractResponse
   contractName: string
-  onBack: () => void
-  onReset: () => void
+  onBack: string | (() => void)
+  onReset: string | (() => void)
 }
 
 export function ContractResult({ result, contractName, onBack, onReset }: ContractResultProps) {
@@ -117,12 +117,12 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
           <button className="glass-btn" onClick={exportDocx} disabled={exporting}>
             {exporting ? <><SpinnerIcon /> Export…</> : <><DocxIcon /> DOCX</>}
           </button>
-          <button className="glass-btn glass-btn--ghost" onClick={onBack}>
+          <ActionButton action={onBack} className="glass-btn glass-btn--ghost">
             Upravit
-          </button>
-          <button className="glass-btn glass-btn--ghost" onClick={onReset}>
+          </ActionButton>
+          <ActionButton action={onReset} className="glass-btn glass-btn--ghost">
             Nová smlouva
-          </button>
+          </ActionButton>
         </div>
       </div>
 
@@ -217,12 +217,12 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
         <button className="glass-btn" onClick={exportDocx} disabled={exporting}>
           {exporting ? <><SpinnerIcon /> Exportuji…</> : <><DocxIcon /> Stáhnout DOCX</>}
         </button>
-        <button className="glass-btn" onClick={onBack}>
+        <ActionButton action={onBack} className="glass-btn">
           Upravit a vygenerovat znovu
-        </button>
-        <button className="glass-btn glass-btn--ghost" onClick={onReset}>
+        </ActionButton>
+        <ActionButton action={onReset} className="glass-btn glass-btn--ghost">
           Nová smlouva
-        </button>
+        </ActionButton>
       </div>
 
       {/* ── Compliance disclaimer ── */}
@@ -250,6 +250,19 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       </div>
     </section>
   )
+}
+
+// ── ActionButton — renders <a> for URLs, <button> for callbacks ──────────────
+
+function ActionButton({ action, className, children }: {
+  action: string | (() => void)
+  className?: string
+  children: React.ReactNode
+}) {
+  if (typeof action === 'string') {
+    return <a href={action} className={className} style={{ textDecoration: 'none' }}>{children}</a>
+  }
+  return <button className={className} onClick={action}>{children}</button>
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
