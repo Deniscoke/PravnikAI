@@ -1,7 +1,15 @@
 const { withSentryConfig } = require('@sentry/nextjs')
+const path = require('path')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Fix Turbopack workspace root detection (multiple lockfiles warning)
+  experimental: {
+    turbo: {
+      root: path.resolve(__dirname),
+    },
+  },
+
   async headers() {
     return [
       {
@@ -38,12 +46,6 @@ module.exports = withSentryConfig(nextConfig, {
   // Hide source maps from users (security)
   hideSourceMaps: true,
 
-  // Automatically tree-shake Sentry logger in production
-  disableLogger: true,
-
   // Tunnel Sentry events through /monitoring to avoid ad-blockers
   tunnelRoute: '/monitoring',
-
-  // Automatically instrument API routes and server components
-  automaticVercelMonitors: true,
 })

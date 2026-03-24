@@ -1,5 +1,5 @@
 /**
- * Next.js Middleware — PrávníkAI
+ * Next.js Proxy (Middleware) — PrávníkAI
  *
  * Responsibilities:
  *   1. Refresh Supabase auth session on every matched request (prevents stale JWTs)
@@ -12,7 +12,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

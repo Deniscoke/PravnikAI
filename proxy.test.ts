@@ -1,5 +1,5 @@
 /**
- * Tests for Next.js middleware — PrávníkAI
+ * Tests for Next.js Proxy (Middleware) — PrávníkAI
  *
  * What is tested:
  *   1. Protected routes redirect to /login when unauthenticated
@@ -9,7 +9,7 @@
  *   5. Redirect preserves the intended destination in ?redirect param
  *
  * Run:
- *   npx vitest run middleware.test.ts
+ *   npx vitest run proxy.test.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -27,7 +27,7 @@ vi.mock('@supabase/ssr', () => ({
   })),
 }))
 
-import { middleware } from './middleware'
+import { proxy } from './proxy'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -52,10 +52,10 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 })
 
-describe('middleware', () => {
+describe('proxy', () => {
   it('redirects /dashboard to /login when unauthenticated', async () => {
     mockUnauthenticated()
-    const res = await middleware(makeRequest('/dashboard'))
+    const res = await proxy(makeRequest('/dashboard'))
     expect(res.status).toBe(307)
     const location = new URL(res.headers.get('location')!)
     expect(location.pathname).toBe('/login')
@@ -64,28 +64,28 @@ describe('middleware', () => {
 
   it('allows /dashboard when authenticated', async () => {
     mockAuthenticated()
-    const res = await middleware(makeRequest('/dashboard'))
+    const res = await proxy(makeRequest('/dashboard'))
     // Should NOT redirect — pass through
     expect(res.status).toBe(200)
   })
 
   it('redirects /login to /dashboard when already authenticated', async () => {
     mockAuthenticated()
-    const res = await middleware(makeRequest('/login'))
+    const res = await proxy(makeRequest('/login'))
     expect(res.status).toBe(307)
     expect(new URL(res.headers.get('location')!).pathname).toBe('/dashboard')
   })
 
   it('allows /login when unauthenticated', async () => {
     mockUnauthenticated()
-    const res = await middleware(makeRequest('/login'))
+    const res = await proxy(makeRequest('/login'))
     expect(res.status).toBe(200)
   })
 
   it('allows public routes for unauthenticated users', async () => {
     mockUnauthenticated()
     for (const path of ['/', '/generator', '/review']) {
-      const res = await middleware(makeRequest(path))
+      const res = await proxy(makeRequest(path))
       expect(res.status).toBe(200)
     }
   })
@@ -93,14 +93,14 @@ describe('middleware', () => {
   it('allows public routes for authenticated users', async () => {
     mockAuthenticated()
     for (const path of ['/', '/generator', '/review']) {
-      const res = await middleware(makeRequest(path))
+      const res = await proxy(makeRequest(path))
       expect(res.status).toBe(200)
     }
   })
 
   it('preserves redirect path when redirecting to login', async () => {
     mockUnauthenticated()
-    const res = await middleware(makeRequest('/dashboard/some-page'))
+    const res = await proxy(makeRequest('/dashboard/some-page'))
     const location = new URL(res.headers.get('location')!)
     expect(location.searchParams.get('redirect')).toBe('/dashboard/some-page')
   })
