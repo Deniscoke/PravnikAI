@@ -144,12 +144,20 @@ describe('saveReviewToHistory', () => {
 })
 
 describe('completeOnboarding', () => {
-  it('updates profile and preferences for authenticated user', async () => {
+  it('updates profile and preferences when marketingConsent=true', async () => {
     mockAuthenticatedUser('user-xyz')
     await completeOnboarding({ marketingConsent: true })
-    // Should call from('profiles') and from('user_preferences')
     expect(mockFrom).toHaveBeenCalledWith('profiles')
     expect(mockFrom).toHaveBeenCalledWith('user_preferences')
+  })
+
+  it('updates profile but skips preferences when marketingConsent=false', async () => {
+    mockAuthenticatedUser('user-xyz')
+    await completeOnboarding({ marketingConsent: false })
+    expect(mockFrom).toHaveBeenCalledWith('profiles')
+    // user_preferences should NOT be updated when no marketing consent
+    const preferenceCalls = mockFrom.mock.calls.filter((args) => args[0] === 'user_preferences')
+    expect(preferenceCalls).toHaveLength(0)
   })
 
   it('throws when user is not authenticated', async () => {
