@@ -97,6 +97,24 @@ export async function assertBillingAccess(
     }
   }
 
+  // Onboarding gate: block users who haven't accepted terms yet.
+  // This prevents API usage before legal consent is given.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_completed')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.onboarding_completed) {
+    return {
+      allowed: false,
+      response: NextResponse.json(
+        { error: 'Nejdříve dokončete registraci.', code: 'ONBOARDING_REQUIRED' },
+        { status: 403 },
+      ),
+    }
+  }
+
   const billing = await getBillingAccessForUser(supabase, user.id, action)
 
   if (!billing.allowed) {

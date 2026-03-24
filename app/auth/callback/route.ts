@@ -33,6 +33,20 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
+      // Check if user needs onboarding before sending to intended destination
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single()
+
+        if (!profile?.onboarding_completed) {
+          return NextResponse.redirect(`${origin}/onboarding`)
+        }
+      }
+
       // Successful auth — redirect to intended destination
       return NextResponse.redirect(`${origin}${redirect}`)
     }

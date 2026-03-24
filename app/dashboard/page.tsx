@@ -14,7 +14,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { HistoryList } from '@/components/dashboard/HistoryList'
-import { OnboardingView } from '@/components/dashboard/OnboardingView'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { PricingSection } from '@/components/billing/PricingSection'
 import type { SubscriptionTier } from '@/lib/billing/plans'
@@ -32,20 +31,9 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // ── Onboarding gate ─────────────────────────────────────────────────────
+  // ── Onboarding gate — redirect to standalone onboarding page ────────────
   if (!profile?.onboarding_completed) {
-    const displayName =
-      profile?.display_name ||
-      user.user_metadata?.full_name ||
-      user.user_metadata?.name ||
-      ''
-
-    return (
-      <main style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', padding: '0 var(--space-md)' }}>
-        <DashboardHeader />
-        <OnboardingView userName={displayName} />
-      </main>
-    )
+    redirect('/onboarding')
   }
 
   // ── Fetch current subscription tier (UI cache — guard enforces real tier) ──
