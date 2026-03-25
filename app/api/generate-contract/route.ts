@@ -48,7 +48,7 @@ import type {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 0a. Rate limit ────────────────────────────────────────────────────────
   const ip = getClientIp(req.headers)
-  const { allowed: rlAllowed, remaining, resetAt } = checkRateLimit(ip, { max: 10, windowMs: 60_000 })
+  const { allowed: rlAllowed, remaining, resetAt } = await checkRateLimit(ip, { max: 10, windowMs: 60_000 })
   if (!rlAllowed) {
     return NextResponse.json(
       { error: 'Příliš mnoho požadavků. Zkuste to za chvíli.', code: 'RATE_LIMITED' },

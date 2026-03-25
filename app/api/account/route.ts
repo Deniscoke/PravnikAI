@@ -45,7 +45,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
   // Rate limit account deletion — prevent abuse (3 attempts per 10 minutes)
   const ip = getClientIp(req.headers)
-  const { allowed: rlAllowed, resetAt } = checkRateLimit(`delete:${ip}`, { max: 3, windowMs: 600_000 })
+  const { allowed: rlAllowed, resetAt } = await checkRateLimit(`delete:${ip}`, { max: 3, windowMs: 600_000 })
   if (!rlAllowed) {
     return NextResponse.json(
       { error: 'Příliš mnoho pokusů o smazání. Zkuste to za chvíli.' },

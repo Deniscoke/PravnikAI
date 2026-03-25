@@ -1,37 +1,23 @@
 /**
- * In-memory rate limiter — PrávníkAI
+ * Distributed rate limiter — PrávníkAI
  *
- * Simple sliding-window rate limiter for Vercel serverless functions.
- * Each function instance maintains its own counter map — not distributed,
- * but effective against single-source abuse (bots, scripts).
+ * Uses Upstash Redis + @upstash/ratelimit for consistent rate limiting
+ * across all Vercel serverless function instances.
  *
- * For distributed rate limiting across all instances, upgrade to:
- * @upstash/ratelimit + Upstash Redis (drop-in replacement).
+ * Falls back to a no-op (allow all) if env vars are not configured so that
+ * local development and CI work without a Redis connection.
+ *
+ * Required env vars (add to .env.local and Vercel project settings):
+ *   UPSTASH_REDIS_REST_URL   — from Upstash console → your database → REST API
+ *   UPSTASH_REDIS_REST_TOKEN — from Upstash console → your database → REST API
  *
  * Usage in a route:
- *   const { allowed, remaining } = checkRateLimit(ip, { max: 10, windowMs: 60_000 })
+ *   const { allowed, remaining, resetAt } = await checkRateLimit(ip, { max: 10, windowMs: 60_000 })
  *   if (!allowed) return NextResponse.json({ error: '...' }, { status: 429 })
  */
 
-interface RateLimitEntry {
-  count: number
-  resetAt: number
-}
-
-const store = new Map<string, RateLimitEntry>()
-
-// Periodic cleanup to prevent memory leaks in long-lived instances
-const CLEANUP_INTERVAL = 5 * 60_000 // 5 minutes
-let lastCleanup = Date.now()
-
-function cleanup() {
-  const now = Date.now()
-  if (now - lastCleanup < CLEANUP_INTERVAL) return
-  lastCleanup = now
-  for (const [key, entry] of store) {
-    if (entry.resetAt <= now) store.delete(key)
-  }
-}
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 interface RateLimitOptions {
   /** Maximum requests per window */
@@ -46,34 +32,52 @@ interface RateLimitResult {
   resetAt: number
 }
 
+// Cache instances keyed by "max:windowMs" to avoid recreating per request
+const instances = new Map<string, Ratelimit>()
+
+function getInstance(max: number, windowMs: number): Ratelimit | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (!url || !token) return null
+
+  const cacheKey = `${max}:${windowMs}`
+  if (instances.has(cacheKey)) return instances.get(cacheKey)!
+
+  const limiter = new Ratelimit({
+    redis: new Redis({ url, token }),
+    limiter: Ratelimit.slidingWindow(max, `${windowMs} ms`),
+    analytics: false,
+    prefix: 'pravnik:rl',
+  })
+
+  instances.set(cacheKey, limiter)
+  return limiter
+}
+
 /**
  * Check and increment rate limit for a given key (usually IP address).
  * Returns whether the request is allowed and how many requests remain.
+ *
+ * This function is async — await it before using the result.
+ * Falls back to allow-all when Upstash env vars are not configured.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   { max, windowMs }: RateLimitOptions,
-): RateLimitResult {
-  cleanup()
+): Promise<RateLimitResult> {
+  const limiter = getInstance(max, windowMs)
 
-  const now = Date.now()
-  const entry = store.get(key)
-
-  // New window or expired window
-  if (!entry || entry.resetAt <= now) {
-    const resetAt = now + windowMs
-    store.set(key, { count: 1, resetAt })
-    return { allowed: true, remaining: max - 1, resetAt }
+  // No Redis configured — allow all (local dev / CI)
+  if (!limiter) {
+    return { allowed: true, remaining: max - 1, resetAt: Date.now() + windowMs }
   }
 
-  // Within existing window
-  entry.count++
-
-  if (entry.count > max) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt }
+  const result = await limiter.limit(key)
+  return {
+    allowed: result.success,
+    remaining: result.remaining,
+    resetAt: result.reset,
   }
-
-  return { allowed: true, remaining: max - entry.count, resetAt: entry.resetAt }
 }
 
 /**
