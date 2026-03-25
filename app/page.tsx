@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { UserMenu } from '@/components/auth/UserMenu'
+import { PricingSection } from '@/components/billing/PricingSection'
 import { getSchemasByCategory } from '@/lib/contracts/contractSchemas'
 
 // ── FAQ data ──────────────────────────────────────────────────────────────
@@ -195,6 +196,17 @@ export default function Home() {
               <FaqItem key={i} question={item.q} answer={item.a} />
             ))}
           </div>
+        </section>
+
+        <div className="divider" />
+
+        {/* ── Pricing ── */}
+        <section className="section" id="cenik">
+          <div className="section__header">
+            <h2 className="section__title">Ceník</h2>
+            <span className="section__subtitle">Začněte zdarma, upgradujte až budete připraveni</span>
+          </div>
+          <PricingSection currentTier="free" />
         </section>
 
         <div className="divider" />
