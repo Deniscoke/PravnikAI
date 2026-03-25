@@ -42,12 +42,26 @@ export const pracovniSmlouva: ContractSchema = {
       defaultJurisdictionClause: 'Příslušný soud dle místa výkonu práce (§ 12 OSŘ)',
     },
     aiInstructions:
-      'Generuj pracovní smlouvu výhradně dle ZP č. 262/2006 Sb. ' +
-      'Povinně uveď druh práce, místo výkonu práce a den nástupu (§ 34 ZP). ' +
-      'Mzda nesmí být nižší než aktuální minimální mzda (§ 111 ZP). ' +
-      'Zkušební doba nesmí přesáhnout 3 měsíce (6 měsíců u vedoucích zaměstnanců) dle § 35 ZP. ' +
-      'Dovolená minimálně 4 týdny dle § 213 ZP. ' +
-      'Nikdy nepoužívej slovenskou právní terminologii.',
+      'Generuj pracovní smlouvu výhradně dle ZP č. 262/2006 Sb.\n\n' +
+      'POVINNÝ CHECKLIST KLAUZULÍ pro pracovní smlouvu:\n' +
+      '1. Identifikace zaměstnavatele — obchodní firma/název, IČO, sídlo\n' +
+      '2. Identifikace zaměstnance — jméno, příjmení, bydliště, datum narození\n' +
+      '3. Druh práce — povinná náležitost dle § 34 odst. 1 písm. a) ZP\n' +
+      '4. Místo výkonu práce — povinná náležitost dle § 34 odst. 1 písm. b) ZP\n' +
+      '5. Den nástupu do práce — povinná náležitost dle § 34 odst. 1 písm. c) ZP\n' +
+      '6. Mzda / plat — výše, složky, termín a způsob výplaty; nesmí být pod minimální mzdou (§ 111 ZP)\n' +
+      '7. Pracovní doba — stanovená týdenní pracovní doba, rozvrh (§ 79–80 ZP)\n' +
+      '8. Zkušební doba — max. 3 měsíce (6 u vedoucích), nesmí být delší než polovina doby trvání PP (§ 35 ZP)\n' +
+      '9. Doba trvání — určitá (s uvedením data/události) nebo neurčitá\n' +
+      '10. Dovolená — minimálně 4 týdny (§ 213 ZP)\n' +
+      '11. Výpovědní doba — minimálně 2 měsíce (§ 51 ZP), začíná prvním dnem následujícího měsíce\n' +
+      '12. Závěrečná ustanovení — rozhodné právo, počet vyhotovení\n' +
+      '13. Podpisové bloky — zaměstnavatel i zaměstnanec\n\n' +
+      'PRÁVNÍ POZNÁMKY:\n' +
+      '- Pracovní smlouvu NELZE uzavřít ústně — vyžaduje písemnou formu (§ 34 odst. 2 ZP)\n' +
+      '- Nikdy nepoužívej slovenskou právní terminologii\n' +
+      '- Konkurenční doložka jen pokud je v zadání (§ 310 ZP) — nevymýšlej ji\n' +
+      '- Nevymýšlej benefity, prémie ani jiné složky mzdy, které nejsou v zadání',
   },
 
   parties: [

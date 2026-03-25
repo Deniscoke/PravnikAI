@@ -40,12 +40,26 @@ export const ndaSmlouva: ContractSchema = {
       defaultJurisdictionClause: 'Příslušný obecný soud dle místa sídla žalovaného',
     },
     aiInstructions:
-      'Generuj NDA jako inominátní smlouvu dle § 1746 odst. 2 NOZ. ' +
-      'Definuj obchodní tajemství dle § 504 NOZ: musí splňovat znaky tajnosti, hospodářské hodnoty a zajištění ochrany. ' +
-      'Uveď dobu trvání závazku mlčenlivosti (i po ukončení spolupráce). ' +
-      'Smluvní pokutu za porušení sjednej jako přiměřenou (§ 2051 NOZ — soud může nepřiměřenou pokutu snížit). ' +
-      'Pro vzájemné NDA jasně uveď oboustrannost závazků. ' +
-      'Nezapomeň na výjimky: informace v public domain, informace získané třetí stranou.',
+      'Generuj NDA jako inominátní smlouvu dle § 1746 odst. 2 NOZ.\n\n' +
+      'POVINNÝ CHECKLIST KLAUZULÍ pro smlouvu o mlčenlivosti (NDA):\n' +
+      '1. Identifikace smluvních stran — poskytovatel a příjemce (nebo oboustranně)\n' +
+      '2. Účel smlouvy — důvod sdílení důvěrných informací\n' +
+      '3. Definice důvěrných informací — konkrétní vymezení, co je důvěrné; odkaz na § 504 NOZ (obchodní tajemství)\n' +
+      '4. Výjimky z důvěrnosti — informace veřejně dostupné, nezávisle vyvinuté, získané od třetí strany bez omezení, vyžádané zákonem\n' +
+      '5. Povinnosti příjemce — ochrana informací, omezení přístupu, zákaz kopírování/šíření\n' +
+      '6. Povolené použití — výhradně pro sjednaný účel\n' +
+      '7. Doba trvání — platnost NDA a doba trvání závazku mlčenlivosti po ukončení (přežívající klauzule)\n' +
+      '8. Vrácení/zničení — povinnost vrátit nebo zničit důvěrné materiály po ukončení\n' +
+      '9. Smluvní pokuta — přiměřená výše (§ 2051 NOZ — soud může nepřiměřenou pokutu snížit)\n' +
+      '10. Náhrada škody — právo na náhradu škody vedle smluvní pokuty\n' +
+      '11. Oboustrannost — u vzájemného NDA jasně uveď symetrické závazky\n' +
+      '12. Závěrečná ustanovení — rozhodné právo, řešení sporů, počet vyhotovení\n' +
+      '13. Podpisové bloky\n\n' +
+      'PRÁVNÍ POZNÁMKY:\n' +
+      '- NDA musí mít znaky obchodního tajemství dle § 504 NOZ: tajnost, hospodářská hodnota, zajištění ochrany\n' +
+      '- Smluvní pokuta musí být přiměřená — soud může snížit nepřiměřenou (§ 2051 NOZ)\n' +
+      '- Nevymýšlej konkrétní výši smluvní pokuty, pokud není v zadání\n' +
+      '- Závazek mlčenlivosti může přežívat ukončení smlouvy — to je standardní a žádoucí',
   },
 
   parties: [

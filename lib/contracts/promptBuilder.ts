@@ -34,6 +34,7 @@ import type {
   ContractField,
   PartyField,
   SelectOption,
+  DraftingPosture,
 } from './types'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -47,6 +48,8 @@ export interface PromptInput {
    * Format: "sectionId.fieldId" or "partyId.fieldId"
    */
   missingFields: string[]
+  /** Drafting posture — controls clause selection and wording strategy. Optional. */
+  posture?: DraftingPosture
 }
 
 export interface BuiltPrompt {
@@ -63,7 +66,7 @@ export interface BuiltPrompt {
  * Deterministic: identical input always produces identical output.
  */
 export function buildPrompt(input: PromptInput): BuiltPrompt {
-  const { schema, data, mode, missingFields } = input
+  const { schema, data, mode, missingFields, posture } = input
   const missingSet = new Set(missingFields)
 
   const userPromptParts = [
@@ -73,7 +76,12 @@ export function buildPrompt(input: PromptInput): BuiltPrompt {
     buildMissingSection(schema, data, missingFields),
     buildInstructionSection(mode),
     buildOutputStructureSection(schema),
+    buildQualityCheckSection(mode),
   ]
+
+  if (posture && hasPostureContent(posture)) {
+    userPromptParts.push(buildPostureSection(posture, schema))
+  }
 
   return {
     systemPrompt: assembleSystemPrompt(schema.metadata.aiInstructions),
@@ -369,7 +377,10 @@ function buildModeBlock(mode: GenerationMode): string {
         'Povinná pole jsou vyplněna, ale chybí část volitelných polí.',
         'Vygeneruj **návrh textu smlouvy** s označenými mezerami pro chybějící údaje.',
         '',
-        '- Kde chybí volitelné údaje ze sekce C, vlož `[DOPLNIT: {popis čeho přesně}]`',
+        '**Výstup musí být řádný právní text v češtině — nikoli seznam odrážek ani výčet polí.**',
+        'Placeholdery `[DOPLNIT: ...]` vkládej přímo do vět na místě, kde chybějící údaj patří.',
+        '',
+        '- Kde chybí volitelné údaje ze sekce C, vlož `[DOPLNIT: {popis čeho přesně}]` inline do věty',
         '- Na samý začátek dokumentu — před název smlouvy — přidej toto varování na vlastním řádku:',
         '  `NÁVRH — Text smlouvy určený k doplnění a právní kontrole před podpisem`',
         '- Text nesmí být podepsán, dokud nejsou doplněny všechny `[DOPLNIT]` placeholdery',
@@ -383,11 +394,15 @@ function buildModeBlock(mode: GenerationMode): string {
         '',
         'Vygeneruj **orientační kostru smlouvy** s jasně vyznačenými neúplnými místy.',
         '',
-        '- Pro každé chybějící povinné pole (sekce C) vlož: `⚠️ ZKONTROLOVAT — [DOPLNIT: {popis čeho}]`',
+        '**KLÍČOVÉ: Výstup musí být VŽDY řádný právní text v češtině — nikoli seznam odrážek ani tabulka polí.**',
+        'Každý článek smlouvy napiš jako souvětí/odstavec v právní češtině (vzor: "Prodávající [DOPLNIT: Jméno], bytem ⚠️ ZKONTROLOVAT — [DOPLNIT: Adresa prodávajícího], tímto prodává..."). Placeholdery ⚠️ ZKONTROLOVAT — [DOPLNIT: ...] vkládej přímo do vět na místě, kde chybějící údaj patří — NIKDY jako samostatnou odrážku mimo větu.',
+        '',
+        '- Pro každé chybějící povinné pole (sekce C) vlož inline do věty: `⚠️ ZKONTROLOVAT — [DOPLNIT: {popis čeho}]`',
         '- Na samý začátek dokumentu přidej prominentní varování:',
         '  `⚠️ NEÚPLNÁ KOSTRA — Pouze orientační podklad. Před podpisem vyžaduje právní kontrolu.`',
         '- Bezprostředně za varováním uveď číslovaný seznam všech chybějících povinných polí ze sekce C',
         '- Text v tomto stavu slouží pouze jako podklad — nesmí být použit bez odborné kontroly',
+        '- Struktura dokumentu: použij Článek I., Článek II. atd. — každý článek obsahuje celé odstavce právní prózy, ne odrážky',
       ].join('\n')
   }
 }
@@ -420,6 +435,8 @@ function buildOutputStructureSection(schema: ContractSchema): string {
     '',
     '**Formátovací pravidla:**',
     '- Nadpisy oddílů: Článek I., Článek II., ... (nebo § 1, § 2, ...)',
+    '- Obsah každého článku: celé odstavce právní prózy v češtině — NIKDY odrážky, tabulky ani výčty polí',
+    '- Chybějící údaje: vlož `[DOPLNIT: popis]` nebo `⚠️ ZKONTROLOVAT — [DOPLNIT: popis]` přímo do věty jako součást souvětí — NIKDY jako samostatnou odrážku',
     '- Právní citace ve tvaru `(§ X zák. č. Y/RRRR Sb.)` vlož jen tam, kde posilují konkrétní ujednání',
     '- Data v českém formátu: `d. měsíce RRRR` — např. `15. března 2024`',
     '- Peněžní částky uváděj číselně; slovy pouze u kupní ceny, nájemného a smluvní pokuty',
@@ -433,6 +450,185 @@ function buildOutputStructureSection(schema: ContractSchema): string {
 
   if (outputStructure.requiresSignature) {
     lines.push('- Smlouva vyžaduje vlastnoruční podpis všech smluvních stran')
+  }
+
+  return lines.join('\n')
+}
+
+// ─── Section F: Quality self-check ──────────────────────────────────────────
+
+/**
+ * Instructs the model to perform an internal quality check before finalizing
+ * the output. Placed last in the prompt for maximum recency weight.
+ */
+function buildQualityCheckSection(mode: GenerationMode): string {
+  return [
+    '## F) ZÁVĚREČNÁ KONTROLA KVALITY — PROVEĎ PŘED ODEVZDÁNÍM',
+    '',
+    'Před odevzdáním textu interně prověř tyto body. Pokud nalezneš problém, OPRAV ho přímo v textu:',
+    '',
+    '1. **Nejednoznačnosti:** Existuje formulace s více možnými výklady? → Přeformuluj jednoznačně.',
+    '2. **Vnitřní rozpory:** Protiřečí si klauzule, data, částky nebo lhůty? → Sjednoť.',
+    '3. **Chybějící klauzule:** Chybí pro tento typ smlouvy esenciální ustanovení dle českého práva? → Doplň.',
+    '4. **Definované pojmy:** Jsou všechny definované pojmy (velké písmeno) definovány při prvním použití a používány konzistentně? → Oprav.',
+    '5. **Placeholdery:** Vymyslel jsi konkrétní údaj, který nebyl v sekci B? → Nahraď [DOPLNIT: ...].',
+    '6. **Zákonné odkazy:** Jsou citace (§) správné a existující v českém právu? → Oprav nebo odstraň.',
+    '7. **Praktická vymahatelnost:** Je smlouva prakticky proveditelná a vymahatelná? → Doplň chybějící mechanismy.',
+    ...(mode === 'complete' ? [
+      '8. **Úplnost:** Je text kompletní a připravený k právní kontrole? Nejsou v něm zbytné [DOPLNIT] placeholdery pro data, která JSOU dostupná v sekci B?',
+    ] : []),
+  ].join('\n')
+}
+
+// ─── Section G: Drafting posture ─────────────────────────────────────────────
+
+/** Returns true when the posture object has at least one meaningful field. */
+function hasPostureContent(posture: DraftingPosture): boolean {
+  return !!(
+    posture.draftingSide ||
+    posture.riskTolerance ||
+    posture.negotiationPosture ||
+    posture.transactionContext ||
+    posture.mustIncludeClauses?.length ||
+    posture.mustAvoidClauses?.length ||
+    posture.specialCommercialNotes
+  )
+}
+
+/**
+ * Injects explicit drafting strategy instructions derived from the posture.
+ * Placed last in the prompt to carry the highest recency weight.
+ *
+ * Design invariants:
+ * - Never overrides safety rules from Section D
+ * - Never invents facts — only influences clause selection and wording posture
+ * - Consumer context always activates mandatory Czech consumer-protection framing
+ */
+function buildPostureSection(posture: DraftingPosture, schema: ContractSchema): string {
+  const lines: string[] = [
+    '## G) INSTRUKCE K ZASTOUPENÍ A OBCHODNÍ STRATEGII',
+    '',
+    '> Tato sekce upřesňuje smluvní strategii a postoj při tvorbě textu.',
+    '> NEPŘEKRÝVÁ bezpečnostní pravidla z části D. Data NIKDY nevymýšlej.',
+    '',
+  ]
+
+  // ── Represented party ────────────────────────────────────────────────────
+  if (posture.draftingSide) {
+    const party = schema.parties.find((p) => p.id === posture.draftingSide)
+    const partyLabel = party ? `**${party.label}** (${party.role})` : `**${posture.draftingSide}**`
+    lines.push(
+      `### Zastoupená strana`,
+      `Smlouvu navrhuješ v zájmu strany ${partyLabel}.`,
+      'Formuluj klauzule tak, aby chránily a zvýhodňovaly tuto stranu v mezích dovolené autonomie vůle.',
+      '',
+    )
+  }
+
+  // ── Risk tolerance ────────────────────────────────────────────────────────
+  if (posture.riskTolerance) {
+    const riskMap: Record<NonNullable<DraftingPosture['riskTolerance']>, string[]> = {
+      conservative: [
+        '### Tolerance rizika: KONZERVATIVNÍ',
+        '- Preferuj formulace s minimálním rizikem pro zastoupenou stranu',
+        '- Upřednostňuj kogentní normy před dispozitivními tam, kde chrání zastoupenou stranu',
+        '- Zařaď silné záruky, smluvní pokuty pro druhou stranu a přísné podmínky předání',
+        '- Vyhni se vágním formulacím jako „dle dohody stran" bez konkrétního obsahu',
+      ],
+      balanced: [
+        '### Tolerance rizika: VYVÁŽENÁ',
+        '- Vyváž zájmy obou stran — standardní obchodní formulace pro první kolo vyjednávání',
+        '- Zařaď standardní sankce a odpovědnostní klauzule bez extremních vychýlení',
+      ],
+      aggressive: [
+        '### Tolerance rizika: AGRESIVNÍ',
+        '- Maximalizuj výhody pro zastoupenou stranu v mezích dovolené autonomie vůle (§ 1 odst. 2 NOZ)',
+        '- Zařaď formulace minimalizující záruky druhé strany a maximalizující tvá práva',
+        '- Lze použít tvrdé odpovědnostní klauzule a jednostranně výhodné podmínky',
+        '- POZOR: spotřebitelské smlouvy mají kogentní limity — § 1813 NOZ zakazuje zakázaná ujednání',
+      ],
+    }
+    lines.push(...riskMap[posture.riskTolerance], '')
+  }
+
+  // ── Negotiation posture ───────────────────────────────────────────────────
+  if (posture.negotiationPosture) {
+    const postureMap: Record<NonNullable<DraftingPosture['negotiationPosture']>, string[]> = {
+      'client-protective': [
+        '### Vyjednávací postoj: MAXIMÁLNÍ OCHRANA KLIENTA',
+        '- Silné záruky a opravné prostředky pro zastoupenou stranu',
+        '- Přísné podmínky jednostranného odstoupení od smlouvy v prospěch zastoupené strany',
+        '- Tvrdé smluvní pokuty pro druhou stranu při prodlení nebo porušení',
+      ],
+      neutral: [
+        '### Vyjednávací postoj: NEUTRÁLNÍ',
+        '- Vyvážený text vhodný jako výchozí pozice pro vyjednávání',
+        '- Symetrické práva a povinnosti obou stran',
+      ],
+      compromise: [
+        '### Vyjednávací postoj: KOMPROMISNÍ',
+        '- Navrhuj kompromisní formulace usnadňující rychlé uzavření',
+        '- Přijatelná ústupky — menší ochrana, ale realisticky akceptovatelné podmínky',
+      ],
+    }
+    lines.push(...postureMap[posture.negotiationPosture], '')
+  }
+
+  // ── Transaction context ───────────────────────────────────────────────────
+  if (posture.transactionContext) {
+    const contextMap: Record<NonNullable<DraftingPosture['transactionContext']>, string[]> = {
+      B2B: [
+        '### Transakční kontext: B2B (podnikatel — podnikatel)',
+        '- Jde o vztah mezi podnikateli — lze uplatnit širší smluvní volnost (§ 1 odst. 2 NOZ)',
+        '- Spotřebitelská ochrana se NEAPLIKUJE — strany jsou rovnocenné',
+      ],
+      consumer: [
+        '### Transakční kontext: B2C (podnikatel — spotřebitel)',
+        '⚠️ **POVINNÉ: Spotřebitelská ochrana dle § 1810–1867 NOZ**',
+        '- Zakázaná ujednání dle § 1813 NOZ NESMÍ být zahrnuta',
+        '- Právo na odstoupení od smlouvy (§ 1829–1851 NOZ) musí být zmíněno tam, kde se aplikuje',
+        '- Vyhni se formulacím omezujícím zákonná práva spotřebitele',
+        '- Formulace musí být srozumitelná průměrnému spotřebiteli (§ 1812 odst. 2 NOZ)',
+      ],
+      employment: [
+        '### Transakční kontext: PRACOVNĚPRÁVNÍ',
+        '- Vztah se řídí zákoníkem práce (zák. č. 262/2006 Sb.) — KOGENTNÍ normy',
+        '- Minimální práva zaměstnance nesmí být snížena pod zákonné minimum',
+        '- Minimální mzda a zákonná náhrada mzdy jsou pevné spodní meze',
+      ],
+      other: [
+        '### Transakční kontext: OSTATNÍ',
+        '- Aplikuj standardní českoprávní zásady pro daný typ smlouvy',
+      ],
+    }
+    lines.push(...contextMap[posture.transactionContext], '')
+  }
+
+  // ── Must-include clauses ──────────────────────────────────────────────────
+  if (posture.mustIncludeClauses?.length) {
+    lines.push('### Klauzule, které MUSÍ být v textu:')
+    for (const clause of posture.mustIncludeClauses) {
+      lines.push(`- ${clause}`)
+    }
+    lines.push('')
+  }
+
+  // ── Must-avoid clauses ────────────────────────────────────────────────────
+  if (posture.mustAvoidClauses?.length) {
+    lines.push('### Klauzule nebo formulace, které NESMÍ být v textu:')
+    for (const clause of posture.mustAvoidClauses) {
+      lines.push(`- ${clause}`)
+    }
+    lines.push('')
+  }
+
+  // ── Special commercial notes ──────────────────────────────────────────────
+  if (posture.specialCommercialNotes) {
+    lines.push(
+      '### Zvláštní obchodní kontext:',
+      posture.specialCommercialNotes,
+      '',
+    )
   }
 
   return lines.join('\n')

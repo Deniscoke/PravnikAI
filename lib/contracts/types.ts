@@ -235,9 +235,43 @@ export interface PromptBuilderInput {
 
 // ─── API Request / Response ──────────────────────────────────────────────────
 
+// ─── Drafting Posture ────────────────────────────────────────────────────────
+
+/**
+ * Controls how the contract is drafted — whose interests to protect,
+ * how aggressively, and what the commercial context is.
+ * All fields are optional; omitting posture produces neutral output.
+ */
+export interface DraftingPosture {
+  /**
+   * Party ID whose interests to optimize (e.g. "prodavajici", "kupujici").
+   * Must match one of the party IDs in the schema.
+   */
+  draftingSide?: string
+  /** How risk-protective the clauses should be for the represented party. */
+  riskTolerance?: 'conservative' | 'balanced' | 'aggressive'
+  /** Tactical posture — how hard to push for the represented party. */
+  negotiationPosture?: 'client-protective' | 'neutral' | 'compromise'
+  /**
+   * Legal nature of the transaction.
+   * 'consumer' triggers mandatory Czech consumer-protection framing.
+   */
+  transactionContext?: 'B2B' | 'consumer' | 'employment' | 'other'
+  /** Clauses the drafter requires in the output — verbatim or by description. */
+  mustIncludeClauses?: string[]
+  /** Clause patterns to keep out of the output (e.g. "arbitration clause"). */
+  mustAvoidClauses?: string[]
+  /** Free-text commercial context the model should consider when drafting. */
+  specialCommercialNotes?: string
+}
+
 export interface GenerateContractRequest {
   schemaId: string
   formData: NormalizedFormData
+  /** Request premium polish pass with GPT-5.4-pro (final text only) */
+  premium?: boolean
+  /** Drafting posture controls clause selection and wording strategy. */
+  posture?: DraftingPosture
 }
 
 export interface ContractWarning {

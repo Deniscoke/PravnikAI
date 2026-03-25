@@ -6,8 +6,10 @@
  *   2. Resolve schemaId (handles legacy Slovak slugs)
  *   3. Run 3-layer validation
  *   4. Build system + user prompts
- *   5. Call LLM via provider-isolated wrapper
- *   6. Return structured GenerateContractResponse
+ *   5. Stage 1: Generate draft via LLM (gpt-5.4)
+ *   6. Stage 2: Self-check quality review (gpt-5.4)
+ *   7. Stage 3 (optional): Premium polish (gpt-5.4-pro) — only if premium=true
+ *   8. Return structured GenerateContractResponse
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -18,6 +20,19 @@ import { getSchema, resolveSchemaId } from '@/lib/contracts/contractSchemas'
 import { runFullValidation } from '@/lib/contracts/validators'
 import { buildPrompt } from '@/lib/contracts/promptBuilder'
 import { generateText } from '@/lib/llm/openaiClient'
+import { SELF_CHECK_SYSTEM_PROMPT } from '@/lib/contracts/systemPrompt'
+import {
+  buildQualityGatePrompt,
+  parseQualityGateResponse,
+  applyQualityGateDecision,
+  extractQualityWarnings,
+} from '@/lib/contracts/qualityGate'
+import type { QualityGateResult } from '@/lib/contracts/qualityGate'
+import {
+  runIntegrityCheck,
+  applyIntegrityDecision,
+  extractIntegrityWarnings,
+} from '@/lib/contracts/integrityValidator'
 import { saveGenerationToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
@@ -27,6 +42,7 @@ import type {
   GenerateContractResponse,
   GenerateContractError,
   ContractWarning,
+  GenerationMode,
 } from '@/lib/contracts/types'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -96,16 +112,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     data: body.formData,
     mode,
     missingFields: allMissing,
+    posture: body.posture,
   })
 
-  // ── 5. Call LLM ───────────────────────────────────────────────────────────
+  // ── 5. Stage 1: Generate draft ────────────────────────────────────────────
   let contractText: string
+  let totalTokens = 0
   try {
-    const llmResult = await generateText({ systemPrompt, userPrompt })
-    contractText = llmResult.text
-    console.info(`[generate-contract] ${resolvedSchemaId} | mode=${mode} | tokens=${llmResult.tokensUsed}`)
+    const stage1 = await generateText({ systemPrompt, userPrompt })
+    contractText = stage1.text
+    totalTokens += stage1.tokensUsed
+    console.info(`[generate-contract] Stage 1 (draft) | ${resolvedSchemaId} | mode=${mode} | tokens=${stage1.tokensUsed}`)
   } catch (err) {
-    console.error('[generate-contract] LLM error:', err)
+    console.error('[generate-contract] Stage 1 LLM error:', err)
     return errorResponse(
       'Chyba při komunikaci s AI. Zkuste to znovu.',
       'LLM_ERROR',
@@ -113,7 +132,70 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // ── 6. Build warnings ─────────────────────────────────────────────────────
+  // ── 6. Stage 2: Structured legal quality gate ────────────────────────────
+  let qualityGate: QualityGateResult | null = null
+  let effectiveMode: GenerationMode = mode
+  try {
+    const qualityPrompt = buildQualityGatePrompt(resolvedSchemaId, schema.metadata.name)
+    const stage2 = await generateText({
+      systemPrompt: qualityPrompt,
+      userPrompt: contractText,
+      jsonMode: true,
+      reasoning: 'medium',
+    })
+    totalTokens += stage2.tokensUsed
+    qualityGate = parseQualityGateResponse(stage2.text)
+    console.info(
+      `[generate-contract] Stage 2 (quality gate) | status=${qualityGate.status} ` +
+      `| recommended=${qualityGate.recommendedMode} | tokens=${stage2.tokensUsed}`
+    )
+
+    // Apply corrected text if the quality gate provided one
+    if (qualityGate.correctedText) {
+      contractText = qualityGate.correctedText
+    }
+
+    // Apply hard routing — quality gate can only downgrade, never upgrade
+    effectiveMode = applyQualityGateDecision(mode, qualityGate)
+    if (effectiveMode !== mode) {
+      console.info(`[generate-contract] Quality gate downgraded mode: ${mode} → ${effectiveMode}`)
+    }
+  } catch (err) {
+    // Quality gate failure is non-fatal — use Stage 1 draft, keep original mode
+    console.warn('[generate-contract] Stage 2 quality gate failed, using Stage 1 draft:', err)
+  }
+
+  // ── 7. Stage 3 (optional): Premium polish ────────────────────────────────
+  if (body.premium) {
+    try {
+      const stage3 = await generateText({
+        systemPrompt: SELF_CHECK_SYSTEM_PROMPT,
+        userPrompt: `Proveď finální jazykovou a právní revizi tohoto návrhu smlouvy. Oprav stylistické nedostatky, zpřesni formulace a zajisti maximální právní preciznost.\n\n${contractText}`,
+        premium: true,
+      })
+      contractText = stage3.text
+      totalTokens += stage3.tokensUsed
+      console.info(`[generate-contract] Stage 3 (premium) | tokens=${stage3.tokensUsed}`)
+    } catch (err) {
+      // Premium failure is non-fatal — use Stage 2 result
+      console.warn('[generate-contract] Stage 3 premium polish failed, using Stage 2 result:', err)
+    }
+  }
+
+  // ── 7b. Deterministic integrity check ────────────────────────────────────
+  // Runs on final contractText (after all LLM stages). Non-LLM, always fast.
+  const integrityResult = runIntegrityCheck(contractText, resolvedSchemaId, effectiveMode, body.posture)
+  const effectiveModeAfterIntegrity = applyIntegrityDecision(effectiveMode, integrityResult)
+  if (effectiveModeAfterIntegrity !== effectiveMode) {
+    console.info(
+      `[generate-contract] Integrity check downgraded mode: ${effectiveMode} → ${effectiveModeAfterIntegrity}` +
+      ` | placeholders=${integrityResult.unresolvedPlaceholders}` +
+      ` | reviewMarkers=${integrityResult.unresolvedReviewMarkers}`
+    )
+  }
+  effectiveMode = effectiveModeAfterIntegrity
+
+  // ── 8. Build warnings ─────────────────────────────────────────────────────
   const warnings: ContractWarning[] = []
 
   for (const issue of validation.businessLegal.issues) {
@@ -125,24 +207,44 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
   }
 
-  if (mode === 'draft') {
+  // Quality gate warnings (structured findings from Stage 2)
+  if (qualityGate) {
+    for (const qw of extractQualityWarnings(qualityGate)) {
+      warnings.push({ code: qw.code, message: qw.message })
+    }
+
+    // If the quality gate downgraded the mode, add an explicit warning
+    if (effectiveMode !== mode) {
+      warnings.push({
+        code: 'QUALITY_DOWNGRADE',
+        message: `Kontrola kvality změnila režim z „${mode}" na „${effectiveMode}": ${qualityGate.summary}`,
+      })
+    }
+  }
+
+  // Integrity validator warnings (deterministic findings)
+  for (const iw of extractIntegrityWarnings(integrityResult)) {
+    warnings.push({ code: iw.code, message: iw.message })
+  }
+
+  if (effectiveMode === 'draft') {
     warnings.push({
       code: 'DRAFT_MODE',
       message: `Smlouva byla vygenerována jako návrh. ${missingOptional.length} volitelných polí chybí — hledejte [DOPLNIT] v textu.`,
     })
   }
 
-  if (mode === 'review-needed') {
+  if (effectiveMode === 'review-needed') {
     warnings.push({
       code: 'REVIEW_NEEDED',
-      message: `Smlouva vyžaduje kontrolu. Povinná pole chybí: ${missingRequired.join(', ')}. Hledejte ⚠️ ZKONTROLOVAT v textu.`,
+      message: `Smlouva vyžaduje kontrolu. ${missingRequired.length > 0 ? `Povinná pole chybí: ${missingRequired.join(', ')}. ` : ''}Hledejte ⚠️ ZKONTROLOVAT v textu.`,
     })
   }
 
-  // ── 7. Build response ────────────────────────────────────────────────────
+  // ── 9. Build response ────────────────────────────────────────────────────
   const response: GenerateContractResponse = {
     schemaId: resolvedSchemaId,
-    mode,
+    mode: effectiveMode,
     contractText,
     warnings,
     missingFields: allMissing,
@@ -150,7 +252,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     generatedAt: new Date().toISOString(),
   }
 
-  // ── 8. Save to history (best-effort, non-blocking for unauthenticated) ──
+  // ── 10. Save to history (best-effort, non-blocking for unauthenticated) ─
   const partyNames = body.formData?.parties
     ?.map((p: { fields?: Record<string, string> }) => p.fields?.name)
     .filter(Boolean)
@@ -162,7 +264,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     user_id: '', // Set by the action from session
     schema_id: resolvedSchemaId,
     title,
-    mode,
+    mode: effectiveMode,
     contract_text: contractText,
     form_data_snapshot: body.formData as unknown as Record<string, unknown>,
     warnings: warnings as unknown as Array<{ code: string; message: string }>,

@@ -322,9 +322,9 @@ describe('1 — Required 5-section structure', () => {
 
     it(`mode="${mode}": sections are separated by --- dividers`, () => {
       const { userPrompt } = buildFor(mode)
-      // 5 sections + header = 5 dividers joining them
+      // 6 sections + header = 6 dividers joining 7 parts (A–F)
       const dividerCount = (userPrompt.match(/\n\n---\n\n/g) ?? []).length
-      expect(dividerCount).toBe(5)
+      expect(dividerCount).toBe(6)
     })
 
     it(`mode="${mode}": returns non-empty systemPrompt`, () => {
@@ -984,7 +984,7 @@ describe('11 — System prompt', () => {
   it('contains the base Czech law system prompt', () => {
     const { systemPrompt } = buildFor('complete')
     // The base prompt identifies the assistant as specialised in Czech law
-    expectContains(systemPrompt, 'české právo')
+    expectContains(systemPrompt, 'český transakční právník')
   })
 
   it('appends schema-specific aiInstructions after the base prompt', () => {
@@ -1060,3 +1060,175 @@ describe('12 — Safety rules present in section D', () => {
     expectContains(userPrompt, 'Smlouva vyžaduje vlastnoruční podpis všech smluvních stran')
   })
 })
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 11. Section F — Quality self-check instructions
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('11 — Section F: quality self-check', () => {
+  function buildForMode(mode: GenerationMode) {
+    return buildPrompt({
+      schema: makeSchema(),
+      data: makeFullData(),
+      mode,
+      missingFields: mode === 'complete' ? [] : ['prodavajici.name'],
+    })
+  }
+
+  it('section F header is present in userPrompt for complete mode', () => {
+    const { userPrompt } = buildForMode('complete')
+    expectContains(userPrompt, 'KONTROLA KVALITY')
+  })
+
+  it('section F header is present for draft mode', () => {
+    const { userPrompt } = buildForMode('draft')
+    expectContains(userPrompt, 'KONTROLA KVALITY')
+  })
+
+  it('section F header is present for review-needed mode', () => {
+    const { userPrompt } = buildForMode('review-needed')
+    expectContains(userPrompt, 'KONTROLA KVALITY')
+  })
+
+  it('section F mentions internal contradiction checking', () => {
+    const { userPrompt } = buildForMode('complete')
+    expectContains(userPrompt, 'rozpor')
+  })
+
+  it('section F mentions defined-term consistency', () => {
+    const { userPrompt } = buildForMode('complete')
+    expectContains(userPrompt, 'Definované pojmy')
+  })
+
+  it('section F mentions placeholder verification for draft mode', () => {
+    const { userPrompt } = buildForMode('draft')
+    expectContains(userPrompt, 'DOPLNIT')
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 12. Section G — Drafting posture
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('12 — Section G: drafting posture', () => {
+  function buildWithPosture(posture: import('../types').DraftingPosture) {
+    return buildPrompt({
+      schema: makeSchema(),
+      data: makeFullData(),
+      mode: 'complete',
+      missingFields: [],
+      posture,
+    })
+  }
+
+  it('section G is absent when no posture is provided', () => {
+    const { userPrompt } = buildPrompt({
+      schema: makeSchema(),
+      data: makeFullData(),
+      mode: 'complete',
+      missingFields: [],
+    })
+    expect(userPrompt).not.toContain('## G)')
+  })
+
+  it('section G is absent when posture object has no content', () => {
+    const { userPrompt } = buildPrompt({
+      schema: makeSchema(),
+      data: makeFullData(),
+      mode: 'complete',
+      missingFields: [],
+      posture: {},
+    })
+    expect(userPrompt).not.toContain('## G)')
+  })
+
+  it('section G header is present when posture has content', () => {
+    const { userPrompt } = buildWithPosture({ draftingSide: 'prodavajici' })
+    expectContains(userPrompt, '## G)')
+  })
+
+  it('draftingSide injects represented party instruction', () => {
+    const { userPrompt } = buildWithPosture({ draftingSide: 'prodavajici' })
+    expectContains(userPrompt, 'Prodávající')
+    expectContains(userPrompt, 'Zastoupená strana')
+  })
+
+  it('conservative riskTolerance injects conservative wording', () => {
+    const { userPrompt } = buildWithPosture({ riskTolerance: 'conservative' })
+    expectContains(userPrompt, 'KONZERVATIVNÍ')
+    expectContains(userPrompt, 'kogentní')
+  })
+
+  it('aggressive riskTolerance injects aggressive wording', () => {
+    const { userPrompt } = buildWithPosture({ riskTolerance: 'aggressive' })
+    expectContains(userPrompt, 'AGRESIVNÍ')
+    expectContains(userPrompt, 'Maximalizuj výhody')
+  })
+
+  it('balanced riskTolerance injects balanced wording', () => {
+    const { userPrompt } = buildWithPosture({ riskTolerance: 'balanced' })
+    expectContains(userPrompt, 'VYVÁŽENÁ')
+  })
+
+  it('client-protective negotiationPosture injects strong protection language', () => {
+    const { userPrompt } = buildWithPosture({ negotiationPosture: 'client-protective' })
+    expectContains(userPrompt, 'MAXIMÁLNÍ OCHRANA KLIENTA')
+  })
+
+  it('consumer transactionContext injects consumer protection mandate', () => {
+    const { userPrompt } = buildWithPosture({ transactionContext: 'consumer' })
+    expectContains(userPrompt, '§ 1813 NOZ')
+    expectContains(userPrompt, 'spotřebitele')
+  })
+
+  it('consumer context includes § 1829 withdrawal right reference', () => {
+    const { userPrompt } = buildWithPosture({ transactionContext: 'consumer' })
+    expectContains(userPrompt, '§ 1829')
+  })
+
+  it('B2B transactionContext injects B2B autonomy language', () => {
+    const { userPrompt } = buildWithPosture({ transactionContext: 'B2B' })
+    expectContains(userPrompt, 'B2B')
+    expectContains(userPrompt, 'podnikatel')
+  })
+
+  it('mustIncludeClauses are injected into prompt', () => {
+    const { userPrompt } = buildWithPosture({
+      mustIncludeClauses: ['Smluvní pokuta 0,1 % denně z dlužné částky'],
+    })
+    expectContains(userPrompt, 'Smluvní pokuta 0,1 %')
+    expectContains(userPrompt, 'MUSÍ být v textu')
+  })
+
+  it('mustAvoidClauses are injected into prompt', () => {
+    const { userPrompt } = buildWithPosture({
+      mustAvoidClauses: ['Rozhodčí doložka'],
+    })
+    expectContains(userPrompt, 'Rozhodčí doložka')
+    expectContains(userPrompt, 'NESMÍ být v textu')
+  })
+
+  it('specialCommercialNotes are injected verbatim', () => {
+    const note = 'Transakce je součástí M&A procesu.'
+    const { userPrompt } = buildWithPosture({ specialCommercialNotes: note })
+    expectContains(userPrompt, note)
+  })
+
+  it('section G is appended after section F (posture comes last)', () => {
+    const { userPrompt } = buildWithPosture({ draftingSide: 'prodavajici' })
+    const posF = userPrompt.indexOf('## F)')
+    const posG = userPrompt.indexOf('## G)')
+    expect(posG).toBeGreaterThan(posF)
+  })
+
+  it('safety rules from section D are not overridden by posture', () => {
+    const { userPrompt } = buildWithPosture({
+      riskTolerance: 'aggressive',
+      transactionContext: 'B2B',
+    })
+    // Safety rules (Section D) must still be present
+    expectContains(userPrompt, 'BEZPEČNOSTNÍ PRAVIDLA')
+    expectContains(userPrompt, 'NIKDY nevymýšlej')
+  })
+})
+

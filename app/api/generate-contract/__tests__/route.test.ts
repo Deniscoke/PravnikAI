@@ -77,18 +77,77 @@ Prodávající prodává kupujícímu toto zboží: Dell Latitude 5540 notebook,
 
 Kupní cena činí 150 000 Kč (slovy: sto padesát tisíc korun českých).
 
-Článek IV. — Závěrečná ustanovení
+Článek IV. — Přechod vlastnického práva
 
-Tato smlouva se řídí právem České republiky.`
+Vlastnické právo k předmětu koupě přechází na kupujícího okamžikem předání.
 
-/** Configures the mock to return a successful LLM result. */
-function mockLLMSuccess(text = MOCK_CONTRACT) {
-  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234 })
+Článek V. — Odpovědnost za vady
+
+Odpovědnost za vady se řídí § 2099–2112 NOZ.
+
+Článek VI. — Závěrečná ustanovení
+
+Tato smlouva se řídí právem České republiky.
+
+Podpis prodávajícího: ___________________________
+
+Podpis kupujícího: ___________________________`
+
+/** A quality gate JSON response indicating "pass" (no issues). */
+function makeQualityGateJSON(overrides: Record<string, unknown> = {}): string {
+  return JSON.stringify({
+    status: 'pass',
+    recommendedMode: 'complete',
+    summary: 'Smlouva je v pořádku.',
+    missingEssentialFacts: [],
+    missingEssentialClauses: [],
+    ambiguities: [],
+    contradictions: [],
+    undefinedOrInconsistentTerms: [],
+    riskyAssumptions: [],
+    executionRisks: [],
+    czechLawSpecificRisks: [],
+    consumerOrRegulatoryFlags: [],
+    suggestedFixes: [],
+    ...overrides,
+  })
 }
 
-/** Configures the mock to simulate an LLM failure. */
+/**
+ * Configures the mock to return successful LLM results for the two-stage pipeline.
+ * Stage 1 (draft) returns the given text; Stage 2 (quality gate) returns a JSON verdict.
+ */
+function mockLLMSuccess(text = MOCK_CONTRACT, gateOverrides: Record<string, unknown> = {}) {
+  // Stage 1: generate draft
+  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-5.4' })
+  // Stage 2: quality gate (returns JSON verdict)
+  vi.mocked(generateText).mockResolvedValueOnce({
+    text: makeQualityGateJSON(gateOverrides),
+    tokensUsed: 800,
+    model: 'gpt-5.4',
+  })
+}
+
+/** Configures the mock to simulate a Stage 1 LLM failure. */
 function mockLLMFailure(message = 'OpenAI API timeout') {
   vi.mocked(generateText).mockRejectedValueOnce(new Error(message))
+}
+
+/** Configures Stage 1 success + Stage 2 failure (non-fatal — falls back to Stage 1 draft). */
+function mockStage2Failure(text = MOCK_CONTRACT) {
+  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-5.4' })
+  vi.mocked(generateText).mockRejectedValueOnce(new Error('Quality gate timeout'))
+}
+
+/** Configures full 3-stage pipeline mock (Stage 1 + 2 + 3 premium). */
+function mockPremiumSuccess(text = MOCK_CONTRACT, polishedText = MOCK_CONTRACT + '\n\n// polished') {
+  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-5.4' })
+  vi.mocked(generateText).mockResolvedValueOnce({
+    text: makeQualityGateJSON(),
+    tokensUsed: 800,
+    model: 'gpt-5.4',
+  })
+  vi.mocked(generateText).mockResolvedValueOnce({ text: polishedText, tokensUsed: 1500, model: 'gpt-5.4-pro' })
 }
 
 // ─── Request helpers ──────────────────────────────────────────────────────────
@@ -273,10 +332,10 @@ describe('1 — Valid request → 200 + structured response', () => {
     expect(body.schemaId).toBe('kupni-smlouva-v1')
   })
 
-  it('generateText was called exactly once', async () => {
+  it('generateText was called twice (Stage 1 draft + Stage 2 self-check)', async () => {
     mockLLMSuccess()
     await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
-    expect(vi.mocked(generateText)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(generateText)).toHaveBeenCalledTimes(2)
   })
 
   it('generateText is called with both systemPrompt and userPrompt', async () => {
@@ -295,7 +354,7 @@ describe('1 — Valid request → 200 + structured response', () => {
     mockLLMSuccess()
     await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const [callArgs] = vi.mocked(generateText).mock.calls
-    expect(callArgs[0].systemPrompt).toContain('české právo')
+    expect(callArgs[0].systemPrompt).toContain('český transakční právník')
   })
 
   it('userPrompt contains the contract subject description provided by user', async () => {
@@ -408,7 +467,7 @@ describe('3 — Suspicious data (quality guards) → review-needed + 200', () =>
   it('generateText IS called (request is not hard-blocked)', async () => {
     mockLLMSuccess()
     await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: SUSPICIOUS_FORM_DATA }))
-    expect(vi.mocked(generateText)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(generateText)).toHaveBeenCalledTimes(2)
   })
 
   it('userPrompt contains ⚠️ ZKONTROLOVAT instruction (review-needed mode)', async () => {
@@ -668,12 +727,18 @@ describe('9 — Response shape invariants', () => {
     expect(['complete', 'draft', 'review-needed']).toContain(body.mode)
   })
 
-  it('contractText is the string returned by the mock LLM', async () => {
-    const customText = 'SMLOUVA O DÍLO dle § 2586 NOZ — testovací obsah'
-    vi.mocked(generateText).mockResolvedValueOnce({ text: customText, tokensUsed: 99 })
+  it('contractText uses correctedText from quality gate when provided', async () => {
+    const corrected = 'SMLOUVA O DÍLO dle § 2586 NOZ — opravený text z quality gate s dostatečnou délkou pro validaci'
+    // Stage 1 returns draft, Stage 2 returns JSON with correctedText
+    vi.mocked(generateText).mockResolvedValueOnce({ text: 'draft', tokensUsed: 99, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({
+      text: makeQualityGateJSON({ correctedText: corrected }),
+      tokensUsed: 80,
+      model: 'gpt-5.4',
+    })
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body: GenerateContractResponse = await res.json()
-    expect(body.contractText).toBe(customText)
+    expect(body.contractText).toBe(corrected)
   })
 
   it('every warning object has code and message fields', async () => {
@@ -912,5 +977,355 @@ describe('13 — Business-legal warnings (validators layer 2)', () => {
     }
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: pastData }))
     expect(res.status).toBe(200)
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 14. Two-stage pipeline: Stage 1 (draft) + Stage 2 (self-check)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('14 — Two-stage pipeline behaviour', () => {
+  it('Stage 2 uses the structured quality gate prompt (not freeform self-check)', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls.length).toBe(2)
+    // Quality gate prompt should mention structured review and JSON output
+    expect(calls[1][0].systemPrompt).toContain('kontrolu kvality')
+    expect(calls[1][0].systemPrompt).toContain('JSON')
+    expect(calls[1][0].jsonMode).toBe(true)
+  })
+
+  it('Stage 2 receives the Stage 1 draft as its user prompt', async () => {
+    const draftText = 'KUPNÍ SMLOUVA — návrh z Stage 1'
+    vi.mocked(generateText).mockResolvedValueOnce({ text: draftText, tokensUsed: 1000, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({
+      text: makeQualityGateJSON(),
+      tokensUsed: 500,
+      model: 'gpt-5.4',
+    })
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[1][0].userPrompt).toBe(draftText)
+  })
+
+  it('Stage 2 uses reasoning=medium (lower effort than Stage 1)', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[1][0].reasoning).toBe('medium')
+  })
+
+  it('Stage 2 failure is non-fatal — returns Stage 1 draft', async () => {
+    mockStage2Failure('Dobrý návrh smlouvy')
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    expect(res.status).toBe(200)
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe('Dobrý návrh smlouvy')
+  })
+
+  it('Stage 2 can modify the contract text via correctedText field', async () => {
+    const draft = 'Draft with typo — original version of the contract text before quality gate review'
+    const corrected = 'Corrected draft without typo — final version of the contract text after quality gate review'
+    vi.mocked(generateText).mockResolvedValueOnce({ text: draft, tokensUsed: 1000, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({
+      text: makeQualityGateJSON({ correctedText: corrected }),
+      tokensUsed: 800,
+      model: 'gpt-5.4',
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(corrected)
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 15. Premium polish (Stage 3) — optional, only when premium=true
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('15 — Premium polish (Stage 3)', () => {
+  it('premium=true triggers 3 generateText calls', async () => {
+    mockPremiumSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
+    expect(vi.mocked(generateText)).toHaveBeenCalledTimes(3)
+  })
+
+  it('Stage 3 call uses premium=true option', async () => {
+    mockPremiumSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[2][0].premium).toBe(true)
+  })
+
+  it('premium=false (default) triggers only 2 calls', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    expect(vi.mocked(generateText)).toHaveBeenCalledTimes(2)
+  })
+
+  it('premium response contains the polished text from Stage 3', async () => {
+    const polished = 'Finálně revidovaná smlouva'
+    mockPremiumSuccess(MOCK_CONTRACT, polished)
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(polished)
+  })
+
+  it('Stage 3 failure is non-fatal — returns Stage 2 result (correctedText or Stage 1 draft)', async () => {
+    const corrected = 'Quality-gate corrected draft — opravený text smlouvy s dostatečnou délkou pro parser'
+    vi.mocked(generateText).mockResolvedValueOnce({ text: 'original draft', tokensUsed: 1000, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({
+      text: makeQualityGateJSON({ correctedText: corrected }),
+      tokensUsed: 800,
+      model: 'gpt-5.4',
+    })
+    vi.mocked(generateText).mockRejectedValueOnce(new Error('Premium model timeout'))
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
+    expect(res.status).toBe(200)
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(corrected)
+  })
+
+  it('Stage 3 does NOT use jsonMode', async () => {
+    mockPremiumSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[2][0].jsonMode).toBeUndefined()
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 16. Model routing — no provider internals in response
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('16 — Model routing safety', () => {
+  it('response does not contain gpt-5.4 or gpt-5.4-pro strings', async () => {
+    mockLLMSuccess()
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const raw = await res.text()
+    expect(raw).not.toContain('gpt-5.4')
+    expect(raw).not.toContain('gpt-5.4-pro')
+  })
+
+  it('response does not expose total tokens from pipeline', async () => {
+    mockLLMSuccess()
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body = await res.json()
+    expect(body).not.toHaveProperty('tokensUsed')
+    expect(body).not.toHaveProperty('totalTokens')
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 17. Structured quality gate integration (Stage 2 → mode routing)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('17 — Quality gate integration', () => {
+  it('quality gate "pass" keeps complete mode unchanged', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, { status: 'pass', recommendedMode: 'complete' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.mode).toBe('complete')
+  })
+
+  it('quality gate "warn" downgrades complete → draft', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, {
+      status: 'warn',
+      recommendedMode: 'draft',
+      summary: 'Chybí doplňkové klauzule.',
+      ambiguities: ['Neurčitá formulace v čl. III'],
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.mode).toBe('draft')
+  })
+
+  it('quality gate "block" forces review-needed', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, {
+      status: 'block',
+      recommendedMode: 'review-needed',
+      summary: 'Závažné rozpory v textu.',
+      contradictions: ['Článek II a III si protiřečí'],
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.mode).toBe('review-needed')
+  })
+
+  it('quality gate cannot upgrade mode (draft stays draft even if gate says pass)', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, { status: 'pass', recommendedMode: 'complete' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    // Stage 1 says draft, quality gate says complete — but gate can never upgrade
+    expect(body.mode).toBe('draft')
+  })
+
+  it('QUALITY_DOWNGRADE warning is emitted when mode is downgraded', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, {
+      status: 'block',
+      recommendedMode: 'review-needed',
+      summary: 'Chybí esenciální klauzule.',
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    const downgradeWarning = body.warnings.find((w) => w.code === 'QUALITY_DOWNGRADE')
+    expect(downgradeWarning).toBeDefined()
+    expect(downgradeWarning?.message).toContain('review-needed')
+  })
+
+  it('quality gate missing clauses are surfaced as QUALITY_MISSING_CLAUSES warning', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, {
+      status: 'warn',
+      recommendedMode: 'draft',
+      summary: 'Chybí podpisové bloky.',
+      missingEssentialClauses: ['Podpisové bloky'],
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    const clauseWarning = body.warnings.find((w) => w.code === 'QUALITY_MISSING_CLAUSES')
+    expect(clauseWarning).toBeDefined()
+    expect(clauseWarning?.message).toContain('Podpisové bloky')
+  })
+
+  it('quality gate contradictions are surfaced as QUALITY_CONTRADICTIONS warning', async () => {
+    mockLLMSuccess(MOCK_CONTRACT, {
+      status: 'block',
+      recommendedMode: 'review-needed',
+      summary: 'Rozpory.',
+      contradictions: ['Článek II a III uvádějí různé ceny'],
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    const contradictionWarning = body.warnings.find((w) => w.code === 'QUALITY_CONTRADICTIONS')
+    expect(contradictionWarning).toBeDefined()
+  })
+
+  it('quality gate correctedText replaces Stage 1 draft', async () => {
+    const corrected = 'Opravená smlouva z quality gate — dostatečně dlouhý text pro parser validation check'
+    mockLLMSuccess(MOCK_CONTRACT, { correctedText: corrected })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(corrected)
+  })
+
+  it('without correctedText, Stage 1 draft is preserved', async () => {
+    mockLLMSuccess(MOCK_CONTRACT)
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(MOCK_CONTRACT)
+  })
+
+  it('quality gate failure falls back safely — mode unchanged, Stage 1 draft used', async () => {
+    mockStage2Failure(MOCK_CONTRACT)
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    expect(res.status).toBe(200)
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(MOCK_CONTRACT)
+    expect(body.mode).toBe('draft')
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 18. Drafting posture + deterministic integrity routing
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('18 — Posture and integrity validator integration', () => {
+  it('posture is passed through to prompt (stage 1 system prompt or user prompt)', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({
+      schemaId: 'kupni-smlouva-v1',
+      formData: DRAFT_FORM_DATA,
+      posture: { draftingSide: 'prodavajici', riskTolerance: 'conservative' },
+    }))
+    const calls = vi.mocked(generateText).mock.calls
+    // Stage 1 user prompt should contain the posture section
+    expect(calls[0][0].userPrompt).toContain('G)')
+    expect(calls[0][0].userPrompt).toContain('KONZERVATIVNÍ')
+  })
+
+  it('consumer posture injects consumer protection mandate into prompt', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({
+      schemaId: 'kupni-smlouva-v1',
+      formData: DRAFT_FORM_DATA,
+      posture: { transactionContext: 'consumer' },
+    }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[0][0].userPrompt).toContain('spotřebitele')
+    expect(calls[0][0].userPrompt).toContain('§ 1813')
+  })
+
+  it('mustIncludeClauses appear in prompt', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({
+      schemaId: 'kupni-smlouva-v1',
+      formData: DRAFT_FORM_DATA,
+      posture: { mustIncludeClauses: ['Smluvní pokuta 5 % denně'] },
+    }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[0][0].userPrompt).toContain('Smluvní pokuta 5 %')
+  })
+
+  it('mustAvoidClauses appear in prompt', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({
+      schemaId: 'kupni-smlouva-v1',
+      formData: DRAFT_FORM_DATA,
+      posture: { mustAvoidClauses: ['Rozhodčí doložka'] },
+    }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[0][0].userPrompt).toContain('Rozhodčí doložka')
+  })
+
+  it('no posture → section G absent from prompt', async () => {
+    mockLLMSuccess()
+    await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const calls = vi.mocked(generateText).mock.calls
+    expect(calls[0][0].userPrompt).not.toContain('## G)')
+  })
+
+  it('unresolved [DOPLNIT] in complete-mode output → integrity downgrades to draft', async () => {
+    // LLM returns "complete"-flagging quality gate but the text has a placeholder
+    const textWithPlaceholder = MOCK_CONTRACT + '\n\nPlatba: [DOPLNIT: způsob platby]'
+    mockLLMSuccess(textWithPlaceholder, { status: 'pass', recommendedMode: 'complete' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    // complete → draft due to integrity check
+    expect(body.mode).toBe('draft')
+  })
+
+  it('UNRESOLVED_PLACEHOLDERS warning emitted when placeholder found', async () => {
+    const textWithPlaceholder = MOCK_CONTRACT + '\n\nPlatba: [DOPLNIT: způsob platby]'
+    mockLLMSuccess(textWithPlaceholder, { status: 'pass', recommendedMode: 'complete' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    const integrityWarning = body.warnings.find((w) => w.code === 'UNRESOLVED_PLACEHOLDERS')
+    expect(integrityWarning).toBeDefined()
+  })
+
+  it('more than 2 unresolved placeholders forces review-needed', async () => {
+    const manyPlaceholders = MOCK_CONTRACT +
+      '\n\n[DOPLNIT: A]\n[DOPLNIT: B]\n[DOPLNIT: C]'
+    mockLLMSuccess(manyPlaceholders, { status: 'pass', recommendedMode: 'complete' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.mode).toBe('review-needed')
+  })
+
+  it('clean complete output passes integrity check — mode stays complete', async () => {
+    // MOCK_CONTRACT has essential kupní smlouva terms + signature markers
+    mockLLMSuccess(MOCK_CONTRACT, { status: 'pass', recommendedMode: 'complete' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.mode).toBe('complete')
+  })
+
+  it('integrity and quality gate combine: block + placeholder forces review-needed', async () => {
+    const textWithPlaceholder = MOCK_CONTRACT + '\n\n[DOPLNIT: A]\n[DOPLNIT: B]\n[DOPLNIT: C]'
+    // Quality gate says warn+draft, integrity also triggers for placeholders
+    mockLLMSuccess(textWithPlaceholder, { status: 'warn', recommendedMode: 'draft' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.mode).toBe('review-needed')
   })
 })

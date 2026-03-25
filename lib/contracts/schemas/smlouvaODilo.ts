@@ -40,12 +40,28 @@ export const smlouvaODilo: ContractSchema = {
       defaultJurisdictionClause: 'Příslušný obecný soud dle místa sídla žalovaného',
     },
     aiInstructions:
-      'Generuj smlouvu o dílo dle § 2586–2635 NOZ. ' +
-      'Jasně vymezte předmět díla — co přesně má být zhotoveno (§ 2587). ' +
-      'Uveď, zda je cena pevná nebo odhadní (§ 2620 NOZ). ' +
-      'Sjednej postup při vadách díla (§ 2615 NOZ) a záruční dobu. ' +
-      'Pro dílo s prvky duševního vlastnictví (software, grafika) uveď licenční ujednání (§ 2370 NOZ). ' +
-      'Odpovědnost za škodu při prodlení se řídí § 2913 NOZ.',
+      'Generuj smlouvu o dílo dle § 2586–2635 NOZ.\n\n' +
+      'POVINNÝ CHECKLIST KLAUZULÍ pro smlouvu o dílo:\n' +
+      '1. Identifikace smluvních stran — objednatel a zhotovitel\n' +
+      '2. Předmět díla — určitý a podrobný popis (§ 2587 NOZ), co má být zhotoveno/provedeno\n' +
+      '3. Cena díla — pevná nebo dle rozpočtu/odhadu (§ 2620–2622 NOZ); podmínky změny ceny\n' +
+      '4. Termín zhotovení — lhůta pro dokončení díla, dílčí milníky pokud relevantní\n' +
+      '5. Předání a převzetí díla — postup při předání, akceptační kritéria, předávací protokol\n' +
+      '6. Platební podmínky — splatnost, zálohy, fakturace; harmonogram plateb u větších zakázek\n' +
+      '7. Součinnost objednatele — povinnosti objednatele poskytnout podklady/přístup\n' +
+      '8. Vlastnické právo k dílu — přechod vlastnictví při zhotovování (§ 2599 NOZ)\n' +
+      '9. Odpovědnost za vady — práva z vadného plnění (§ 2615 NOZ), reklamační lhůty\n' +
+      '10. Záruka za jakost — pokud sjednána, délka a rozsah\n' +
+      '11. Prodlení — důsledky prodlení zhotovitele i objednatele (§ 2913 NOZ)\n' +
+      '12. Odstoupení od smlouvy — podmínky pro obě strany\n' +
+      '13. Duševní vlastnictví — licenční ujednání (§ 2370 NOZ) pokud dílo zahrnuje SW, grafiku, text\n' +
+      '14. Závěrečná ustanovení — rozhodné právo, řešení sporů, počet vyhotovení\n' +
+      '15. Podpisové bloky\n\n' +
+      'PRÁVNÍ POZNÁMKY:\n' +
+      '- Cenu díla uváděj číselně i slovy\n' +
+      '- U díla na nemovitosti se uplatní § 2623 NOZ (právo zástavní)\n' +
+      '- Nevymýšlej smluvní pokuty ani úroky z prodlení nad rámec zadání\n' +
+      '- Zhotovitel provádí dílo na svůj náklad a nebezpečí (§ 2586 odst. 1 NOZ)',
   },
 
   parties: [
