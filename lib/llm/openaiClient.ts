@@ -17,7 +17,8 @@
  *   OPENAI_MODEL_QUALITY_GATE=gpt-5.5
  *
  * Note: GPT-5.x / o-series Chat Completions use max_completion_tokens + reasoning_effort.
- *       gpt-4o*, gpt-5-chat*, etc. use max_tokens and must NOT receive reasoning_effort.
+ *       They only support default sampling temperature (1) — we omit `temperature` for those models.
+ *       gpt-4o*, gpt-5-chat*, etc. use max_tokens, custom temperature 0.1, and must NOT receive reasoning_effort.
  *
  * To switch providers in future: replace this file only.
  */
@@ -78,6 +79,11 @@ function supportsReasoningEffort(model: string): boolean {
   return needsMaxCompletionTokens(model)
 }
 
+/** Reasoning SKUs reject non-default temperature (400) — omit the parameter. */
+function supportsCustomTemperature(model: string): boolean {
+  return !supportsReasoningEffort(model)
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type LLMStage = 'draft' | 'quality-gate' | 'premium' | 'review'
@@ -85,7 +91,7 @@ export type LLMStage = 'draft' | 'quality-gate' | 'premium' | 'review'
 export interface LLMGenerateOptions {
   systemPrompt: string
   userPrompt: string
-  /** Override default temperature (0.1) for this call */
+  /** Override sampling temperature when the model accepts it (default 0.1). Ignored for GPT‑5 / o‑series reasoning SKUs — API fixed at 1. */
   temperature?: number
   /** Override max output budget (16384). Mapped to max_completion_tokens for GPT‑5 / o‑series, else max_tokens. */
   maxTokens?: number
@@ -123,8 +129,9 @@ export interface LLMGenerateResult {
  *   2. stage='quality-gate'            → OPENAI_MODEL_QUALITY_GATE
  *   3. otherwise                       → OPENAI_MODEL_DEFAULT
  *
- * Per-call overrides (temperature, maxTokens, jsonMode, reasoning) take
- * precedence over module-level defaults without changing them globally.
+ * Per-call overrides (maxTokens, jsonMode, reasoning) take
+ * precedence where the model supports them. `temperature` overrides are applied
+ * only when the model accepts custom sampling (not GPT‑5 / o‑series reasoning SKUs).
  */
 export async function generateText(options: LLMGenerateOptions): Promise<LLMGenerateResult> {
   const usePremium = options.premium === true || options.stage === 'premium'
@@ -148,7 +155,9 @@ export async function generateText(options: LLMGenerateOptions): Promise<LLMGene
 
   const completion = await getOpenAI().chat.completions.create({
     model,
-    temperature: options.temperature ?? TEMPERATURE,
+    ...(supportsCustomTemperature(model)
+      ? { temperature: options.temperature ?? TEMPERATURE }
+      : {}),
     ...(needsMaxCompletionTokens(model)
       ? { max_completion_tokens: tokenLimit }
       : { max_tokens: tokenLimit }),

@@ -5,7 +5,8 @@
  *  1. Model routing: default → gpt-4o, frontier env → gpt-5.x params
  *  2. Premium + jsonMode guard (must throw)
  *  3. Response shape (text, tokensUsed, model)
- *  4. Reasoning effort defaults and overrides
+ *  4. Reasoning effort defaults / omission vs SKU
+ *  5. GPT‑5 reasoning SKUs omit custom sampling temperature
  *
  * OpenAI SDK is fully mocked — no real API calls.
  *
@@ -65,7 +66,7 @@ describe('Model routing', () => {
       expect.objectContaining({ model: 'gpt-4o' }),
     )
     const args = mockCreate.mock.calls[0][0]
-    expect(args).toMatchObject({ max_tokens: 16384 })
+    expect(args).toMatchObject({ model: 'gpt-4o', max_tokens: 16384, temperature: 0.1 })
     expect(args).not.toHaveProperty('max_completion_tokens')
   })
 
@@ -80,6 +81,7 @@ describe('Model routing', () => {
         max_completion_tokens: 16384,
         reasoning_effort: 'high',
       })
+      expect(args).not.toHaveProperty('temperature')
       expect(args).not.toHaveProperty('max_tokens')
     } finally {
       vi.unstubAllEnvs()
@@ -92,7 +94,7 @@ describe('Model routing', () => {
       mockOpenAIResponse('text')
       await generateText(BASE_OPTIONS)
       const args = mockCreate.mock.calls[0][0]
-      expect(args).toMatchObject({ model: 'gpt-5-chat-latest', max_tokens: 16384 })
+      expect(args).toMatchObject({ model: 'gpt-5-chat-latest', max_tokens: 16384, temperature: 0.1 })
       expect(args).not.toHaveProperty('max_completion_tokens')
     } finally {
       vi.unstubAllEnvs()
@@ -219,6 +221,24 @@ describe('Reasoning effort', () => {
       await generateText({ ...BASE_OPTIONS, reasoning: 'medium' })
       const callArgs = mockCreate.mock.calls[0][0]
       expect(callArgs).not.toHaveProperty('reasoning_effort')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 5. Sampling temperature (GPT-5 reasoning SKUs = API default only)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('Sampling temperature', () => {
+  it('gpt-5.x: explicit temperature override is still omitted (API default 1)', async () => {
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-5.5-2026-04-23')
+    try {
+      mockOpenAIResponse('text')
+      await generateText({ ...BASE_OPTIONS, temperature: 0.1 })
+      const args = mockCreate.mock.calls[0][0]
+      expect(args).not.toHaveProperty('temperature')
     } finally {
       vi.unstubAllEnvs()
     }
