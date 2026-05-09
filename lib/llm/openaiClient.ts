@@ -5,21 +5,19 @@
  * The rest of the codebase (route, schemas, validators, promptBuilder)
  * calls generateText() and remains provider-agnostic.
  *
- * Model strategy (configurable via env vars):
- *   - OPENAI_MODEL_DEFAULT (default 'gpt-5.4')
- *       Used for Stage 1 contract drafting + structured review (JSON).
- *   - OPENAI_MODEL_PREMIUM (default 'gpt-5.4-pro')
- *       Used for Stage 3 final-text polish — never for JSON outputs.
- *   - OPENAI_MODEL_QUALITY_GATE (defaults to OPENAI_MODEL_DEFAULT)
- *       Optional override for Stage 2 JSON quality gate, e.g. 'gpt-5.4-mini'
- *       to cut cost when the JSON verdict is straightforward.
+ * Model strategy (configurable via env vars).
+ * Code defaults are conservative IDs that resolve on typical API keys:
+ *   - OPENAI_MODEL_DEFAULT → gpt-4o (Stage 1 draft + JSON when QUALITY_GATE unset)
+ *   - OPENAI_MODEL_PREMIUM → gpt-4o (Stage 3 polish only)
+ *   - OPENAI_MODEL_QUALITY_GATE → falls back to OPENAI_MODEL_DEFAULT
  *
- * Recommended production tier (May 2026):
+ * Frontier (requires funded tier + model access — see OpenAI Models / rate limits):
  *   OPENAI_MODEL_DEFAULT=gpt-5.5
  *   OPENAI_MODEL_PREMIUM=gpt-5.5-pro
- *   OPENAI_MODEL_QUALITY_GATE=gpt-5.4
+ *   OPENAI_MODEL_QUALITY_GATE=gpt-5.5
  *
- * GPT-5 / o-series: Chat Completions must use max_completion_tokens (this file does); max_tokens breaks requests.
+ * Note: GPT-5.x / o-series Chat Completions use max_completion_tokens + reasoning_effort.
+ *       gpt-4o*, gpt-5-chat*, etc. use max_tokens and must NOT receive reasoning_effort.
  *
  * To switch providers in future: replace this file only.
  */
@@ -41,12 +39,12 @@ function getOpenAI(): OpenAI {
 
 /** Default model for contract generation and structured review (Stage 1 + 2). */
 function getDefaultModel(): string {
-  return process.env.OPENAI_MODEL_DEFAULT?.trim() || 'gpt-5.4'
+  return process.env.OPENAI_MODEL_DEFAULT?.trim() || 'gpt-4o'
 }
 
 /** Premium model for optional final-text polish — NEVER for structured JSON. */
 function getPremiumModel(): string {
-  return process.env.OPENAI_MODEL_PREMIUM?.trim() || 'gpt-5.4-pro'
+  return process.env.OPENAI_MODEL_PREMIUM?.trim() || 'gpt-4o'
 }
 
 /** Optional override for Stage 2 quality gate (cost optimisation). */
@@ -64,14 +62,20 @@ const TEMPERATURE = 0.1
 const MAX_TOKENS = 16384
 
 /**
- * GPT-5+ and o-series reasoning models bill hidden "reasoning" output tokens.
- * For those models, `max_tokens` is deprecated and rejected — the API expects
- * `max_completion_tokens` (covers reasoning + visible completion tokens).
- * @see https://github.com/openai/openai-node/blob/master/src/resources/chat/completions/completions.ts
+ * GPT-5 *reasoning* SKUs bill hidden reasoning output tokens → use max_completion_tokens.
+ * Exclude aliases like `gpt-5-chat-*` — they behave like ordinary chat completions.
  */
 function needsMaxCompletionTokens(model: string): boolean {
   const m = model.trim().toLowerCase()
-  return m.startsWith('gpt-5') || /^o\d/.test(m)
+  if (/^o\d/.test(m)) return true
+  if (!m.startsWith('gpt-5')) return false
+  if (m.startsWith('gpt-5-chat')) return false
+  return true
+}
+
+/** Only newer reasoning SKUs accept `reasoning_effort`; gpt-4o* rejects it (400). */
+function supportsReasoningEffort(model: string): boolean {
+  return needsMaxCompletionTokens(model)
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -87,7 +91,7 @@ export interface LLMGenerateOptions {
   maxTokens?: number
   /** Request structured JSON output (requires "JSON" in system prompt) */
   jsonMode?: boolean
-  /** Use premium model (gpt-5.4-pro by default) — only for final text, never for JSON */
+  /** Use premium model (gpt-4o by default) — only for final text, never for JSON */
   premium?: boolean
   /** Reasoning effort: 'low' | 'medium' | 'high' — default 'high' for legal drafting */
   reasoning?: 'low' | 'medium' | 'high'
@@ -153,8 +157,10 @@ export async function generateText(options: LLMGenerateOptions): Promise<LLMGene
       { role: 'user', content: options.userPrompt },
     ],
     ...(options.jsonMode ? { response_format: { type: 'json_object' as const } } : {}),
-    // GPT-5+ reasoning control — 'high' for legal drafting precision
-    ...(reasoning !== 'medium' ? { reasoning_effort: reasoning } : {}),
+    // Reasoning models: only when API supports `reasoning_effort` for this SKU.
+    ...(supportsReasoningEffort(model) && reasoning !== 'medium'
+      ? { reasoning_effort: reasoning }
+      : {}),
   })
 
   const choice = completion.choices[0]

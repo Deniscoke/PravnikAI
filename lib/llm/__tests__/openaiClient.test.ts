@@ -2,7 +2,7 @@
  * Unit tests for LLM provider wrapper (openaiClient.ts)
  *
  * Test areas:
- *  1. Model routing: default → gpt-5.4, premium → gpt-5.4-pro
+ *  1. Model routing: default → gpt-4o, frontier env → gpt-5.x params
  *  2. Premium + jsonMode guard (must throw)
  *  3. Response shape (text, tokensUsed, model)
  *  4. Reasoning effort defaults and overrides
@@ -58,53 +58,65 @@ beforeEach(() => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('Model routing', () => {
-  it('uses gpt-5.4 by default', async () => {
+  it('uses gpt-4o by default with max_tokens (not max_completion_tokens)', async () => {
     mockOpenAIResponse('contract text')
     await generateText(BASE_OPTIONS)
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'gpt-5.4' }),
+      expect.objectContaining({ model: 'gpt-4o' }),
     )
-  })
-
-  it('uses max_completion_tokens for GPT-5 family (not max_tokens)', async () => {
-    mockOpenAIResponse('contract text')
-    await generateText(BASE_OPTIONS)
     const args = mockCreate.mock.calls[0][0]
-    expect(args).toMatchObject({ max_completion_tokens: 16384 })
-    expect(args).not.toHaveProperty('max_tokens')
+    expect(args).toMatchObject({ max_tokens: 16384 })
+    expect(args).not.toHaveProperty('max_completion_tokens')
   })
 
-  it('uses max_tokens for non–GPT-5 models when OPENAI_MODEL_DEFAULT is overridden', async () => {
-    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-4o')
+  it('uses max_completion_tokens + reasoning_effort for gpt-5.x when OPENAI_MODEL_DEFAULT is set', async () => {
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-5.5')
+    try {
+      mockOpenAIResponse('contract text')
+      await generateText(BASE_OPTIONS)
+      const args = mockCreate.mock.calls[0][0]
+      expect(args).toMatchObject({
+        model: 'gpt-5.5',
+        max_completion_tokens: 16384,
+        reasoning_effort: 'high',
+      })
+      expect(args).not.toHaveProperty('max_tokens')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('uses max_tokens for gpt-5-chat-latest (alias, not a reasoning SKU)', async () => {
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-5-chat-latest')
     try {
       mockOpenAIResponse('text')
       await generateText(BASE_OPTIONS)
       const args = mockCreate.mock.calls[0][0]
-      expect(args).toMatchObject({ model: 'gpt-4o', max_tokens: 16384 })
+      expect(args).toMatchObject({ model: 'gpt-5-chat-latest', max_tokens: 16384 })
       expect(args).not.toHaveProperty('max_completion_tokens')
     } finally {
       vi.unstubAllEnvs()
     }
   })
 
-  it('uses gpt-5.4-pro when premium=true', async () => {
+  it('uses gpt-4o when premium=true (default premium model)', async () => {
     mockOpenAIResponse('polished text')
     await generateText({ ...BASE_OPTIONS, premium: true })
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'gpt-5.4-pro' }),
+      expect.objectContaining({ model: 'gpt-4o' }),
     )
   })
 
   it('returns the model name in the result', async () => {
     mockOpenAIResponse('text')
     const result = await generateText(BASE_OPTIONS)
-    expect(result.model).toBe('gpt-5.4')
+    expect(result.model).toBe('gpt-4o')
   })
 
-  it('returns gpt-5.4-pro model name for premium calls', async () => {
+  it('returns gpt-4o model name for premium calls with defaults', async () => {
     mockOpenAIResponse('text')
     const result = await generateText({ ...BASE_OPTIONS, premium: true })
-    expect(result.model).toBe('gpt-5.4-pro')
+    expect(result.model).toBe('gpt-4o')
   })
 })
 
@@ -167,26 +179,48 @@ describe('Response shape', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('Reasoning effort', () => {
-  it('defaults to reasoning_effort=high for legal drafting', async () => {
+  it('does not send reasoning_effort for gpt-4o (API rejects it on non-reasoning SKUs)', async () => {
     mockOpenAIResponse('text')
     await generateText(BASE_OPTIONS)
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ reasoning_effort: 'high' }),
-    )
+    const callArgs = mockCreate.mock.calls[0][0]
+    expect(callArgs).not.toHaveProperty('reasoning_effort')
   })
 
-  it('passes reasoning=low when specified', async () => {
-    mockOpenAIResponse('text')
-    await generateText({ ...BASE_OPTIONS, reasoning: 'low' })
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ reasoning_effort: 'low' }),
-    )
+  it('defaults to reasoning_effort=high for gpt-5.x models', async () => {
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-5.5')
+    try {
+      mockOpenAIResponse('text')
+      await generateText(BASE_OPTIONS)
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ reasoning_effort: 'high' }),
+      )
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('passes reasoning=low when specified (gpt-5.x only)', async () => {
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-5.5')
+    try {
+      mockOpenAIResponse('text')
+      await generateText({ ...BASE_OPTIONS, reasoning: 'low' })
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ reasoning_effort: 'low' }),
+      )
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 
   it('does not pass reasoning_effort when reasoning=medium', async () => {
-    mockOpenAIResponse('text')
-    await generateText({ ...BASE_OPTIONS, reasoning: 'medium' })
-    const callArgs = mockCreate.mock.calls[0][0]
-    expect(callArgs).not.toHaveProperty('reasoning_effort')
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-5.5')
+    try {
+      mockOpenAIResponse('text')
+      await generateText({ ...BASE_OPTIONS, reasoning: 'medium' })
+      const callArgs = mockCreate.mock.calls[0][0]
+      expect(callArgs).not.toHaveProperty('reasoning_effort')
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 })

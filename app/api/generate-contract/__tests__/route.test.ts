@@ -119,12 +119,12 @@ function makeQualityGateJSON(overrides: Record<string, unknown> = {}): string {
  */
 function mockLLMSuccess(text = MOCK_CONTRACT, gateOverrides: Record<string, unknown> = {}) {
   // Stage 1: generate draft
-  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-5.4' })
+  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-4o' })
   // Stage 2: quality gate (returns JSON verdict)
   vi.mocked(generateText).mockResolvedValueOnce({
     text: makeQualityGateJSON(gateOverrides),
     tokensUsed: 800,
-    model: 'gpt-5.4',
+    model: 'gpt-4o',
   })
 }
 
@@ -135,19 +135,19 @@ function mockLLMFailure(message = 'OpenAI API timeout') {
 
 /** Configures Stage 1 success + Stage 2 failure (non-fatal — falls back to Stage 1 draft). */
 function mockStage2Failure(text = MOCK_CONTRACT) {
-  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-5.4' })
+  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-4o' })
   vi.mocked(generateText).mockRejectedValueOnce(new Error('Quality gate timeout'))
 }
 
 /** Configures full 3-stage pipeline mock (Stage 1 + 2 + 3 premium). */
 function mockPremiumSuccess(text = MOCK_CONTRACT, polishedText = MOCK_CONTRACT + '\n\n// polished') {
-  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-5.4' })
+  vi.mocked(generateText).mockResolvedValueOnce({ text, tokensUsed: 1234, model: 'gpt-4o' })
   vi.mocked(generateText).mockResolvedValueOnce({
     text: makeQualityGateJSON(),
     tokensUsed: 800,
-    model: 'gpt-5.4',
+    model: 'gpt-4o',
   })
-  vi.mocked(generateText).mockResolvedValueOnce({ text: polishedText, tokensUsed: 1500, model: 'gpt-5.4-pro' })
+  vi.mocked(generateText).mockResolvedValueOnce({ text: polishedText, tokensUsed: 1500, model: 'gpt-4o' })
 }
 
 // ─── Request helpers ──────────────────────────────────────────────────────────
@@ -730,11 +730,11 @@ describe('9 — Response shape invariants', () => {
   it('contractText uses correctedText from quality gate when provided', async () => {
     const corrected = 'SMLOUVA O DÍLO dle § 2586 NOZ — opravený text z quality gate s dostatečnou délkou pro validaci'
     // Stage 1 returns draft, Stage 2 returns JSON with correctedText
-    vi.mocked(generateText).mockResolvedValueOnce({ text: 'draft', tokensUsed: 99, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({ text: 'draft', tokensUsed: 99, model: 'gpt-4o' })
     vi.mocked(generateText).mockResolvedValueOnce({
       text: makeQualityGateJSON({ correctedText: corrected }),
       tokensUsed: 80,
-      model: 'gpt-5.4',
+      model: 'gpt-4o',
     })
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body: GenerateContractResponse = await res.json()
@@ -998,11 +998,11 @@ describe('14 — Two-stage pipeline behaviour', () => {
 
   it('Stage 2 receives the Stage 1 draft as its user prompt', async () => {
     const draftText = 'KUPNÍ SMLOUVA — návrh z Stage 1'
-    vi.mocked(generateText).mockResolvedValueOnce({ text: draftText, tokensUsed: 1000, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({ text: draftText, tokensUsed: 1000, model: 'gpt-4o' })
     vi.mocked(generateText).mockResolvedValueOnce({
       text: makeQualityGateJSON(),
       tokensUsed: 500,
-      model: 'gpt-5.4',
+      model: 'gpt-4o',
     })
     await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const calls = vi.mocked(generateText).mock.calls
@@ -1027,11 +1027,11 @@ describe('14 — Two-stage pipeline behaviour', () => {
   it('Stage 2 can modify the contract text via correctedText field', async () => {
     const draft = 'Draft with typo — original version of the contract text before quality gate review'
     const corrected = 'Corrected draft without typo — final version of the contract text after quality gate review'
-    vi.mocked(generateText).mockResolvedValueOnce({ text: draft, tokensUsed: 1000, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({ text: draft, tokensUsed: 1000, model: 'gpt-4o' })
     vi.mocked(generateText).mockResolvedValueOnce({
       text: makeQualityGateJSON({ correctedText: corrected }),
       tokensUsed: 800,
-      model: 'gpt-5.4',
+      model: 'gpt-4o',
     })
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body: GenerateContractResponse = await res.json()
@@ -1075,11 +1075,11 @@ describe('15 — Premium polish (Stage 3)', () => {
 
   it('Stage 3 failure is non-fatal — returns Stage 2 result (correctedText or Stage 1 draft)', async () => {
     const corrected = 'Quality-gate corrected draft — opravený text smlouvy s dostatečnou délkou pro parser'
-    vi.mocked(generateText).mockResolvedValueOnce({ text: 'original draft', tokensUsed: 1000, model: 'gpt-5.4' })
+    vi.mocked(generateText).mockResolvedValueOnce({ text: 'original draft', tokensUsed: 1000, model: 'gpt-4o' })
     vi.mocked(generateText).mockResolvedValueOnce({
       text: makeQualityGateJSON({ correctedText: corrected }),
       tokensUsed: 800,
-      model: 'gpt-5.4',
+      model: 'gpt-4o',
     })
     vi.mocked(generateText).mockRejectedValueOnce(new Error('Premium model timeout'))
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
@@ -1101,12 +1101,12 @@ describe('15 — Premium polish (Stage 3)', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('16 — Model routing safety', () => {
-  it('response does not contain gpt-5.4 or gpt-5.4-pro strings', async () => {
+  it('response does not contain internal OpenAI model IDs', async () => {
     mockLLMSuccess()
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const raw = await res.text()
-    expect(raw).not.toContain('gpt-5.4')
-    expect(raw).not.toContain('gpt-5.4-pro')
+    expect(raw).not.toContain('gpt-4o')
+    expect(raw).not.toContain('gpt-5.')
   })
 
   it('response does not expose total tokens from pipeline', async () => {

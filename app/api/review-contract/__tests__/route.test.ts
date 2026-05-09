@@ -83,7 +83,7 @@ function mockLLMSuccess(responseObj: Record<string, unknown> = GOOD_LLM_RESPONSE
   vi.mocked(generateText).mockResolvedValueOnce({
     text: JSON.stringify(responseObj),
     tokensUsed: 800,
-    model: 'gpt-5.4',
+    model: 'gpt-4o',
   })
 }
 
@@ -92,7 +92,7 @@ function mockLLMFailure(message = 'OpenAI API timeout') {
 }
 
 function mockLLMRawText(raw: string) {
-  vi.mocked(generateText).mockResolvedValueOnce({ text: raw, tokensUsed: 0, model: 'gpt-5.4' })
+  vi.mocked(generateText).mockResolvedValueOnce({ text: raw, tokensUsed: 0, model: 'gpt-4o' })
 }
 
 function makeRequest(body: unknown): NextRequest {
