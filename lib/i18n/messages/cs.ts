@@ -145,6 +145,8 @@ export const cs: Messages = {
     breadcrumbResult: 'Výsledek',
     generatingTitle: 'Generuji {type}',
     generatingSubtitle: 'AI analyzuje právní kontext a připravuje text smlouvy.',
+    generatingDurationHint:
+      'U výkonných modelů (např. GPT‑5) může celý proces trvat 1–4 minuty — probíhají dva kroky AI (návrh + kontrola kvality). Nechte stránku otevřenou.',
     steps: {
       validate: 'Validuji zadaná data…',
       context: 'Připravuji právní kontext…',
@@ -156,6 +158,8 @@ export const cs: Messages = {
       heading: 'Chyba při generování',
       retry: 'Zkusit znovu',
       changeType: 'Změnit typ smlouvy',
+      timeoutOrNetwork:
+        'Spojení se serverem přerušeno nebo vypršel časový limit funkce na hostingu (dlouhé generování u výkonných modelů to často způsobí). Vyčkejte chvíli a zkuste to znovu; pokud problém přetrvává, vývoj potřebuje delší povolený běh serverové funkce (např. plán na Vercelu s vyšším limitem).',
     },
   },
 
@@ -281,8 +285,9 @@ export interface Messages {
     breadcrumbResult: string
     generatingTitle: string
     generatingSubtitle: string
+    generatingDurationHint: string
     steps: { validate: string; context: string; draft: string; review: string; finalize: string }
-    error: { heading: string; retry: string; changeType: string }
+    error: { heading: string; retry: string; changeType: string; timeoutOrNetwork: string }
   }
   result: {
     trustBanner: string

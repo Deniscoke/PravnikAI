@@ -296,8 +296,19 @@ export default function GeneratorPage() {
               <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 'var(--space-sm)' }}>
                 {formatMsg(t.generator.generatingTitle, { type: selectedSchema?.metadata.name?.toLowerCase() ?? '' })}
               </h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-xl)' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-sm)' }}>
                 {t.generator.generatingSubtitle}
+              </p>
+              <p
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--color-text-subtle)',
+                  maxWidth: 420,
+                  margin: '0 auto var(--space-xl)',
+                  lineHeight: 1.45,
+                }}
+              >
+                {t.generator.generatingDurationHint}
               </p>
 
               {/* Step progress */}

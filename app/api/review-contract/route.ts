@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+export const maxDuration = 300
+
 export const runtime = 'nodejs'
 
 import { buildReviewPrompt } from '@/lib/review/reviewPromptBuilder'

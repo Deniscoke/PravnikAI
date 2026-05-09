@@ -145,6 +145,8 @@ export const de: Messages = {
     breadcrumbResult: 'Ergebnis',
     generatingTitle: '{type} wird erstellt',
     generatingSubtitle: 'Die KI analysiert den rechtlichen Kontext und erstellt den Vertragstext.',
+    generatingDurationHint:
+      'Bei leistungsstarken Modellen (z. B. GPT‑5) kann der gesamte Vorgang 1–4 Minuten dauern — es laufen zwei KI-Schritte (Entwurf + Qualitätsprüfung). Bitte lassen Sie die Seite geöffnet.',
     steps: {
       validate: 'Eingaben werden validiert…',
       context: 'Rechtskontext wird vorbereitet…',
@@ -156,6 +158,8 @@ export const de: Messages = {
       heading: 'Fehler bei der Erstellung',
       retry: 'Erneut versuchen',
       changeType: 'Vertragsart ändern',
+      timeoutOrNetwork:
+        'Die Verbindung zum Server wurde unterbrochen oder das Hosting-Zeitlimit der Funktion wurde überschritten (lange Ausführungen mit leistungsstarken Modellen passieren häufig). Warten Sie kurz und versuchen Sie es erneut; falls es weiterhin fehlschlägt, muss eine längere Laufzeit der Server-Funktion konfiguriert werden (z. B. Vercel-Plan mit höherem Limit).',
     },
   },
 

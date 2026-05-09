@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useCallback } from 'react'
+import { useTranslations } from '@/lib/i18n/client'
 import { getSchema } from '@/lib/contracts/contractSchemas'
 import { validateUI } from '@/lib/contracts/validators'
 import type {
@@ -48,6 +49,7 @@ interface DynamicContractFormProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function DynamicContractForm({ schemaId, onSuccess, onError, onGenerating }: DynamicContractFormProps) {
+  const t = useTranslations()
   const schema = getSchema(schemaId)
 
   // Form state: parties + sections as flat records
@@ -161,11 +163,30 @@ export function DynamicContractForm({ schemaId, onSuccess, onError, onGenerating
         signal,
       })
 
-      const data = await res.json()
+      const raw = await res.text()
+      let data: Record<string, unknown> = {}
+
+      try {
+        if (raw.trim()) data = JSON.parse(raw) as Record<string, unknown>
+      } catch {
+        onError?.(t.generator.error.timeoutOrNetwork, requestId)
+        return
+      }
+
+      const gatewayStatus = [502, 503, 504, 524].includes(res.status)
+      const apiErrorMsg =
+        typeof data.error === 'string' ? data.error.trim() : ''
+
+      if (!res.ok && gatewayStatus && apiErrorMsg === '') {
+        onError?.(t.generator.error.timeoutOrNetwork, requestId)
+        return
+      }
 
       if (!res.ok) {
         const base =
-          typeof data.error === 'string' ? data.error : 'Chyba při generování smlouvy.'
+          apiErrorMsg !== ''
+            ? apiErrorMsg
+            : 'Chyba při generování smlouvy.'
         const hint =
           typeof data.hint === 'string' && data.hint.trim() !== ''
             ? data.hint.trim()
@@ -174,11 +195,11 @@ export function DynamicContractForm({ schemaId, onSuccess, onError, onGenerating
         return
       }
 
-      onSuccess?.(data as GenerateContractResponse, requestId)
+      onSuccess?.(data as unknown as GenerateContractResponse, requestId)
     } catch (err) {
       // Silently ignore aborted requests — the user navigated away intentionally
       if (err instanceof DOMException && err.name === 'AbortError') return
-      onError?.('Síťová chyba. Zkuste to prosím znovu.', requestId)
+      onError?.(t.generator.error.timeoutOrNetwork, requestId)
     } finally {
       setIsSubmitting(false)
     }

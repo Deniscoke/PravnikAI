@@ -121,17 +121,21 @@ const VALIDATION_ERROR_RESPONSE = {
 // ─── Fetch mock helpers ───────────────────────────────────────────────────────
 
 function mockFetchSuccess(body: GenerateContractResponse) {
+  const json = JSON.stringify(body)
   vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
     ok: true,
     status: 200,
+    text: async () => json,
     json: async () => body,
   } as Response)
 }
 
 function mockFetchError(status: number, body: object) {
+  const json = JSON.stringify(body)
   vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
     ok: false,
     status,
+    text: async () => json,
     json: async () => body,
   } as Response)
 }
@@ -781,7 +785,7 @@ describe('7 — API failure → error state', () => {
     expect(screen.queryByText(/kompletní smlouva|pracovní návrh/i)).not.toBeInTheDocument()
   })
 
-  it('shows generic error message when fetch throws a network error', async () => {
+  it('shows timeout/hosting hint when fetch throws a network error', async () => {
     const user = userEvent.setup()
     mockFetchNetworkFailure()
     render(<GeneratorPage />)
@@ -791,7 +795,7 @@ describe('7 — API failure → error state', () => {
     await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
 
     await waitFor(() =>
-      expect(screen.getByText(/síťová chyba/i)).toBeInTheDocument(),
+      expect(screen.getByText(/Spojení se serverem přerušeno|vypršel časový limit/i)).toBeInTheDocument(),
     )
   })
 })

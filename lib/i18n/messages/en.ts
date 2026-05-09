@@ -145,6 +145,8 @@ export const en: Messages = {
     breadcrumbResult: 'Result',
     generatingTitle: 'Drafting your {type}',
     generatingSubtitle: 'The AI is analysing the legal context and preparing the contract text.',
+    generatingDurationHint:
+      'Frontier models (e.g. GPT‑5) often need 1–4 minutes — the pipeline runs two AI steps (draft + quality review). Keep this tab open.',
     steps: {
       validate: 'Validating your input…',
       context: 'Preparing legal context…',
@@ -156,6 +158,8 @@ export const en: Messages = {
       heading: 'Drafting error',
       retry: 'Try again',
       changeType: 'Change contract type',
+      timeoutOrNetwork:
+        'The connection was interrupted or the hosting function timed out (long frontier-model jobs often exceed default limits). Wait a moment and try again; if it keeps failing, the deployment needs a longer serverless timeout (for example on Vercel with a tier that supports a higher limit).',
     },
   },
 
