@@ -20,6 +20,7 @@ import { generateText } from '@/lib/llm/openaiClient'
 import { saveReviewToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 import type { ReviewContractRequest, ReviewContractResponse } from '@/lib/review/types'
 
 /** Maximum contract text length — ~50 pages of dense legal text */
@@ -87,11 +88,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
     rawText = result.text
   } catch (err) {
+    const hint = formatOpenAiUserHint(err, 'cs')
     console.error('[review-contract] LLM error:', err)
     return errorResponse(
       'Chyba při komunikaci s AI. Zkuste to znovu.',
       'LLM_ERROR',
       502,
+      hint,
     )
   }
 
@@ -229,6 +232,9 @@ function errorResponse(
   message: string,
   code: string,
   status: number,
+  hint?: string,
 ): NextResponse {
-  return NextResponse.json({ error: message, code }, { status })
+  const body: Record<string, string> = { error: message, code }
+  if (hint?.trim()) body.hint = hint.trim()
+  return NextResponse.json(body, { status })
 }

@@ -9,7 +9,7 @@
  *  5.  Unknown schema ID → 404 SCHEMA_NOT_FOUND
  *  6.  Missing schemaId or formData in body → 400 VALIDATION_FAILED
  *  7.  Malformed JSON body → 400 VALIDATION_FAILED
- *  8.  OpenAI wrapper throws → 502 LLM_ERROR (safe, no internal details leaked)
+ *  8.  OpenAI wrapper throws → 502 LLM_ERROR + optional hint (generic headline + detail)
  *  9.  Response shape invariants on every 200 (mode, warnings, missingFields, etc.)
  * 10.  Route does not leak provider internals (no 'gpt-4o', tokensUsed, etc.)
  * 11.  Draft mode: DRAFT_MODE warning included in response warnings
@@ -654,15 +654,15 @@ describe('8 — LLM failure → 502 LLM_ERROR', () => {
     expect(body.code).toBe('LLM_ERROR')
   })
 
-  it('502 error message is user-friendly Czech (no raw error internals)', async () => {
+  it('502 error message is user-friendly Czech; detail goes to hint', async () => {
     mockLLMFailure('OpenAI API timeout after 30s — connection refused')
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body: GenerateContractError = await res.json()
-    // Should not expose raw error message
     expect(body.error).not.toContain('timeout after 30s')
     expect(body.error).not.toContain('connection refused')
-    // Should be user-friendly
     expect(body.error).toMatch(/AI|komunikaci|znovu/i)
+    expect(typeof body.hint).toBe('string')
+    expect(body.hint!.length).toBeGreaterThan(10)
   })
 
   it('502 response has no contractText (error path, not success path)', async () => {
@@ -796,15 +796,15 @@ describe('10 — No provider internals leaked in API response', () => {
     expect(body).not.toHaveProperty('prompt')
   })
 
-  it('502 error response does not contain raw OpenAI error object', async () => {
+  it('502 error response does not leak stack / cause; detail is in hint only', async () => {
     mockLLMFailure('Rate limit exceeded — retry after 60s')
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body = await res.json()
-    // Raw internal error must not be serialized into the response
     expect(body).not.toHaveProperty('originalError')
     expect(body).not.toHaveProperty('cause')
     expect(body).not.toHaveProperty('stack')
-    expect(JSON.stringify(body)).not.toContain('retry after 60s')
+    expect(typeof body.hint).toBe('string')
+    expect(body.error).not.toContain('retry after')
   })
 
   it('response JSON body does not contain the string "gpt-4o"', async () => {

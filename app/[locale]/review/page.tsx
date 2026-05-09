@@ -110,7 +110,10 @@ export default function ReviewPage() {
 
       if (!res.ok) {
         abortControllerRef.current = null
-        setErrorMessage(data.error ?? 'Chyba při analýze smlouvy.')
+        const base = typeof data.error === 'string' ? data.error : 'Chyba při analýze smlouvy.'
+        const hint =
+          typeof data.hint === 'string' && data.hint.trim() !== '' ? data.hint.trim() : ''
+        setErrorMessage(hint ? `${base}\n\n${hint}` : base)
         setPageState('error')
         return
       }
@@ -335,7 +338,7 @@ export default function ReviewPage() {
         {/* STATE: error */}
         {pageState === 'error' && (
           <section>
-            <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)', whiteSpace: 'pre-line' }}>
               <strong>Chyba při analýze:</strong> {errorMessage}
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-md)' }}>

@@ -342,7 +342,7 @@ export default function GeneratorPage() {
         {/* STATE: error */}
         {pageState === 'error' && (
           <section>
-            <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)', whiteSpace: 'pre-line' }}>
               <strong>{t.generator.error.heading}:</strong> {errorMessage}
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-md)' }}>

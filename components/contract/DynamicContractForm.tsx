@@ -164,7 +164,13 @@ export function DynamicContractForm({ schemaId, onSuccess, onError, onGenerating
       const data = await res.json()
 
       if (!res.ok) {
-        onError?.(data.error ?? 'Chyba při generování smlouvy.', requestId)
+        const base =
+          typeof data.error === 'string' ? data.error : 'Chyba při generování smlouvy.'
+        const hint =
+          typeof data.hint === 'string' && data.hint.trim() !== ''
+            ? data.hint.trim()
+            : ''
+        onError?.(hint ? `${base}\n\n${hint}` : base, requestId)
         return
       }
 

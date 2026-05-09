@@ -37,6 +37,7 @@ import {
 import { saveGenerationToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 
 import type {
   GenerateContractRequest,
@@ -46,6 +47,7 @@ import type {
   GenerationMode,
   Jurisdiction,
 } from '@/lib/contracts/types'
+import { jurisdictionToLocale } from '@/lib/contracts/types'
 
 /** Localized polish-pass prompts for Stage 3 (premium model). */
 const POLISH_USER_PROMPT: Record<Jurisdiction, (text: string) => string> = {
@@ -200,8 +202,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     totalTokens += stage1.tokensUsed
     console.info(`[generate-contract] Stage 1 (draft) | ${jurisdiction}/${resolvedSchemaId} | mode=${mode} | tokens=${stage1.tokensUsed}`)
   } catch (err) {
+    const locale = jurisdictionToLocale(jurisdiction)
+    const hint = formatOpenAiUserHint(err, locale)
     console.error('[generate-contract] Stage 1 LLM error:', err)
-    return errorResponse(LLM_ERROR_MSG[jurisdiction], 'LLM_ERROR', 502)
+    return errorResponse(LLM_ERROR_MSG[jurisdiction], 'LLM_ERROR', 502, hint)
   }
 
   // ── 6. Stage 2: Structured legal quality gate ────────────────────────────
@@ -345,6 +349,10 @@ function errorResponse(
   message: string,
   code: GenerateContractError['code'],
   status: number,
+  hint?: string,
 ): NextResponse {
-  return NextResponse.json<GenerateContractError>({ error: message, code }, { status })
+  const payload: GenerateContractError = hint?.trim()
+    ? { error: message, code, hint: hint.trim() }
+    : { error: message, code }
+  return NextResponse.json<GenerateContractError>(payload, { status })
 }

@@ -360,5 +360,7 @@ export interface GenerateContractError {
     | 'LLM_ERROR'
     | 'RATE_LIMITED'
     | 'UNSUPPORTED_JURISDICTION'
+  /** User-safe secondary line (e.g. OpenAI status / model / quota) — optional */
+  hint?: string
   issues?: ValidationIssue[]
 }
