@@ -222,7 +222,12 @@ describe('1 — Selecting state (initial load)', () => {
 
   it('shows the Czech law legal notice', () => {
     render(<GeneratorPage />)
-    expect(screen.getByText(/českého práva/i)).toBeInTheDocument()
+    // CZ default locale renders the jurisdiction notice; multiple nodes match
+    // (header subtitle, alert banner). At least one is enough.
+    const matches = screen.getAllByText((_, node) =>
+      /česk[éý].*práv/i.test(node?.textContent ?? ''),
+    )
+    expect(matches.length).toBeGreaterThan(0)
   })
 
   it('does not show the form or result sections on initial load', () => {

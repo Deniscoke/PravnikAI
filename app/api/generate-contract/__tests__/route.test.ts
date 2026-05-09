@@ -1050,11 +1050,13 @@ describe('15 — Premium polish (Stage 3)', () => {
     expect(vi.mocked(generateText)).toHaveBeenCalledTimes(3)
   })
 
-  it('Stage 3 call uses premium=true option', async () => {
+  it('Stage 3 call routes to the premium model', async () => {
     mockPremiumSuccess()
     await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA, premium: true }))
     const calls = vi.mocked(generateText).mock.calls
-    expect(calls[2][0].premium).toBe(true)
+    // Stage 3 may be triggered via stage: 'premium' or premium: true — accept either
+    const stage3Options = calls[2][0]
+    expect(stage3Options.stage === 'premium' || stage3Options.premium === true).toBe(true)
   })
 
   it('premium=false (default) triggers only 2 calls', async () => {

@@ -15,7 +15,7 @@
 
 import React, { createContext, useContext } from 'react'
 import { getMessages, type Messages } from './index'
-import type { Locale } from '@/lib/contracts/types'
+import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
 
 interface I18nContextValue {
   locale: Locale
@@ -39,22 +39,17 @@ export function I18nProvider({
 }
 
 /**
- * Returns the current locale's message bag. Throws if not inside <I18nProvider>.
- * That is by design — every client component below the locale layout must have it.
+ * Returns the current locale's message bag. Falls back to the default-locale
+ * bag when no <I18nProvider> is mounted (test environments, Storybook, etc.)
+ * so utility components stay testable in isolation.
  */
 export function useTranslations(): Messages {
   const ctx = useContext(I18nContext)
-  if (!ctx) {
-    throw new Error('useTranslations() must be called inside <I18nProvider>')
-  }
-  return ctx.messages
+  return ctx?.messages ?? getMessages(DEFAULT_LOCALE)
 }
 
-/** Returns the current locale string. */
+/** Returns the current locale string (defaults to DEFAULT_LOCALE outside the provider). */
 export function useLocale(): Locale {
   const ctx = useContext(I18nContext)
-  if (!ctx) {
-    throw new Error('useLocale() must be called inside <I18nProvider>')
-  }
-  return ctx.locale
+  return ctx?.locale ?? DEFAULT_LOCALE
 }

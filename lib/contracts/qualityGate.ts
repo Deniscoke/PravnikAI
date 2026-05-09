@@ -266,7 +266,8 @@ Dostaneš návrh české smlouvy typu „${schemaName}". Proveď důkladnou kont
 ### 2. Rizikové domněnky — předpokládá model nesdělená fakta? Vágní formulace?
 ### 3. Konzistence definovaných pojmů — definice + důsledné použití.
 ### 4. Vnitřní rozpory — protiřečí si klauzule, data, částky, lhůty?
-### 5. Esenciální klauzule pro typ „${schemaName}" — zkontroluj přítomnost těchto klauzulí:
+### 5. Esenciální klauzule pro typ „${schemaName}"
+Zkontroluj přítomnost těchto klauzulí:
 ${clauseList}
 ### 6. Nejednoznačnosti — formulace připouštějící více výkladů?
 ### 7. Vymahatelnost a realizace — je smlouva prakticky proveditelná?
