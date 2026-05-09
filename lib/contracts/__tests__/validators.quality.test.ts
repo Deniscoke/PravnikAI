@@ -48,15 +48,17 @@ function makeSchema(opts: {
   return {
     metadata: {
       schemaId: 'test-schema-v1',
+      contractFamily: 'sale',
       name: 'Test',
       version: '1.0.0',
       jurisdiction: 'CZ',
+      currency: 'CZK',
       legalBasis: [],
       sensitivity: 'standard',
       outputStructure: { sections: [], requiresSignature: true },
       aiInstructions: '',
       description: '',
-      category: 'občanské',
+      category: 'civil',
     },
     parties: [
       {

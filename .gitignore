@@ -48,3 +48,6 @@ next-env.d.ts
 PrvAI/
 
 .vercel
+
+# Local helper files (never commit)
+.commit-msg.tmp

@@ -1,38 +1,37 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { CookieConsent } from '@/components/CookieConsent'
 import { createClient } from '@/lib/supabase/server'
+import { getSiteUrl, SEO_DESCRIPTION_DEFAULT, SITE_NAME } from '@/lib/seo/site'
+import { getMessages, coerceLocale } from '@/lib/i18n'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pravnik-ai-five.vercel.app'
+const APP_URL = getSiteUrl()
 
 export const metadata: Metadata = {
   title: {
-    default: 'PrávníkAI — AI právní asistent',
+    default: `${SITE_NAME} — AI legal contract drafting (CZ · DE · UK)`,
     template: '%s — PrávníkAI',
   },
-  description: 'AI generátor a kontrola právních smluv pro českou právní praxi. Vytvořte profesionální smlouvy za minuty.',
+  description: SEO_DESCRIPTION_DEFAULT,
   metadataBase: new URL(APP_URL),
   openGraph: {
     type: 'website',
-    locale: 'cs_CZ',
     url: APP_URL,
-    siteName: 'PrávníkAI',
-    title: 'PrávníkAI — AI právní asistent',
-    description: 'Generujte a kontrolujte právní smlouvy pomocí AI. Profesionální výstup pro české právo.',
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — AI legal contract drafting`,
+    description: SEO_DESCRIPTION_DEFAULT,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PrávníkAI — AI právní asistent',
-    description: 'Generujte a kontrolujte právní smlouvy pomocí AI. Profesionální výstup pro české právo.',
+    title: `${SITE_NAME} — AI legal contract drafting`,
+    description: SEO_DESCRIPTION_DEFAULT,
   },
   robots: {
     index: true,
     follow: true,
-  },
-  alternates: {
-    canonical: APP_URL,
   },
 }
 
@@ -41,8 +40,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Resolve locale from middleware-injected header so <html lang> is correct.
+  // Falls back to 'cs' for routes outside the [locale] segment (e.g. /api).
+  const headerList = await headers()
+  const headerLocale = coerceLocale(headerList.get('x-locale'))
+  const t = getMessages(headerLocale)
+
   return (
-    <html lang="cs" data-theme="light" suppressHydrationWarning>
+    <html lang={t.meta.htmlLang} data-theme="light" suppressHydrationWarning>
       <head>
         {/* Prevent flash of wrong theme on load */}
         <script dangerouslySetInnerHTML={{ __html: `

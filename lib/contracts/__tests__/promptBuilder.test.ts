@@ -41,9 +41,11 @@ function makeSchema(overrides: Partial<ContractSchema> = {}): ContractSchema {
   return {
     metadata: {
       schemaId: 'kupni-smlouva-v1',
+      contractFamily: 'sale',
       name: 'Kupní smlouva',
       version: '1.0.0',
       jurisdiction: 'CZ',
+      currency: 'CZK',
       legalBasis: [
         '§ 2079–2183 zák. č. 89/2012 Sb. (NOZ) — kupní smlouva',
         '§ 2080 NOZ — předmět koupě',
@@ -62,7 +64,7 @@ function makeSchema(overrides: Partial<ContractSchema> = {}): ContractSchema {
       },
       aiInstructions: 'Tato smlouva se řídí § 2079 a násl. NOZ.',
       description: 'Kupní smlouva dle NOZ',
-      category: 'občanské',
+      category: 'civil',
     },
     parties: [
       {

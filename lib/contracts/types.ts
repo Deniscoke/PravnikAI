@@ -1,8 +1,50 @@
 /**
  * PrávnikAI — Contract Generator Type System
- * Jurisdiction: Czech Republic (CZ)
+ * Multi-jurisdiction: CZ (Czech Republic), DE (Germany), UK (United Kingdom)
  * All modules import from this file.
  */
+
+// ─── Jurisdiction & Locale ───────────────────────────────────────────────────
+
+/**
+ * Legal jurisdiction the contract is governed by.
+ * Each schema is bound to exactly one jurisdiction — its legal basis,
+ * required clauses, and statutory citations are jurisdiction-specific.
+ */
+export type Jurisdiction = 'CZ' | 'DE' | 'UK'
+
+/**
+ * UI locale — what the user sees on screen.
+ * Locale ↔ jurisdiction is 1:1 by default (see localeToJurisdiction()).
+ */
+export type Locale = 'cs' | 'de' | 'en'
+
+/** Currency used for monetary fields in this jurisdiction. */
+export type Currency = 'CZK' | 'EUR' | 'GBP'
+
+/** Maps a UI locale to its default legal jurisdiction. */
+export function localeToJurisdiction(locale: Locale): Jurisdiction {
+  if (locale === 'de') return 'DE'
+  if (locale === 'en') return 'UK'
+  return 'CZ'
+}
+
+/** Maps a jurisdiction to its primary UI locale. */
+export function jurisdictionToLocale(jurisdiction: Jurisdiction): Locale {
+  if (jurisdiction === 'DE') return 'de'
+  if (jurisdiction === 'UK') return 'en'
+  return 'cs'
+}
+
+/** Returns the currency code used in a jurisdiction. */
+export function jurisdictionCurrency(jurisdiction: Jurisdiction): Currency {
+  if (jurisdiction === 'DE') return 'EUR'
+  if (jurisdiction === 'UK') return 'GBP'
+  return 'CZK'
+}
+
+export const ALL_LOCALES: readonly Locale[] = ['cs', 'de', 'en'] as const
+export const DEFAULT_LOCALE: Locale = 'cs'
 
 // ─── Field Types ─────────────────────────────────────────────────────────────
 
@@ -125,26 +167,43 @@ export interface OutputStructure {
 
 // ─── Schema Metadata ─────────────────────────────────────────────────────────
 
+/**
+ * Stable contract category. Display label is resolved per locale via i18n
+ * messages. We keep canonical English IDs so the schema files stay locale-neutral.
+ */
+export type ContractCategory = 'civil' | 'commercial' | 'employment' | 'realestate'
+
 export interface SchemaMetadata {
-  /** Stable, versioned ID — never change once deployed: "kupni-smlouva-v1" */
+  /** Stable, versioned ID — never change once deployed: "kupni-smlouva-v1", "kaufvertrag-v1", "sale-of-goods-v1" */
   schemaId: string
-  /** Human-readable name: "Kupní smlouva" */
+  /** Stable cross-jurisdiction family ID — same value across CZ/DE/UK variants of the same contract type ("nda", "sale", "employment", "tenancy", "services"). */
+  contractFamily: ContractFamily
+  /** Human-readable name in the schema's native language. */
   name: string
   /** SemVer — bump minor for new optional fields, major for breaking changes */
   version: string
-  /** Always 'CZ' — this system never generates SK or generic EU contracts */
-  jurisdiction: 'CZ'
-  /** Primary statutory basis with section numbers */
+  /** Legal jurisdiction the schema is bound to. */
+  jurisdiction: Jurisdiction
+  /** Currency used for monetary fields. */
+  currency: Currency
+  /** Primary statutory basis with section numbers (in the jurisdiction's language). */
   legalBasis: string[]
   sensitivity: SchemaSensitivity
   outputStructure: OutputStructure
   /** Appended verbatim to the system prompt when generating this contract type */
   aiInstructions: string
-  /** Short description shown in UI select / chip grid */
+  /** Short description shown in UI select / chip grid (native language). */
   description: string
-  /** Category for grouping in the UI */
-  category: 'občanské' | 'obchodní' | 'pracovní' | 'nemovitosti'
+  /** Stable category — UI label resolved via i18n messages. */
+  category: ContractCategory
 }
+
+/**
+ * Stable contract family identifier shared across jurisdictions.
+ * Allows the UI to group "the same" contract type (e.g. NDA) across CZ/DE/UK
+ * even though each has its own jurisdiction-specific schema.
+ */
+export type ContractFamily = 'nda' | 'sale' | 'employment' | 'tenancy' | 'services'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 
@@ -295,6 +354,11 @@ export interface GenerateContractResponse {
 
 export interface GenerateContractError {
   error: string
-  code: 'VALIDATION_FAILED' | 'SCHEMA_NOT_FOUND' | 'LLM_ERROR' | 'RATE_LIMITED'
+  code:
+    | 'VALIDATION_FAILED'
+    | 'SCHEMA_NOT_FOUND'
+    | 'LLM_ERROR'
+    | 'RATE_LIMITED'
+    | 'UNSUPPORTED_JURISDICTION'
   issues?: ValidationIssue[]
 }

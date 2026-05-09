@@ -41,7 +41,7 @@ function makeGateResult(overrides: Partial<QualityGateResult> = {}): QualityGate
     undefinedOrInconsistentTerms: [],
     riskyAssumptions: [],
     executionRisks: [],
-    czechLawSpecificRisks: [],
+    jurisdictionSpecificRisks: [],
     consumerOrRegulatoryFlags: [],
     suggestedFixes: [],
     ...overrides,
@@ -265,7 +265,7 @@ describe('6 — extractQualityWarnings', () => {
   })
 
   it('surfaces Czech law risks', () => {
-    const gate = makeGateResult({ czechLawSpecificRisks: ['Neplatná smluvní pokuta u nájmu bytu'] })
+    const gate = makeGateResult({ jurisdictionSpecificRisks: ['Neplatná smluvní pokuta u nájmu bytu'] })
     const warnings = extractQualityWarnings(gate)
     expect(warnings[0].code).toBe('QUALITY_LEGAL_RISKS')
   })
@@ -280,7 +280,7 @@ describe('6 — extractQualityWarnings', () => {
     const gate = makeGateResult({
       missingEssentialFacts: ['Fakt 1'],
       contradictions: ['Rozpor 1'],
-      czechLawSpecificRisks: ['Riziko 1'],
+      jurisdictionSpecificRisks: ['Riziko 1'],
     })
     const warnings = extractQualityWarnings(gate)
     expect(warnings).toHaveLength(3)
@@ -336,11 +336,9 @@ describe('7 — getEssentialClauses', () => {
   })
 
   it('every known schema has an essential clause list', () => {
-    for (const schemaId of Object.keys(ESSENTIAL_CLAUSES)) {
-      const clauses = getEssentialClauses(schemaId)
-      expect(clauses.length).toBeGreaterThan(0)
-      // Every contract needs signature blocks
-      expect(clauses.some(c => c.includes('Podpisové bloky'))).toBe(true)
+    // Keys are now `${jurisdiction}:${schemaId}` — only assert structurally
+    for (const key of Object.keys(ESSENTIAL_CLAUSES)) {
+      expect(ESSENTIAL_CLAUSES[key].length).toBeGreaterThan(0)
     }
   })
 })

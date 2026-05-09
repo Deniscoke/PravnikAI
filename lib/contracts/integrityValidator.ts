@@ -1,28 +1,26 @@
 /**
- * Deterministic Contract Integrity Validator
+ * Deterministic Contract Integrity Validator — multi-jurisdiction (CZ / DE / UK)
  *
  * Runs non-LLM checks on the GENERATED contract text to catch issues
  * that the LLM quality gate may have missed. Complements Stage 2 —
  * does NOT replace it.
  *
- * Reliable deterministic checks (no LLM required):
- *   1. Unresolved placeholder count  → [DOPLNIT found in output
- *   2. ZKONTROLOVAT marker count     → ⚠️ ZKONTROLOVAT in output
- *   3. Essential keyword presence    → per-schema required terms
- *   4. Signature block presence      → structural check
- *   5. Defined-term consistency      → terms defined but never reused
- *   6. Consumer posture conflict     → B2C context flags
+ * All checks (placeholders, review markers, signature blocks, consumer-risk
+ * patterns) are aware of the schema's jurisdiction so the right tokens and
+ * heuristics are applied. Placeholder/review tokens come from the prompt
+ * bundle (lib/contracts/prompts/{cz,de,uk}.ts).
  *
  * Routing rules (never-upgrade applies here too):
  *   - Unresolved placeholders > 0 in 'complete' mode → downgrade to 'draft'
  *   - Unresolved placeholders > 0 in 'draft' mode    → keep 'draft'
- *   - ZKONTROLOVAT markers > 0                        → keep/force 'review-needed'
+ *   - Review markers > 0                              → keep/force 'review-needed'
  *   - Missing signature block (error-level)           → at least 'draft'
  *   - Missing essential keyword (error-level)         → at least 'draft'
  *   - Consumer posture + suspicious clause            → 'review-needed'
  */
 
-import type { GenerationMode, DraftingPosture } from './types'
+import type { GenerationMode, DraftingPosture, Jurisdiction } from './types'
+import { getPromptBundle } from './prompts'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -33,113 +31,215 @@ export interface IntegrityIssue {
 }
 
 export interface IntegrityResult {
-  /** Overall verdict: pass / warn / block — mirrors quality gate convention */
   severity: 'pass' | 'warn' | 'block'
-  /** Raw count of [DOPLNIT occurrences in the generated text */
   unresolvedPlaceholders: number
-  /** Raw count of ⚠️ ZKONTROLOVAT occurrences */
   unresolvedReviewMarkers: number
-  /** Essential keyword descriptions that were NOT found in the text */
   missingEssentialKeywords: string[]
-  /** Whether a signature block was detected */
   hasSignatureBlock: boolean
-  /** Structured findings for warning injection */
   issues: IntegrityIssue[]
 }
 
-// ─── Essential keyword registry ──────────────────────────────────────────────
+// ─── Essential keyword registry (per jurisdiction & schema) ──────────────────
 
 interface KeywordCheck {
   /** Lowercase substring or simple pattern to search for (case-insensitive) */
   term: string
-  /** Human-readable description used in warnings */
+  /** Human-readable description used in warnings (in jurisdiction language) */
   description: string
   /** 'error' = missing is a hard problem; 'warning' = notable but not blocking */
   severity: 'error' | 'warning'
 }
 
 /**
- * Per-schema keyword checks. Each term is checked case-insensitively.
- * A generic fallback is applied for unknown schemas.
+ * Lookup key: `${jurisdiction}:${schemaId}`. A generic per-jurisdiction
+ * fallback is applied for unknown schemas.
  */
 const ESSENTIAL_KEYWORDS: Record<string, KeywordCheck[]> = {
-  'kupni-smlouva-v1': [
-    { term: 'kupní cena',        description: 'kupní cena',                      severity: 'error' },
-    { term: 'předmět',           description: 'předmět koupě',                   severity: 'error' },
-    { term: 'vlastnick',         description: 'přechod vlastnického práva',       severity: 'error' },
-    { term: 'vad',               description: 'odpovědnost za vady',              severity: 'error' },
-    { term: 'podpis',            description: 'podpisový blok',                   severity: 'warning' },
+  // ── Czech Republic ─────────────────────────────────────────────────────
+  'CZ:kupni-smlouva-v1': [
+    { term: 'kupní cena',  description: 'kupní cena',                severity: 'error' },
+    { term: 'předmět',     description: 'předmět koupě',             severity: 'error' },
+    { term: 'vlastnick',   description: 'přechod vlastnického práva', severity: 'error' },
+    { term: 'vad',         description: 'odpovědnost za vady',        severity: 'error' },
+    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
   ],
-  'pracovni-smlouva-v1': [
-    { term: 'druh práce',        description: 'druh práce',                       severity: 'error' },
-    { term: 'místo výkonu',      description: 'místo výkonu práce',               severity: 'error' },
-    { term: 'nástup',            description: 'den nástupu do práce',             severity: 'error' },
-    { term: 'mzd',               description: 'mzda / plat',                      severity: 'error' },
-    { term: 'výpovědn',          description: 'výpovědní doba',                   severity: 'error' },
-    { term: 'podpis',            description: 'podpisový blok',                   severity: 'warning' },
+  'CZ:pracovni-smlouva-v1': [
+    { term: 'druh práce',  description: 'druh práce',                severity: 'error' },
+    { term: 'místo výkonu',description: 'místo výkonu práce',         severity: 'error' },
+    { term: 'nástup',      description: 'den nástupu do práce',       severity: 'error' },
+    { term: 'mzd',         description: 'mzda / plat',                severity: 'error' },
+    { term: 'výpovědn',    description: 'výpovědní doba',             severity: 'error' },
+    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
   ],
-  'najemni-smlouva-byt-v1': [
-    { term: 'nájemn',            description: 'výše nájemného',                   severity: 'error' },
-    { term: 'byt',               description: 'označení bytu',                    severity: 'error' },
-    { term: 'jistot',            description: 'jistota / kauce',                  severity: 'warning' },
-    { term: 'výpovědn',          description: 'výpovědní podmínky',               severity: 'error' },
-    { term: 'podpis',            description: 'podpisový blok',                   severity: 'warning' },
+  'CZ:najemni-smlouva-byt-v1': [
+    { term: 'nájemn',      description: 'výše nájemného',             severity: 'error' },
+    { term: 'byt',         description: 'označení bytu',              severity: 'error' },
+    { term: 'jistot',      description: 'jistota / kauce',            severity: 'warning' },
+    { term: 'výpovědn',    description: 'výpovědní podmínky',         severity: 'error' },
+    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
   ],
-  'smlouva-o-dilo-v1': [
-    { term: 'předmět díla',      description: 'předmět díla',                     severity: 'error' },
-    { term: 'cen',               description: 'cena díla',                        severity: 'error' },
-    { term: 'termín',            description: 'termín zhotovení',                 severity: 'error' },
-    { term: 'vad',               description: 'odpovědnost za vady díla',         severity: 'error' },
-    { term: 'podpis',            description: 'podpisový blok',                   severity: 'warning' },
+  'CZ:smlouva-o-dilo-v1': [
+    { term: 'předmět díla',description: 'předmět díla',               severity: 'error' },
+    { term: 'cen',         description: 'cena díla',                  severity: 'error' },
+    { term: 'termín',      description: 'termín zhotovení',           severity: 'error' },
+    { term: 'vad',         description: 'odpovědnost za vady díla',   severity: 'error' },
+    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
   ],
-  'nda-smlouva-v1': [
-    { term: 'důvěrn',            description: 'definice důvěrných informací',     severity: 'error' },
-    { term: 'mlčenlivost',       description: 'povinnost mlčenlivosti',            severity: 'error' },
-    { term: 'pokut',             description: 'smluvní pokuta za porušení',       severity: 'warning' },
-    { term: 'podpis',            description: 'podpisový blok',                   severity: 'warning' },
+  'CZ:nda-smlouva-v1': [
+    { term: 'důvěrn',      description: 'definice důvěrných informací', severity: 'error' },
+    { term: 'mlčenlivost', description: 'povinnost mlčenlivosti',       severity: 'error' },
+    { term: 'pokut',       description: 'smluvní pokuta',               severity: 'warning' },
+    { term: 'podpis',      description: 'podpisový blok',               severity: 'warning' },
+  ],
+
+  // ── Germany ─────────────────────────────────────────────────────────────
+  'DE:kaufvertrag-v1': [
+    { term: 'kaufpreis',   description: 'Kaufpreis',                  severity: 'error' },
+    { term: 'vertragsgegenstand', description: 'Vertragsgegenstand',  severity: 'error' },
+    { term: 'eigentum',    description: 'Eigentumsübergang',          severity: 'error' },
+    { term: 'mängel',      description: 'Mängelhaftung',              severity: 'error' },
+    { term: 'unterschrift',description: 'Unterschriftsblock',         severity: 'warning' },
+  ],
+  'DE:arbeitsvertrag-v1': [
+    { term: 'tätigkeit',   description: 'Tätigkeitsbeschreibung',     severity: 'error' },
+    { term: 'arbeitsort',  description: 'Arbeitsort',                 severity: 'error' },
+    { term: 'beginn',      description: 'Beginn des Arbeitsverhältnisses', severity: 'error' },
+    { term: 'vergütung',   description: 'Vergütung',                  severity: 'error' },
+    { term: 'kündigung',   description: 'Kündigungsfrist',            severity: 'error' },
+    { term: 'urlaub',      description: 'Urlaubsanspruch',            severity: 'warning' },
+    { term: 'unterschrift',description: 'Unterschriftsblock',         severity: 'warning' },
+  ],
+  'DE:mietvertrag-v1': [
+    { term: 'miete',       description: 'Miete (Höhe)',               severity: 'error' },
+    { term: 'wohnung',     description: 'Beschreibung der Mietsache', severity: 'error' },
+    { term: 'kaution',     description: 'Kaution',                    severity: 'warning' },
+    { term: 'kündigung',   description: 'Kündigungsbedingungen',      severity: 'error' },
+    { term: 'unterschrift',description: 'Unterschriftsblock',         severity: 'warning' },
+  ],
+  'DE:werkvertrag-v1': [
+    { term: 'werkbeschreibung', description: 'Werkbeschreibung',      severity: 'error' },
+    { term: 'vergütung',   description: 'Vergütung',                  severity: 'error' },
+    { term: 'fertigstellung', description: 'Fertigstellungstermin',   severity: 'error' },
+    { term: 'abnahme',     description: 'Abnahme',                    severity: 'error' },
+    { term: 'mängel',      description: 'Mängelrechte',               severity: 'error' },
+    { term: 'unterschrift',description: 'Unterschriftsblock',         severity: 'warning' },
+  ],
+  'DE:de-nda-v1': [
+    { term: 'vertrauliche', description: 'vertrauliche Informationen', severity: 'error' },
+    { term: 'geheimhaltung', description: 'Geheimhaltungsverpflichtung', severity: 'error' },
+    { term: 'vertragsstrafe', description: 'Vertragsstrafe',           severity: 'warning' },
+    { term: 'unterschrift', description: 'Unterschriftsblock',         severity: 'warning' },
+  ],
+
+  // ── United Kingdom ─────────────────────────────────────────────────────
+  'UK:sale-of-goods-v1': [
+    { term: 'goods',       description: 'description of the goods',   severity: 'error' },
+    { term: 'price',       description: 'price',                      severity: 'error' },
+    { term: 'delivery',    description: 'delivery terms',             severity: 'error' },
+    { term: 'title',       description: 'passing of title / property',severity: 'error' },
+    { term: 'governing law', description: 'governing law',            severity: 'error' },
+    { term: 'signed',      description: 'execution block',            severity: 'warning' },
+  ],
+  'UK:employment-contract-v1': [
+    { term: 'job title',   description: 'job title',                  severity: 'error' },
+    { term: 'duties',      description: 'duties',                     severity: 'error' },
+    { term: 'place of work', description: 'place of work',            severity: 'error' },
+    { term: 'start date',  description: 'start date',                 severity: 'error' },
+    { term: 'salary',      description: 'pay / salary',               severity: 'error' },
+    { term: 'notice',      description: 'notice period',              severity: 'error' },
+    { term: 'holiday',     description: 'holiday entitlement',        severity: 'warning' },
+    { term: 'signed',      description: 'execution block',            severity: 'warning' },
+  ],
+  'UK:tenancy-ast-v1': [
+    { term: 'rent',        description: 'rent amount',                severity: 'error' },
+    { term: 'premises',    description: 'description of the premises', severity: 'error' },
+    { term: 'deposit',     description: 'tenancy deposit',            severity: 'warning' },
+    { term: 'term',        description: 'term of the tenancy',        severity: 'error' },
+    { term: 'notice',      description: 'termination notice',         severity: 'error' },
+    { term: 'signed',      description: 'execution block',            severity: 'warning' },
+  ],
+  'UK:services-agreement-v1': [
+    { term: 'services',    description: 'scope of services',          severity: 'error' },
+    { term: 'fees',        description: 'fees',                       severity: 'error' },
+    { term: 'governing law', description: 'governing law',            severity: 'error' },
+    { term: 'limitation of liability', description: 'limitation of liability', severity: 'warning' },
+    { term: 'signed',      description: 'execution block',            severity: 'warning' },
+  ],
+  'UK:uk-nda-v1': [
+    { term: 'confidential information', description: 'definition of Confidential Information', severity: 'error' },
+    { term: 'purpose',     description: 'purpose of disclosure',      severity: 'error' },
+    { term: 'governing law', description: 'governing law',            severity: 'error' },
+    { term: 'signed',      description: 'execution block',            severity: 'warning' },
   ],
 }
 
-/** Generic fallback for unknown schema types. */
-const GENERIC_KEYWORDS: KeywordCheck[] = [
-  { term: 'smluvní stran',   description: 'identifikace smluvních stran', severity: 'error' },
-  { term: 'předmět',         description: 'předmět smlouvy',              severity: 'error' },
-  { term: 'podpis',          description: 'podpisový blok',               severity: 'warning' },
-]
+const GENERIC_FALLBACK: Record<Jurisdiction, KeywordCheck[]> = {
+  CZ: [
+    { term: 'smluvní stran', description: 'identifikace smluvních stran', severity: 'error' },
+    { term: 'předmět',       description: 'předmět smlouvy',              severity: 'error' },
+    { term: 'podpis',        description: 'podpisový blok',               severity: 'warning' },
+  ],
+  DE: [
+    { term: 'vertragsparte', description: 'Identifikation der Vertragsparteien', severity: 'error' },
+    { term: 'vertragsgegenstand', description: 'Vertragsgegenstand',     severity: 'error' },
+    { term: 'unterschrift',  description: 'Unterschriftsblock',          severity: 'warning' },
+  ],
+  UK: [
+    { term: 'parties',       description: 'identification of the parties', severity: 'error' },
+    { term: 'subject matter',description: 'subject matter',              severity: 'error' },
+    { term: 'signed',        description: 'execution block',             severity: 'warning' },
+  ],
+}
 
-function getKeywords(schemaId: string): KeywordCheck[] {
-  return ESSENTIAL_KEYWORDS[schemaId] ?? GENERIC_KEYWORDS
+function getKeywords(schemaId: string, jurisdiction: Jurisdiction): KeywordCheck[] {
+  const key = `${jurisdiction}:${schemaId}`
+  if (ESSENTIAL_KEYWORDS[key]) return ESSENTIAL_KEYWORDS[key]
+  // Backward compat for legacy CZ-only keys
+  if (jurisdiction === 'CZ' && ESSENTIAL_KEYWORDS[schemaId]) return ESSENTIAL_KEYWORDS[schemaId]
+  return GENERIC_FALLBACK[jurisdiction]
 }
 
 // ─── Signature block detection ────────────────────────────────────────────────
 
-/**
- * Checks for signature-block patterns in the generated text.
- * Looks for Czech signature line conventions: underscores, "Podpis", "Za ..."
- */
-function detectSignatureBlock(text: string): boolean {
+function detectSignatureBlock(text: string, jurisdiction: Jurisdiction): boolean {
   const lower = text.toLowerCase()
+
+  if (jurisdiction === 'DE') {
+    return (
+      lower.includes('unterschrift') ||
+      lower.includes('für den arbeitgeber') ||
+      lower.includes('für den vermieter') ||
+      lower.includes('für den verkäufer') ||
+      /_{5,}/.test(text)
+    )
+  }
+
+  if (jurisdiction === 'UK') {
+    return (
+      lower.includes('signed') ||
+      lower.includes('signature of') ||
+      lower.includes('for and on behalf of') ||
+      lower.includes('executed as a deed') ||
+      /_{5,}/.test(text)
+    )
+  }
+
+  // CZ default
   return (
     lower.includes('podpis') ||
     lower.includes('za objednatel') ||
     lower.includes('za prodáva') ||
     lower.includes('za nájemce') ||
     lower.includes('za zaměstna') ||
-    /_{5,}/.test(text)          // five or more underscores = signature line
+    /_{5,}/.test(text)
   )
 }
 
 // ─── Defined-term consistency check ──────────────────────────────────────────
 
-/**
- * Extracts terms defined with Czech legal convention („TermName") and
- * checks if they appear at least once after their definition point.
- * Only terms defined in a clearly definitional context are checked.
- */
 function checkDefinedTermConsistency(text: string): string[] {
-  // Match patterns like „SomeTerm" or "SomeTerm" used in definitions
-  // Czech convention: Strany se dohodly na definici pojmu „Dílo" takto...
-  const definedTermPattern = /[„"]([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+(?:\s[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]*)*)["""]/g
+  // Czech/German style „Term", and English "Term" (curly + straight)
+  const definedTermPattern = /[„""]([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽÄÖÜ][a-záčďéěíňóřšťúůýžäöüß]+(?:\s[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽÄÖÜ][a-záčďéěíňóřšťúůýžäöüß]*)*)["""]/g
 
   const inconsistentTerms: string[] = []
   const seen = new Set<string>()
@@ -150,9 +250,7 @@ function checkDefinedTermConsistency(text: string): string[] {
     if (seen.has(term)) continue
     seen.add(term)
 
-    // Check the term appears at least once AFTER the definition location
     const afterDefinition = text.slice(match.index + match[0].length)
-    // Look for bare use (not in quotes) — simple heuristic
     if (!afterDefinition.includes(term)) {
       inconsistentTerms.push(term)
     }
@@ -163,32 +261,43 @@ function checkDefinedTermConsistency(text: string): string[] {
 
 // ─── Consumer posture check ───────────────────────────────────────────────────
 
-/**
- * When transactionContext='consumer', checks for patterns that suggest
- * clauses prohibited by § 1813 NOZ (unfair terms in consumer contracts).
- * This is a conservative heuristic — flags for human review, not auto-block.
- */
-function checkConsumerPostureConflict(text: string): IntegrityIssue[] {
+interface ConsumerPattern {
+  pattern: string
+  message: string
+}
+
+const CONSUMER_PATTERNS: Record<Jurisdiction, ConsumerPattern[]> = {
+  CZ: [
+    { pattern: 'vzdává se',
+      message: 'Text obsahuje formulaci „vzdává se" — spotřebitel se nemůže vzdát zákonných práv (§ 1813 NOZ)' },
+    { pattern: 'rozhodčí doložk',
+      message: 'Spotřebitelská smlouva obsahuje rozhodčí doložku — silně omezená přípustnost (§ 2 zák. č. 216/1994 Sb.)' },
+    { pattern: 'bez nároku na náhradu',
+      message: 'Formulace „bez nároku na náhradu" může být nepřípustným omezením práv spotřebitele (§ 1813 NOZ)' },
+  ],
+  DE: [
+    { pattern: 'verzichtet auf',
+      message: 'Formulierung „verzichtet auf" — der Verbraucher kann auf gesetzliche Rechte i. d. R. nicht verzichten (§§ 307–309 BGB)' },
+    { pattern: 'jeglicher haftung',
+      message: 'Pauschaler Haftungsausschluss verstößt typischerweise gegen § 309 Nr. 7 BGB (Verschulden bei Personenschäden)' },
+    { pattern: 'schiedsgericht',
+      message: 'Schiedsklausel in Verbrauchervertrag — eingeschränkte Zulässigkeit (§ 1031 Abs. 5 ZPO)' },
+  ],
+  UK: [
+    { pattern: 'waives',
+      message: '"Waives" wording — consumer cannot waive statutory rights under the Consumer Rights Act 2015' },
+    { pattern: 'binding arbitration',
+      message: 'Binding arbitration in a consumer contract is restricted under s.91 Arbitration Act 1996 if the dispute is below the small-claims threshold' },
+    { pattern: 'as is',
+      message: '"As is" sale of goods to a consumer is incompatible with the satisfactory-quality term implied by Part 1 CRA 2015' },
+  ],
+}
+
+function checkConsumerPostureConflict(text: string, jurisdiction: Jurisdiction): IntegrityIssue[] {
   const issues: IntegrityIssue[] = []
   const lower = text.toLowerCase()
 
-  // Patterns that are forbidden or heavily restricted in consumer contracts
-  const riskyPatterns: Array<{ pattern: string; message: string }> = [
-    {
-      pattern: 'vzdává se',
-      message: 'Text obsahuje formulaci „vzdává se" — spotřebitel se nemůže vzdát zákonných práv (§ 1813 NOZ)',
-    },
-    {
-      pattern: 'rozhodčí doložk',
-      message: 'Spotřebitelská smlouva obsahuje rozhodčí doložku — silně omezená přípustnost (§ 2 zák. č. 216/1994 Sb.)',
-    },
-    {
-      pattern: 'bez nároku na náhradu',
-      message: 'Formulace „bez nároku na náhradu" může být nepřípustným omezením práv spotřebitele (§ 1813 NOZ)',
-    },
-  ]
-
-  for (const { pattern, message } of riskyPatterns) {
+  for (const { pattern, message } of CONSUMER_PATTERNS[jurisdiction]) {
     if (lower.includes(pattern)) {
       issues.push({ code: 'CONSUMER_RISKY_CLAUSE', message, severity: 'warning' })
     }
@@ -202,98 +311,135 @@ function checkConsumerPostureConflict(text: string): IntegrityIssue[] {
 /**
  * Runs all deterministic integrity checks on a generated contract text.
  *
- * @param text         - The generated contract text (Stage 1 or Stage 2 output)
- * @param schemaId     - Canonical schema identifier
- * @param mode         - Current generation mode (used for severity calibration)
- * @param posture      - Optional drafting posture for context-aware checks
+ * Backwards-compatible signature: legacy callers may invoke this as
+ *   runIntegrityCheck(text, schemaId, mode, posture?)
+ * (without an explicit jurisdiction, defaulting to 'CZ'). The new canonical
+ * signature requires jurisdiction:
+ *   runIntegrityCheck(text, schemaId, jurisdiction, mode, posture?)
  */
 export function runIntegrityCheck(
   text: string,
   schemaId: string,
+  jurisdictionOrMode: Jurisdiction | GenerationMode,
+  modeOrPosture?: GenerationMode | DraftingPosture,
+  posture?: DraftingPosture,
+): IntegrityResult {
+  // ── Resolve overloaded args ─────────────────────────────────────────────
+  let jurisdiction: Jurisdiction
+  let mode: GenerationMode
+  let actualPosture: DraftingPosture | undefined
+
+  if (jurisdictionOrMode === 'CZ' || jurisdictionOrMode === 'DE' || jurisdictionOrMode === 'UK') {
+    jurisdiction = jurisdictionOrMode
+    mode = modeOrPosture as GenerationMode
+    actualPosture = posture
+  } else {
+    // Legacy 4-arg call: (text, schemaId, mode, posture?)
+    jurisdiction = 'CZ'
+    mode = jurisdictionOrMode as GenerationMode
+    actualPosture = modeOrPosture as DraftingPosture | undefined
+  }
+
+  return runIntegrityCheckCore(text, schemaId, jurisdiction, mode, actualPosture)
+}
+
+function runIntegrityCheckCore(
+  text: string,
+  schemaId: string,
+  jurisdiction: Jurisdiction,
   mode: GenerationMode,
   posture?: DraftingPosture,
 ): IntegrityResult {
   const issues: IntegrityIssue[] = []
   const lower = text.toLowerCase()
+  const placeholders = getPromptBundle(jurisdiction).placeholders
 
-  // ── 1. Unresolved placeholders ────────────────────────────────────────────
-  const unresolvedPlaceholders = (text.match(/\[DOPLNIT/g) ?? []).length
-  const unresolvedReviewMarkers = (text.match(/⚠️ ZKONTROLOVAT/g) ?? []).length
+  // ── 1. Unresolved placeholders & review markers ──────────────────────────
+  const placeholderRegex = new RegExp(escapeForRegex(placeholders.fillToken), 'g')
+  const reviewRegex = new RegExp(escapeForRegex(placeholders.reviewToken), 'g')
+  const unresolvedPlaceholders = (text.match(placeholderRegex) ?? []).length
+  const unresolvedReviewMarkers = (text.match(reviewRegex) ?? []).length
 
   if (unresolvedPlaceholders > 0) {
     const sev = mode === 'complete' ? 'error' : 'warning'
-    issues.push({
-      code: 'UNRESOLVED_PLACEHOLDERS',
-      message: `Text obsahuje ${unresolvedPlaceholders} nevyplněný${unresolvedPlaceholders === 1 ? '' : 'ch'} placeholder${unresolvedPlaceholders === 1 ? '' : 'ů'} [DOPLNIT]`,
-      severity: sev,
-    })
+    const msg =
+      jurisdiction === 'DE'
+        ? `Text enthält ${unresolvedPlaceholders} unausgefüllte Platzhalter ${placeholders.fillToken}]`
+        : jurisdiction === 'UK'
+          ? `Text contains ${unresolvedPlaceholders} unresolved placeholder${unresolvedPlaceholders === 1 ? '' : 's'} ${placeholders.fillToken}]`
+          : `Text obsahuje ${unresolvedPlaceholders} nevyplněný${unresolvedPlaceholders === 1 ? '' : 'ch'} placeholder${unresolvedPlaceholders === 1 ? '' : 'ů'} ${placeholders.fillToken}]`
+    issues.push({ code: 'UNRESOLVED_PLACEHOLDERS', message: msg, severity: sev })
   }
 
   if (unresolvedReviewMarkers > 0) {
-    issues.push({
-      code: 'UNRESOLVED_REVIEW_MARKERS',
-      message: `Text obsahuje ${unresolvedReviewMarkers} marker${unresolvedReviewMarkers === 1 ? '' : 'ů'} ⚠️ ZKONTROLOVAT`,
-      severity: 'error',
-    })
+    const msg =
+      jurisdiction === 'DE'
+        ? `Text enthält ${unresolvedReviewMarkers} ${placeholders.reviewToken}-Marker zur anwaltlichen Prüfung`
+        : jurisdiction === 'UK'
+          ? `Text contains ${unresolvedReviewMarkers} ${placeholders.reviewToken} marker${unresolvedReviewMarkers === 1 ? '' : 's'} requiring solicitor attention`
+          : `Text obsahuje ${unresolvedReviewMarkers} marker${unresolvedReviewMarkers === 1 ? '' : 'ů'} ${placeholders.reviewToken}`
+    issues.push({ code: 'UNRESOLVED_REVIEW_MARKERS', message: msg, severity: 'error' })
   }
 
   // ── 2. Essential keyword checks ───────────────────────────────────────────
-  const keywords = getKeywords(schemaId)
+  const keywords = getKeywords(schemaId, jurisdiction)
   const missingEssentialKeywords: string[] = []
 
   for (const kw of keywords) {
     if (!lower.includes(kw.term.toLowerCase())) {
       missingEssentialKeywords.push(kw.description)
+      const prefix =
+        jurisdiction === 'DE' ? 'Fehlendes wesentliches Element'
+        : jurisdiction === 'UK' ? 'Missing essential element'
+        : 'Chybí esenciální prvek'
       issues.push({
         code: 'MISSING_ESSENTIAL_KEYWORD',
-        message: `Chybí esenciální prvek: ${kw.description}`,
+        message: `${prefix}: ${kw.description}`,
         severity: kw.severity,
       })
     }
   }
 
   // ── 3. Signature block ────────────────────────────────────────────────────
-  const hasSignatureBlock = detectSignatureBlock(text)
+  const hasSignatureBlock = detectSignatureBlock(text, jurisdiction)
   if (!hasSignatureBlock) {
-    issues.push({
-      code: 'MISSING_SIGNATURE_BLOCK',
-      message: 'Nebyl nalezen podpisový blok — smlouva neobsahuje prostor pro podpisy stran',
-      severity: 'warning',
-    })
+    const msg =
+      jurisdiction === 'DE'
+        ? 'Es wurde kein Unterschriftsblock gefunden — der Vertrag bietet keinen Platz für die Unterschriften der Parteien'
+        : jurisdiction === 'UK'
+          ? 'No execution block detected — the contract does not provide signature lines for the parties'
+          : 'Nebyl nalezen podpisový blok — smlouva neobsahuje prostor pro podpisy stran'
+    issues.push({ code: 'MISSING_SIGNATURE_BLOCK', message: msg, severity: 'warning' })
   }
 
   // ── 4. Defined-term consistency ───────────────────────────────────────────
   const inconsistentTerms = checkDefinedTermConsistency(text)
   for (const term of inconsistentTerms) {
-    issues.push({
-      code: 'DEFINED_TERM_UNUSED',
-      message: `Definovaný pojem „${term}" je definován, ale dále v textu nepoužit`,
-      severity: 'warning',
-    })
+    const msg =
+      jurisdiction === 'DE'
+        ? `Definierter Begriff „${term}" ist definiert, wird aber im weiteren Text nicht verwendet`
+        : jurisdiction === 'UK'
+          ? `Defined term "${term}" is defined but never used afterwards`
+          : `Definovaný pojem „${term}" je definován, ale dále v textu nepoužit`
+    issues.push({ code: 'DEFINED_TERM_UNUSED', message: msg, severity: 'warning' })
   }
 
   // ── 5. Consumer posture conflict ──────────────────────────────────────────
   if (posture?.transactionContext === 'consumer') {
-    const consumerIssues = checkConsumerPostureConflict(text)
-    issues.push(...consumerIssues)
+    issues.push(...checkConsumerPostureConflict(text, jurisdiction))
   }
 
   // ── Compute overall severity ──────────────────────────────────────────────
   const hasErrors = issues.some((i) => i.severity === 'error')
   const hasWarnings = issues.some((i) => i.severity === 'warning')
 
-  // Severity escalation: any error-level issue → at least 'warn'
-  // Unresolved placeholders in complete mode or ZKONTROLOVAT present → 'block'
   let severity: IntegrityResult['severity'] = 'pass'
-
-  if (hasErrors || hasWarnings) {
-    severity = 'warn'
-  }
+  if (hasErrors || hasWarnings) severity = 'warn'
 
   if (
     (unresolvedPlaceholders > 0 && mode === 'complete') ||
     unresolvedReviewMarkers > 0 ||
-    (unresolvedPlaceholders > 2)  // More than 2 unresolved in any mode is a block
+    unresolvedPlaceholders > 2
   ) {
     severity = 'block'
   }
@@ -310,21 +456,7 @@ export function runIntegrityCheck(
 
 // ─── Decision logic ───────────────────────────────────────────────────────────
 
-/**
- * Applies integrity validator findings to the current mode.
- * Never upgrades — only downgrades.
- *
- * Rules:
- *   - ZKONTROLOVAT markers in text → force 'review-needed'
- *   - Placeholders > 0 in 'complete' mode → downgrade to 'draft'
- *   - Placeholders > 2 in any mode → force 'review-needed'
- *   - Error-level issues → at least 'draft'
- *   - Warning-level issues only → keep current mode
- */
-export function applyIntegrityDecision(
-  mode: GenerationMode,
-  result: IntegrityResult,
-): GenerationMode {
+export function applyIntegrityDecision(mode: GenerationMode, result: IntegrityResult): GenerationMode {
   const PRIORITY: Record<GenerationMode, number> = {
     'complete': 0,
     'draft': 1,
@@ -333,22 +465,18 @@ export function applyIntegrityDecision(
 
   let forcedMode: GenerationMode = mode
 
-  // ZKONTROLOVAT markers → must be review-needed
   if (result.unresolvedReviewMarkers > 0) {
     forcedMode = maxMode(forcedMode, 'review-needed', PRIORITY)
   }
 
-  // More than 2 unresolved placeholders → review-needed
   if (result.unresolvedPlaceholders > 2) {
     forcedMode = maxMode(forcedMode, 'review-needed', PRIORITY)
   }
 
-  // Any unresolved placeholder in complete mode → at least draft
   if (result.unresolvedPlaceholders > 0 && forcedMode === 'complete') {
     forcedMode = maxMode(forcedMode, 'draft', PRIORITY)
   }
 
-  // Error-level issues → at least draft
   const hasErrors = result.issues.some((i) => i.severity === 'error')
   if (hasErrors) {
     forcedMode = maxMode(forcedMode, 'draft', PRIORITY)
@@ -357,7 +485,6 @@ export function applyIntegrityDecision(
   return forcedMode
 }
 
-/** Returns the higher-priority (worse) of two modes. Never upgrades. */
 function maxMode(
   current: GenerationMode,
   candidate: GenerationMode,
@@ -368,10 +495,6 @@ function maxMode(
 
 // ─── Warning extraction ───────────────────────────────────────────────────────
 
-/**
- * Converts integrity result into ContractWarning-compatible objects.
- * Only includes non-trivial findings (error + warning severity).
- */
 export function extractIntegrityWarnings(
   result: IntegrityResult,
 ): Array<{ code: string; message: string }> {
@@ -379,4 +502,10 @@ export function extractIntegrityWarnings(
     code: issue.code,
     message: issue.message,
   }))
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function escapeForRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
