@@ -24,7 +24,7 @@
  *   npx vitest app/api/generate-contract/__tests__/route.test.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 // ── Mocks must be declared BEFORE the route import ──────────────────────────
@@ -1329,5 +1329,40 @@ describe('18 — Posture and integrity validator integration', () => {
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: COMPLETE_FORM_DATA }))
     const body: GenerateContractResponse = await res.json()
     expect(body.mode).toBe('review-needed')
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Short-timeout hosting — skip Stage‑2 AI
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('Pipeline — Hobby / SKIP quality gate Stage 2', () => {
+  afterEach(() => {
+    delete process.env.CONTRACT_PIPELINE
+    delete process.env.SKIP_CONTRACT_QUALITY_GATE
+  })
+
+  it('CONTRACT_PIPELINE=hobby → one LLM call, low draft reasoning, QUALITY_GATE_SKIPPED warning', async () => {
+    process.env.CONTRACT_PIPELINE = 'hobby'
+    vi.mocked(generateText).mockResolvedValueOnce({ text: MOCK_CONTRACT, tokensUsed: 111, model: 'gpt-4o' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    expect(res.status).toBe(200)
+    expect(generateText).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(generateText).mock.calls[0][0]).toMatchObject({ stage: 'draft', reasoning: 'low' })
+
+    const body: GenerateContractResponse = await res.json()
+    expect(body.warnings.some((w) => w.code === 'QUALITY_GATE_SKIPPED')).toBe(true)
+  })
+
+  it('SKIP_CONTRACT_QUALITY_GATE=1 skips Stage 2 without hobby draft tuning', async () => {
+    process.env.SKIP_CONTRACT_QUALITY_GATE = 'true'
+    vi.mocked(generateText).mockResolvedValueOnce({ text: MOCK_CONTRACT, tokensUsed: 111, model: 'gpt-4o' })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    expect(res.status).toBe(200)
+    expect(generateText).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(generateText).mock.calls[0][0].reasoning).toBeUndefined()
+
+    const body: GenerateContractResponse = await res.json()
+    expect(body.warnings.some((w) => w.code === 'QUALITY_GATE_SKIPPED')).toBe(true)
   })
 })

@@ -7,7 +7,7 @@
  *   3. Run 3-layer validation
  *   4. Build per-jurisdiction system + user prompts
  *   5. Stage 1: Generate draft via LLM (default model, high reasoning)
- *   6. Stage 2: Self-check quality review (JSON, locale-specific gate)
+ *   6. Stage 2: Self-check quality review (JSON) — skipped when SKIP_CONTRACT_QUALITY_GATE set or CONTRACT_PIPELINE=hobby
  *   7. Stage 3 (optional): Premium polish (premium model)
  *   8. Stage 3b: Deterministic integrity check (locale-specific keywords/tokens)
  *   9. Return structured GenerateContractResponse
@@ -124,6 +124,26 @@ const QUALITY_DOWNGRADE_MSG: Record<Jurisdiction, (from: string, to: string, sum
     `Quality gate downgraded the mode from "${from}" to "${to}": ${summary}`,
 }
 
+/** Hobby / short-timeout hosting: skips Stage‑2 AI review; optional lighter draft reasoning. */
+function isHobbyPipeline(): boolean {
+  return process.env.CONTRACT_PIPELINE?.trim().toLowerCase() === 'hobby'
+}
+
+function isQualityGateLlmSkipped(): boolean {
+  if (isHobbyPipeline()) return true
+  const v = process.env.SKIP_CONTRACT_QUALITY_GATE?.trim().toLowerCase()
+  return v === '1' || v === 'true' || v === 'yes'
+}
+
+const QUALITY_GATE_SKIPPED_MSG: Record<Jurisdiction, string> = {
+  CZ:
+    'V tomto nasazení je vypnut druhý krok AI (kontrola kvality) kvůli krátkému časovému limitu serverové funkce — na výkonnějším tarifu hostingu ho znovu zapněte.',
+  DE:
+    'In dieser Bereitstellung ist die zweite KI‑Qualitätsstufe aus (kurzes Hosting‑Zeitlimit) — aktivieren Sie sie wieder bei längeren Funktionstimeouts.',
+  UK:
+    'The second AI quality pass is disabled here (short serverless timeout) — re‑enable once your hosting allows longer functions.',
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 0a. Rate limit ────────────────────────────────────────────────────────
   const ip = getClientIp(req.headers)
@@ -166,6 +186,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const jurisdiction: Jurisdiction = schema.metadata.jurisdiction
+  const skipQualityGate = isQualityGateLlmSkipped()
 
   // ── 3. Three-layer validation ──────────────────────────────────────────────
   const validation = runFullValidation(schema, body.formData)
@@ -199,7 +220,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let contractText: string
   let totalTokens = 0
   try {
-    const stage1 = await generateText({ systemPrompt, userPrompt, stage: 'draft' })
+    const stage1 = await generateText({
+      systemPrompt,
+      userPrompt,
+      stage: 'draft',
+      ...(isHobbyPipeline() ? { reasoning: 'low' as const } : {}),
+    })
     contractText = stage1.text
     totalTokens += stage1.tokensUsed
     console.info(`[generate-contract] Stage 1 (draft) | ${jurisdiction}/${resolvedSchemaId} | mode=${mode} | tokens=${stage1.tokensUsed}`)
@@ -210,35 +236,42 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return errorResponse(LLM_ERROR_MSG[jurisdiction], 'LLM_ERROR', 502, hint)
   }
 
-  // ── 6. Stage 2: Structured legal quality gate ────────────────────────────
+  // ── 6. Stage 2: Structured legal quality gate (optional — skipped on Hobby / env) ───
   let qualityGate: QualityGateResult | null = null
   let effectiveMode: GenerationMode = mode
-  try {
-    const qualityPrompt = buildQualityGatePrompt(resolvedSchemaId, schema.metadata.name, jurisdiction)
-    const stage2 = await generateText({
-      systemPrompt: qualityPrompt,
-      userPrompt: contractText,
-      jsonMode: true,
-      reasoning: 'medium',
-      stage: 'quality-gate',
-    })
-    totalTokens += stage2.tokensUsed
-    qualityGate = parseQualityGateResponse(stage2.text, jurisdiction)
+  if (!skipQualityGate) {
+    try {
+      const qualityPrompt = buildQualityGatePrompt(resolvedSchemaId, schema.metadata.name, jurisdiction)
+      const stage2 = await generateText({
+        systemPrompt: qualityPrompt,
+        userPrompt: contractText,
+        jsonMode: true,
+        reasoning: 'medium',
+        stage: 'quality-gate',
+      })
+      totalTokens += stage2.tokensUsed
+      qualityGate = parseQualityGateResponse(stage2.text, jurisdiction)
+      console.info(
+        `[generate-contract] Stage 2 (quality gate) | ${jurisdiction} | status=${qualityGate.status} ` +
+        `| recommended=${qualityGate.recommendedMode} | tokens=${stage2.tokensUsed}`,
+      )
+
+      if (qualityGate.correctedText) {
+        contractText = qualityGate.correctedText
+      }
+
+      effectiveMode = applyQualityGateDecision(mode, qualityGate)
+      if (effectiveMode !== mode) {
+        console.info(`[generate-contract] Quality gate downgraded mode: ${mode} → ${effectiveMode}`)
+      }
+    } catch (err) {
+      console.warn('[generate-contract] Stage 2 quality gate failed, using Stage 1 draft:', err)
+    }
+  } else {
     console.info(
-      `[generate-contract] Stage 2 (quality gate) | ${jurisdiction} | status=${qualityGate.status} ` +
-      `| recommended=${qualityGate.recommendedMode} | tokens=${stage2.tokensUsed}`,
+      `[generate-contract] Stage 2 (quality gate) SKIPPED | ${jurisdiction} | ` +
+        `CONTRACT_PIPELINE=${process.env.CONTRACT_PIPELINE ?? 'unset'} | SKIP_CONTRACT_QUALITY_GATE=${process.env.SKIP_CONTRACT_QUALITY_GATE ?? 'unset'}`,
     )
-
-    if (qualityGate.correctedText) {
-      contractText = qualityGate.correctedText
-    }
-
-    effectiveMode = applyQualityGateDecision(mode, qualityGate)
-    if (effectiveMode !== mode) {
-      console.info(`[generate-contract] Quality gate downgraded mode: ${mode} → ${effectiveMode}`)
-    }
-  } catch (err) {
-    console.warn('[generate-contract] Stage 2 quality gate failed, using Stage 1 draft:', err)
   }
 
   // ── 7. Stage 3 (optional): Premium polish ────────────────────────────────
@@ -271,6 +304,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // ── 8. Build warnings ─────────────────────────────────────────────────────
   const warnings: ContractWarning[] = []
+
+  if (skipQualityGate) {
+    warnings.push({
+      code: 'QUALITY_GATE_SKIPPED',
+      message: QUALITY_GATE_SKIPPED_MSG[jurisdiction],
+    })
+  }
 
   for (const issue of validation.businessLegal.issues) {
     warnings.push({
