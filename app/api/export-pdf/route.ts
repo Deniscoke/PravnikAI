@@ -29,6 +29,8 @@ import type { Jurisdiction } from '@/lib/contracts/types'
 // pdfkit needs the Node.js runtime
 export const runtime = 'nodejs'
 
+export const maxDuration = 120
+
 interface ExportRequest {
   contractText: string
   contractName: string

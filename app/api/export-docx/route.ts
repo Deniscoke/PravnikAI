@@ -37,6 +37,9 @@ import type { Jurisdiction } from '@/lib/contracts/types'
 // Force Node.js runtime — docx library uses Buffer and Node-specific APIs
 export const runtime = 'nodejs'
 
+/** Large contracts need headroom; Hobby tier still caps below this. */
+export const maxDuration = 120
+
 interface ExportRequest {
   contractText: string
   contractName: string

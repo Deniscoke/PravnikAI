@@ -192,6 +192,13 @@ export const en: Messages = {
       reviewNeeded: { label: 'Review required', description: 'Required fields are missing. Search the text for ⚠️ REVIEW and complete the missing information.' },
     },
     exportFailed: 'Export failed. Please try again.',
+    exportAuthRequired: 'You need to be signed in to download. After signing in, please retry the export.',
+    exportOnboardingRequired: 'Please complete the short registration (terms acceptance) before exporting.',
+    exportLimitReached: 'You have reached the monthly export limit on the Free plan (5 / month). Upgrade to Pro for unlimited downloads.',
+    exportRateLimited: 'Too many attempts — please try again shortly.',
+    exportServerError: 'The file could not be generated on the server. Please try again or contact us.',
+    exportNetworkOrTimeout:
+      'The download did not finish (network or server timeout). Please try again; for very long contracts on free hosting, shorten the text or retry.',
   },
 
   langSwitch: {

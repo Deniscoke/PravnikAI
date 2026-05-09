@@ -192,6 +192,13 @@ export const cs: Messages = {
       reviewNeeded: { label: 'Vyžaduje kontrolu', description: 'Povinná pole chybí. V textu hledejte ⚠️ ZKONTROLOVAT a doplňte chybějící údaje.' },
     },
     exportFailed: 'Export se nezdařil. Zkuste to znovu.',
+    exportAuthRequired: 'Pro stažení dokumentu se musíte přihlásit. Po přihlášení můžete export zopakovat.',
+    exportOnboardingRequired: 'Před prvním exportem dokončete krátkou registraci (přijetí podmínek).',
+    exportLimitReached: 'Vyčerpali jste měsíční limit exportů ve verzi Zdarma (5 / měsíc). Pro neomezené stahování přejděte na plán Pro.',
+    exportRateLimited: 'Příliš mnoho pokusů — zkuste to prosím za chvíli znovu.',
+    exportServerError: 'Soubor se nepodařilo vygenerovat na serveru. Zkuste znovu, nebo nás prosím kontaktujte.',
+    exportNetworkOrTimeout:
+      'Stažení se nepodařilo dokončit (síť nebo časový limit serveru). Zkuste to znovu; u velké smlouvy na bezplatném hostingu zkraťte text nebo zkuste PDF/DOCX opakovat.',
   },
 
   langSwitch: {
@@ -317,6 +324,12 @@ export interface Messages {
       reviewNeeded: { label: string; description: string }
     }
     exportFailed: string
+    exportAuthRequired: string
+    exportOnboardingRequired: string
+    exportLimitReached: string
+    exportRateLimited: string
+    exportServerError: string
+    exportNetworkOrTimeout: string
   }
   langSwitch: {
     label: string

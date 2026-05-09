@@ -45,16 +45,39 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
           generatedAt: result.generatedAt,
           legalBasis: result.legalBasis,
         }),
+        // Cookies — přihlášenému uživateli se export započítá do tarifu; anonymní export je povolený (jen formátování).
+        credentials: 'same-origin',
       })
 
       if (!res.ok) {
-        const errorBody = await res.text().catch(() => '')
-        console.error(`[export-${format}] Server error:`, res.status, errorBody)
-        throw new Error(`Server returned ${res.status}: ${errorBody}`)
+        // Server vrací JSON s `error` a `code` (AUTH_REQUIRED, ONBOARDING_REQUIRED, BILLING_LIMIT_REACHED…).
+        // Zkusíme ho přečíst a uživateli ukázat konkrétní vysvětlení místo generického „Zkuste to znovu“.
+        const contentType = res.headers.get('content-type') || ''
+        let serverError: { error?: string; code?: string } = {}
+        if (contentType.includes('application/json')) {
+          serverError = await res.json().catch(() => ({}))
+        }
+        console.error(`[export-${format}] Server error:`, res.status, serverError)
+
+        const friendly = friendlyErrorFor(res.status, serverError.code, t)
+        const needsLogin = res.status === 401 || serverError.code === 'AUTH_REQUIRED'
+        if (needsLogin) {
+          if (confirm(`${friendly}\n\nPřejít na přihlášení?`)) {
+            const next = encodeURIComponent(window.location.pathname + window.location.search)
+            window.location.href = `/${locale}/login?next=${next}`
+            return
+          }
+        } else {
+          alert(`${friendly} (${format.toUpperCase()})`)
+        }
+        return
       }
 
       const blob = await res.blob()
-      if (blob.size === 0) throw new Error('Empty file returned')
+      if (blob.size === 0) {
+        console.error(`[export-${format}] Empty response body despite HTTP ${res.status}`)
+        throw new Error('Empty export response')
+      }
 
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -66,7 +89,11 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       URL.revokeObjectURL(url)
     } catch (err) {
       console.error(`[export-${format}] Export failed:`, err)
-      alert(`${t.result.exportFailed} (${format.toUpperCase()})`)
+      const isNet =
+        err instanceof TypeError ||
+        (err instanceof Error && /failed to fetch|network|load failed|aborted/i.test(err.message))
+      const msg = isNet ? t.result.exportNetworkOrTimeout : t.result.exportFailed
+      alert(`${msg} (${format.toUpperCase()})`)
     } finally {
       setExporting(false)
     }
@@ -273,6 +300,24 @@ function ActionButton({ action, className, children }: {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Mapuje HTTP status + server-side `code` na lokalizovanou hlášku pro uživatele.
+ * Server vrací konzistentní `code` (AUTH_REQUIRED / ONBOARDING_REQUIRED / BILLING_LIMIT_REACHED),
+ * fallback je generická exportFailed pro neznámé chyby.
+ */
+function friendlyErrorFor(
+  status: number,
+  code: string | undefined,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (code === 'AUTH_REQUIRED' || status === 401) return t.result.exportAuthRequired
+  if (code === 'ONBOARDING_REQUIRED' || status === 403) return t.result.exportOnboardingRequired
+  if (code === 'BILLING_LIMIT_REACHED' || status === 402) return t.result.exportLimitReached
+  if (status === 429) return t.result.exportRateLimited
+  if (status >= 500) return t.result.exportServerError
+  return t.result.exportFailed
+}
 
 function modeToDisplay(
   mode: GenerationMode,

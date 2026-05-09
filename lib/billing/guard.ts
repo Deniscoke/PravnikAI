@@ -74,8 +74,9 @@ const PAID_ACCESS_STATUSES: SubscriptionStatus[] = [
  *   // guard.user is available (null for unauthenticated)
  *
  * Behavior:
- *   - Unauthenticated: returns allowed=true with user=null, billing=null
- *     (preserves backward compat — anonymous users can still use the app)
+ *   - Unauthenticated: BLOCKED for generate/review (401). For export ONLY,
+ *     allowed=true with user=null — DOCX/PDF is formatting only (no LLM);
+ *     routes still enforce IP rate limits.
  *   - Authenticated + within limits: returns allowed=true with billing state
  *   - Authenticated + over limit: returns allowed=false with 402 JSON response
  */
@@ -85,9 +86,12 @@ export async function assertBillingAccess(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Unauthenticated: BLOCK — require login to use billable features.
-  // OpenAI calls cost real money; anonymous access = unlimited spend risk.
+  // Unauthenticated: block LLM routes — API spend risk.
+  // Export (DOCX/PDF) has no model cost; allow it and rely on per-route IP rate limits.
   if (!user) {
+    if (action === 'export') {
+      return { allowed: true, user: null, billing: null }
+    }
     return {
       allowed: false,
       response: NextResponse.json(

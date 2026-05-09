@@ -192,6 +192,13 @@ export const de: Messages = {
       reviewNeeded: { label: 'Prüfung erforderlich', description: 'Pflichtfelder fehlen. Suchen Sie im Text nach ⚠️ PRÜFEN und ergänzen Sie die fehlenden Angaben.' },
     },
     exportFailed: 'Export fehlgeschlagen. Bitte versuchen Sie es erneut.',
+    exportAuthRequired: 'Zum Herunterladen müssen Sie sich anmelden. Wiederholen Sie den Export nach der Anmeldung.',
+    exportOnboardingRequired: 'Bitte schließen Sie zuerst die Registrierung ab (Annahme der Bedingungen).',
+    exportLimitReached: 'Sie haben das monatliche Export-Limit der kostenlosen Version erreicht (5 / Monat). Für unbegrenzten Download wechseln Sie auf den Pro-Plan.',
+    exportRateLimited: 'Zu viele Anfragen — bitte versuchen Sie es in einem Moment erneut.',
+    exportServerError: 'Datei konnte serverseitig nicht erzeugt werden. Bitte erneut versuchen oder uns kontaktieren.',
+    exportNetworkOrTimeout:
+      'Download konnte nicht abgeschlossen werden (Netzwerk oder Server-Zeitlimit). Bitte erneut versuchen; bei sehr langen Verträgen auf dem kostenlosen Hosting ggf. Text kürzen oder erneut exportieren.',
   },
 
   langSwitch: {
