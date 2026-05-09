@@ -1,68 +1,64 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { getSchemasByCategory, getSchema } from '@/lib/contracts/contractSchemas'
 import { DynamicContractForm } from '@/components/contract/DynamicContractForm'
 import type { GenerationHandle } from '@/components/contract/DynamicContractForm'
 import { ContractResult } from '@/components/contract/ContractResult'
-import type { GenerateContractResponse } from '@/lib/contracts/types'
+import type { GenerateContractResponse, ContractCategory } from '@/lib/contracts/types'
+import { localeToJurisdiction } from '@/lib/contracts/types'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
+import { format as formatMsg } from '@/lib/i18n'
 
-// ── Category display config ─────────────────────────────────────────────────
+// ── Category icons by canonical id (label is per-locale via i18n) ──────────
 
-const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode }> = {
-  'občanské': {
-    label: 'Občanské právo',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-  },
-  'obchodní': {
-    label: 'Obchodní právo',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
-  },
-  'pracovní': {
-    label: 'Pracovní právo',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  },
-  'nemovitosti': {
-    label: 'Nemovitosti',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  },
+const CATEGORY_ICONS: Record<ContractCategory, React.ReactNode> = {
+  civil: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+  commercial: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  employment: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  realestate: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
 }
 
-// ── Schema icon mapping by schemaId ─────────────────────────────────────────
+// ── Schema icons by contractFamily (works across jurisdictions) ────────────
 
-function getSchemaIcon(schemaId: string): React.ReactNode {
+function getSchemaIcon(family: string): React.ReactNode {
   const icons: Record<string, React.ReactNode> = {
-    'kupni-smlouva-v1': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-    'nda-smlouva-v1': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-    'pracovni-smlouva-v1': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-    'najemni-smlouva-byt-v1': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-    'smlouva-o-dilo-v1': <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
+    sale: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+    nda: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+    employment: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    tenancy: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    services: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
   }
-  return icons[schemaId] ?? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+  return icons[family] ?? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
 }
 
 // ── Page state ──────────────────────────────────────────────────────────────
 
 type PageState = 'selecting' | 'filling' | 'generating' | 'result' | 'error'
 
-// ── Loading step labels ─────────────────────────────────────────────────────
-
-const GENERATION_STEPS = [
-  'Validuji zadaná data…',
-  'Připravuji právní kontext…',
-  'Generuji text smlouvy…',
-  'Kontroluji právní ustanovení…',
-  'Dokončuji dokument…',
-]
-
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function GeneratorPage() {
+  const locale = useLocale()
+  const t = useTranslations()
+  const jurisdiction = localeToJurisdiction(locale)
+
   const [pageState, setPageState] = useState<PageState>('selecting')
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null)
   const [result, setResult] = useState<GenerateContractResponse | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [generationStep, setGenerationStep] = useState(0)
+
+  const generationSteps = useMemo(
+    () => [
+      t.generator.steps.validate,
+      t.generator.steps.context,
+      t.generator.steps.draft,
+      t.generator.steps.review,
+      t.generator.steps.finalize,
+    ],
+    [t],
+  )
 
   // ── Async safety: AbortController + request identity ─────────────────────
   // AbortController cancels the in-flight fetch when the user navigates away.
@@ -90,12 +86,13 @@ export default function GeneratorPage() {
     if (pageState !== 'generating') return
     setGenerationStep(0)
     const interval = setInterval(() => {
-      setGenerationStep((s) => (s < GENERATION_STEPS.length - 1 ? s + 1 : s))
+      setGenerationStep((s) => (s < generationSteps.length - 1 ? s + 1 : s))
     }, 3000)
     return () => clearInterval(interval)
-  }, [pageState])
+  }, [pageState, generationSteps])
 
-  const schemasByCategory = getSchemasByCategory()
+  // Filter schemas by the active locale's jurisdiction
+  const schemasByCategory = getSchemasByCategory(jurisdiction)
   const selectedSchema = selectedSchemaId ? getSchema(selectedSchemaId) : null
 
   function handleSelect(schemaId: string) {
@@ -164,7 +161,7 @@ export default function GeneratorPage() {
               PrávníkAI
             </h1>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-subtle)', marginTop: 2 }}>
-              Generátor smluv · České právo
+              {t.generator.title} · {t.jurisdiction.legal[jurisdiction]}
             </p>
           </div>
 
@@ -172,14 +169,14 @@ export default function GeneratorPage() {
             <nav style={{ display: 'flex', gap: 'var(--space-xs)', alignItems: 'center' }}>
               <Breadcrumb
                 steps={[
-                  { label: 'Typ smlouvy', active: false, onClick: reset },
+                  { label: t.generator.breadcrumbType, active: false, onClick: reset },
                   {
                     label: selectedSchema?.metadata.name ?? '',
                     active: pageState === 'filling' || pageState === 'generating' || pageState === 'error',
                     onClick: pageState === 'result' ? backToForm : undefined,
                   },
-                  ...(pageState === 'generating' ? [{ label: 'Generování…', active: true }] : []),
-                  ...(pageState === 'result' ? [{ label: 'Výsledek', active: true }] : []),
+                  ...(pageState === 'generating' ? [{ label: t.generator.breadcrumbGenerating, active: true }] : []),
+                  ...(pageState === 'result' ? [{ label: t.generator.breadcrumbResult, active: true }] : []),
                 ]}
               />
             </nav>
@@ -190,8 +187,7 @@ export default function GeneratorPage() {
         <div className="alert alert--info" style={{ marginTop: 'var(--space-md)', display: 'flex', gap: 'var(--space-sm)', alignItems: 'flex-start' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span>
-            Systém generuje smlouvy výhradně dle <strong>českého práva</strong> (NOZ č. 89/2012 Sb., ZP č. 262/2006 Sb., ZOK č. 90/2012 Sb.).
-            Vygenerované dokumenty slouží jako návrh — vždy nechte finální verzi zkontrolovat advokátem.
+            {formatMsg(t.generator.jurisdictionNotice, { jurisdiction: t.jurisdiction.legal[jurisdiction] })}
           </span>
         </div>
       </header>
@@ -203,17 +199,19 @@ export default function GeneratorPage() {
         {pageState === 'selecting' && (
           <section aria-labelledby="heading-select">
             <h2 id="heading-select" style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 'var(--space-lg)', color: 'var(--color-text-muted)' }}>
-              Vyberte typ smlouvy
+              {t.generator.selectHeading}
             </h2>
 
             {Object.entries(schemasByCategory).map(([category, schemas]) => {
-              const catMeta = CATEGORY_META[category]
+              const cat = category as ContractCategory
+              const icon = CATEGORY_ICONS[cat]
+              const label = t.category[cat] ?? category
               return (
                 <div key={category} style={{ marginBottom: 'var(--space-xl)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', marginBottom: 'var(--space-md)' }}>
-                    <span style={{ color: 'var(--accent-violet)', display: 'flex' }}>{catMeta?.icon}</span>
+                    <span style={{ color: 'var(--accent-violet)', display: 'flex' }}>{icon}</span>
                     <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                      {catMeta?.label ?? category}
+                      {label}
                     </h3>
                     <span style={{ fontSize: '0.7rem', color: 'var(--color-text-subtle)', background: 'var(--color-surface)', padding: '1px 8px', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)' }}>
                       {schemas.length}
@@ -228,7 +226,7 @@ export default function GeneratorPage() {
                         style={{ padding: 'var(--space-xl)', textAlign: 'left', cursor: 'pointer', border: '1px solid var(--glass-border)', background: 'var(--color-surface)', color: 'var(--color-text)', transition: 'all 150ms ease', width: '100%' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
-                          <span style={{ color: 'var(--accent-aqua)' }}>{getSchemaIcon(schema.metadata.schemaId)}</span>
+                          <span style={{ color: 'var(--accent-aqua)' }}>{getSchemaIcon(schema.metadata.contractFamily)}</span>
                         </div>
                         <h4 style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: 'var(--space-2xs)' }}>
                           {schema.metadata.name}
@@ -237,7 +235,7 @@ export default function GeneratorPage() {
                           {schema.metadata.description}
                         </p>
                         <span style={{ fontSize: '0.7rem', color: 'var(--accent-aqua)', fontFamily: 'monospace', opacity: 0.8 }}>
-                          {schema.metadata.legalBasis.join(' · ')}
+                          {schema.metadata.legalBasis.slice(0, 2).join(' · ')}
                         </span>
                       </button>
                     ))}
@@ -248,10 +246,10 @@ export default function GeneratorPage() {
 
             {/* Trust markers */}
             <div className="trust-bar" style={{ display: 'flex', gap: 'var(--space-lg)', justifyContent: 'center', flexWrap: 'wrap', marginTop: 'var(--space-2xl)', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--glass-border-subtle)' }}>
-              <TrustMarker icon={<ShieldIcon />} text="Server-side zpracování" />
-              <TrustMarker icon={<LockIcon />} text="API klíč nikdy na klientu" />
-              <TrustMarker icon={<ScaleIcon />} text="Výhradně české právo" />
-              <TrustMarker icon={<CheckCircleIcon />} text="3-vrstvová validace" />
+              <TrustMarker icon={<ShieldIcon />} text={t.home.trust.serverside} />
+              <TrustMarker icon={<LockIcon />} text={t.home.trust.apikey} />
+              <TrustMarker icon={<ScaleIcon />} text={t.home.trust.jurisdiction} />
+              <TrustMarker icon={<CheckCircleIcon />} text={t.home.trust.validation} />
             </div>
           </section>
         )}
@@ -296,15 +294,15 @@ export default function GeneratorPage() {
               </div>
 
               <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 'var(--space-sm)' }}>
-                Generuji {selectedSchema?.metadata.name?.toLowerCase()}
+                {formatMsg(t.generator.generatingTitle, { type: selectedSchema?.metadata.name?.toLowerCase() ?? '' })}
               </h2>
               <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-xl)' }}>
-                AI analyzuje právní kontext a připravuje text smlouvy dle českého práva.
+                {t.generator.generatingSubtitle}
               </p>
 
               {/* Step progress */}
               <div style={{ maxWidth: 360, margin: '0 auto', textAlign: 'left' }}>
-                {GENERATION_STEPS.map((step, i) => (
+                {generationSteps.map((step, i) => (
                   <div
                     key={i}
                     style={{
@@ -345,14 +343,14 @@ export default function GeneratorPage() {
         {pageState === 'error' && (
           <section>
             <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)' }}>
-              <strong>Chyba při generování:</strong> {errorMessage}
+              <strong>{t.generator.error.heading}:</strong> {errorMessage}
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
               <button className="glass-btn glass-btn--primary" onClick={backToForm}>
-                Zkusit znovu
+                {t.generator.error.retry}
               </button>
               <button className="glass-btn glass-btn--ghost" onClick={reset}>
-                Změnit typ smlouvy
+                {t.generator.error.changeType}
               </button>
             </div>
           </section>

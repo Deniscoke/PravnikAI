@@ -15,11 +15,13 @@
     "@sentry/nextjs": "^10.45.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.3",
+    "@types/pdfkit": "^0.17.6",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "docx": "^9.6.1",
     "next": "^16.2.0",
     "openai": "^4.67.0",
+    "pdfkit": "^0.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "stripe": "^20.4.1"

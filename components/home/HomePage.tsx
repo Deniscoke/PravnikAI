@@ -4,47 +4,53 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { PricingSection } from '@/components/billing/PricingSection'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { getSchemasByCategory } from '@/lib/contracts/contractSchemas'
-import { HOME_FAQ_ITEMS } from '@/lib/seo/faq'
+import { getHomeFaqItems } from '@/lib/seo/faq'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
+import { localeToJurisdiction } from '@/lib/contracts/types'
 
 export default function HomePage() {
-  const schemasByCategory = getSchemasByCategory()
+  const locale = useLocale()
+  const t = useTranslations()
+  const jurisdiction = localeToJurisdiction(locale)
+
+  const schemasByCategory = getSchemasByCategory(jurisdiction)
   const allSchemas = Object.values(schemasByCategory).flat()
+  const faqItems = getHomeFaqItems(locale)
 
   return (
     <>
       <header className="hero">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', maxWidth: 1100, margin: '0 auto', paddingBottom: 'var(--space-lg)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: 1100, margin: '0 auto', paddingBottom: 'var(--space-lg)', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
+          <LanguageSwitcher />
           <UserMenu />
         </div>
-        <span className="hero__kicker">AI asistent pro právníky</span>
+        <span className="hero__kicker">{t.home.kicker}</span>
         <h1 className="hero__title">PrávníkAI</h1>
-        <p className="hero__sub">
-          Generujte právní smlouvy za minuty, ne hodiny. Inteligentní nástroj, který rozumí českému právu
-          a pomáhá vám připravit přesné dokumenty bez zbytečné administrativy.
-        </p>
+        <p className="hero__sub">{t.home.heroSubtitle}</p>
 
         <div className="hero__cta">
-          <Link href="/generator" className="glass-btn glass-btn--primary" style={{ padding: '14px 32px', fontSize: '1rem' }}>
-            <DocIcon /> Generovat smlouvu
+          <Link href={`/${locale}/generator`} className="glass-btn glass-btn--primary" style={{ padding: '14px 32px', fontSize: '1rem' }}>
+            <DocIcon /> {t.home.ctaGenerate}
           </Link>
-          <Link href="/review" className="glass-btn glass-btn--ghost" style={{ padding: '14px 32px', fontSize: '1rem' }}>
-            <SearchIcon /> Zkontrolovat smlouvu
+          <Link href={`/${locale}/review`} className="glass-btn glass-btn--ghost" style={{ padding: '14px 32px', fontSize: '1rem' }}>
+            <SearchIcon /> {t.home.ctaReview}
           </Link>
         </div>
 
         <div className="stats">
           <div className="glass-card stats__item">
-            <div className="stats__num">5+</div>
-            <div className="stats__desc">Typů smluv</div>
+            <div className="stats__num">{allSchemas.length}+</div>
+            <div className="stats__desc">{t.home.statContractTypes}</div>
           </div>
           <div className="glass-card stats__item">
             <div className="stats__num">3 min</div>
-            <div className="stats__desc">Průměrný čas</div>
+            <div className="stats__desc">{t.home.statTime}</div>
           </div>
           <div className="glass-card stats__item">
-            <div className="stats__num">CZ</div>
-            <div className="stats__desc">České právo</div>
+            <div className="stats__num">{t.jurisdiction.short[jurisdiction]}</div>
+            <div className="stats__desc">{t.home.statJurisdictions}</div>
           </div>
         </div>
       </header>
@@ -52,40 +58,16 @@ export default function HomePage() {
       <main>
         <section className="section" id="funkce">
           <div className="section__header">
-            <h2 className="section__title">Proč PrávníkAI</h2>
-            <span className="section__subtitle">Nástroj navržený právníky pro právníky</span>
+            <h2 className="section__title">{t.home.sectionFeaturesTitle}</h2>
+            <span className="section__subtitle">{t.home.sectionFeaturesSubtitle}</span>
           </div>
           <div className="card-grid">
-            <FeatureCard
-              icon={<DocIcon size={32} />}
-              title="Automatizované smlouvy"
-              body="Vyberte typ smlouvy, vyplňte údaje stran a nechte AI vygenerovat kompletní právní dokument v souladu s českou legislativou."
-            />
-            <FeatureCard
-              icon={<ClockIcon />}
-              title="Úspora času"
-              body="Smlouva, která by vám zabrala hodiny manuální práce, je připravena za několik minut. Více času na to, co skutečně vyžaduje vaši expertízu."
-            />
-            <FeatureCard
-              icon={<ShieldCheckIcon />}
-              title="Právní jistota"
-              body="Každá vygenerovaná smlouva vychází z aktuálních právních předpisů ČR — NOZ, zákoníku práce a ZOK. Systém cituje konkrétní ustanovení."
-            />
-            <FeatureCard
-              icon={<LockIcon />}
-              title="Bezpečnost dat"
-              body="Všechny údaje jsou zpracovány server-side v souladu s GDPR. API klíč nikdy neopustí server. Citlivá pole jsou označena a chráněna."
-            />
-            <FeatureCard
-              icon={<SearchIcon size={32} />}
-              title="AI kontrola smluv"
-              body="Vložte existující smlouvu a AI identifikuje rizikové klauzule, chybějící ustanovení a vyjednávací body dle českého práva."
-            />
-            <FeatureCard
-              icon={<ExportIcon />}
-              title="Export do DOCX"
-              body="Exportujte smlouvy do DOCX s profesionálním formátováním — záhlaví, zápatí, právní citace a disclaimer automaticky."
-            />
+            <FeatureCard icon={<DocIcon size={32} />} title={t.home.feature.automated.title} body={t.home.feature.automated.body} />
+            <FeatureCard icon={<ClockIcon />} title={t.home.feature.time.title} body={t.home.feature.time.body} />
+            <FeatureCard icon={<ShieldCheckIcon />} title={t.home.feature.legal.title} body={t.home.feature.legal.body} />
+            <FeatureCard icon={<LockIcon />} title={t.home.feature.security.title} body={t.home.feature.security.body} />
+            <FeatureCard icon={<SearchIcon size={32} />} title={t.home.feature.review.title} body={t.home.feature.review.body} />
+            <FeatureCard icon={<ExportIcon />} title={t.home.feature.export.title} body={t.home.feature.export.body} />
           </div>
         </section>
 
@@ -93,37 +75,31 @@ export default function HomePage() {
 
         <section className="section" id="jak-to-funguje">
           <div className="section__header">
-            <h2 className="section__title">Jak to funguje</h2>
-            <span className="section__subtitle">Smlouva za 3 jednoduché kroky</span>
+            <h2 className="section__title">{t.home.sectionHowTitle}</h2>
+            <span className="section__subtitle">{t.home.sectionHowSubtitle}</span>
           </div>
 
           <div className="steps-visual">
             <div className="glass-card step-card">
               <div className="step-card__number">1</div>
-              <h3 className="glass-card__title">Vyberte typ smlouvy</h3>
-              <p className="glass-card__body">Zvolte z nabídky — kupní, pracovní, nájemní, NDA, smlouva o dílo a další.</p>
+              <h3 className="glass-card__title">{t.home.step.one.title}</h3>
+              <p className="glass-card__body">{t.home.step.one.body}</p>
             </div>
             <div className="step-connector" aria-hidden="true">
-              <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                <line x1="0" y1="12" x2="32" y2="12" />
-                <polyline points="28 6 34 12 28 18" />
-              </svg>
+              <ArrowRight />
             </div>
             <div className="glass-card step-card">
               <div className="step-card__number">2</div>
-              <h3 className="glass-card__title">Vyplňte údaje</h3>
-              <p className="glass-card__body">Zadejte údaje smluvních stran, předmět smlouvy a specifické podmínky. Formulář se dynamicky přizpůsobí.</p>
+              <h3 className="glass-card__title">{t.home.step.two.title}</h3>
+              <p className="glass-card__body">{t.home.step.two.body}</p>
             </div>
             <div className="step-connector" aria-hidden="true">
-              <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                <line x1="0" y1="12" x2="32" y2="12" />
-                <polyline points="28 6 34 12 28 18" />
-              </svg>
+              <ArrowRight />
             </div>
             <div className="glass-card step-card">
               <div className="step-card__number">3</div>
-              <h3 className="glass-card__title">Stáhněte smlouvu</h3>
-              <p className="glass-card__body">AI vygeneruje kompletní smlouvu s citacemi zákonů. Zkontrolujte, upravte a exportujte do DOCX.</p>
+              <h3 className="glass-card__title">{t.home.step.three.title}</h3>
+              <p className="glass-card__body">{t.home.step.three.body}</p>
             </div>
           </div>
         </section>
@@ -132,15 +108,15 @@ export default function HomePage() {
 
         <section className="section" id="typy-smluv">
           <div className="section__header">
-            <h2 className="section__title">Podporované typy smluv</h2>
-            <span className="section__subtitle">Neustále rozšiřujeme knihovnu</span>
+            <h2 className="section__title">{t.home.sectionTypesTitle}</h2>
+            <span className="section__subtitle">{t.home.sectionTypesSubtitle}</span>
           </div>
 
           <div className="chip-grid">
             {allSchemas.map((schema) => (
               <Link
                 key={schema.metadata.schemaId}
-                href="/generator"
+                href={`/${locale}/generator`}
                 className="glass-chip"
                 style={{ textDecoration: 'none' }}
               >
@@ -154,12 +130,12 @@ export default function HomePage() {
 
         <section className="section" id="faq">
           <div className="section__header">
-            <h2 className="section__title">Časté otázky</h2>
-            <span className="section__subtitle">Vše, co potřebujete vědět</span>
+            <h2 className="section__title">{t.home.sectionFaqTitle}</h2>
+            <span className="section__subtitle">{t.home.sectionFaqSubtitle}</span>
           </div>
 
           <div className="faq-accordion">
-            {HOME_FAQ_ITEMS.map((item, i) => (
+            {faqItems.map((item, i) => (
               <FaqItem key={i} question={item.question} answer={item.answer} />
             ))}
           </div>
@@ -169,8 +145,8 @@ export default function HomePage() {
 
         <section className="section" id="cenik">
           <div className="section__header">
-            <h2 className="section__title">Ceník</h2>
-            <span className="section__subtitle">Začněte zdarma, upgradujte až budete připraveni</span>
+            <h2 className="section__title">{t.home.sectionPricingTitle}</h2>
+            <span className="section__subtitle">{t.home.sectionPricingSubtitle}</span>
           </div>
           <PricingSection currentTier="free" />
         </section>
@@ -179,14 +155,14 @@ export default function HomePage() {
 
         <section className="section">
           <div className="glass-card cta-card">
-            <h2 className="cta-card__title">Začněte generovat smlouvy ještě dnes</h2>
-            <p className="cta-card__body">Připravte právně korektní smlouvy za minuty místo hodin. Výhradně české právo, AI-asistovaný návrh.</p>
+            <h2 className="cta-card__title">{t.home.ctaCardTitle}</h2>
+            <p className="cta-card__body">{t.home.ctaCardBody}</p>
             <div className="cta-card__actions">
-              <Link href="/generator" className="glass-btn glass-btn--primary" style={{ padding: '14px 32px' }}>
-                Vyzkoušet zdarma
+              <Link href={`/${locale}/generator`} className="glass-btn glass-btn--primary" style={{ padding: '14px 32px' }}>
+                {t.home.ctaCardPrimary}
               </Link>
               <Link href="#faq" className="glass-btn glass-btn--ghost" style={{ padding: '14px 32px' }}>
-                Mám otázky
+                {t.home.ctaCardSecondary}
               </Link>
             </div>
           </div>
@@ -197,32 +173,33 @@ export default function HomePage() {
         <div className="footer-grid">
           <div>
             <div className="footer-logo">PrávníkAI</div>
-            <p className="footer-desc">
-              Inteligentní generátor smluv pro české právo. AI technologie, profesionální výstup.
-            </p>
+            <p className="footer-desc">{t.home.footer.tagline}</p>
+            <div style={{ marginTop: 'var(--space-md)' }}>
+              <LanguageSwitcher />
+            </div>
           </div>
           <div className="footer-links">
-            <h4 className="footer-links__title">Produkt</h4>
-            <Link href="#funkce">Funkce</Link>
-            <Link href="/generator">Generátor</Link>
-            <Link href="/review">Kontrola smluv</Link>
-            <Link href="#faq">FAQ</Link>
+            <h4 className="footer-links__title">{t.home.footer.productHeading}</h4>
+            <Link href="#funkce">{t.home.footer.links.features}</Link>
+            <Link href={`/${locale}/generator`}>{t.home.footer.links.generator}</Link>
+            <Link href={`/${locale}/review`}>{t.home.footer.links.review}</Link>
+            <Link href="#faq">{t.home.footer.links.faq}</Link>
           </div>
           <div className="footer-links">
-            <h4 className="footer-links__title">Právní</h4>
-            <Link href="/terms">Obchodní podmínky</Link>
-            <Link href="/privacy">Ochrana osobních údajů</Link>
-            <Link href="/gdpr">GDPR</Link>
+            <h4 className="footer-links__title">{t.home.footer.legalHeading}</h4>
+            <Link href={`/${locale}/terms`}>{t.home.footer.links.terms}</Link>
+            <Link href={`/${locale}/privacy`}>{t.home.footer.links.privacy}</Link>
+            <Link href={`/${locale}/gdpr`}>{t.home.footer.links.gdpr}</Link>
           </div>
           <div className="footer-links">
-            <h4 className="footer-links__title">Kontakt</h4>
+            <h4 className="footer-links__title">{t.home.footer.contactHeading}</h4>
             <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a>
-            <a href="tel:+420728523267">728 523 267</a>
-            <a href="mailto:info.indiweb@gmail.com">Podpora</a>
+            <a href="tel:+420728523267">+420 728 523 267</a>
+            <a href="mailto:info.indiweb@gmail.com">{t.home.footer.support}</a>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2026 PrávníkAI · IndiWeb. Všechna práva vyhrazena.</p>
+          <p>&copy; 2026 PrávníkAI · IndiWeb. {t.home.footer.rights}</p>
         </div>
       </footer>
     </>
@@ -255,6 +232,17 @@ function FeatureCard({ icon, title, body }: { icon: React.ReactNode; title: stri
       <h3 className="glass-card__title">{title}</h3>
       <p className="glass-card__body">{body}</p>
     </div>
+  )
+}
+
+// ── Icons ───────────────────────────────────────────────────────────────────
+
+function ArrowRight() {
+  return (
+    <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <line x1="0" y1="12" x2="32" y2="12" />
+      <polyline points="28 6 34 12 28 18" />
+    </svg>
   )
 }
 

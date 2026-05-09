@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import type { GenerateContractResponse, GenerationMode } from '@/lib/contracts/types'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
+import { format as formatMsg } from '@/lib/i18n'
 
 interface ContractResultProps {
   result: GenerateContractResponse
@@ -11,8 +13,11 @@ interface ContractResultProps {
 }
 
 export function ContractResult({ result, contractName, onBack, onReset }: ContractResultProps) {
+  const locale = useLocale()
+  const t = useTranslations()
   const [copied, setCopied] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const [exportingDocx, setExportingDocx] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
 
   async function copyToClipboard() {
     try {
@@ -20,15 +25,16 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback for non-HTTPS or permission denied
-      alert('Kopírování se nezdařilo. Zkuste to znovu nebo text vyberte ručně.')
+      alert(t.result.exportFailed)
     }
   }
 
-  async function exportDocx() {
+  async function exportDocument(format: 'docx' | 'pdf') {
+    const setExporting = format === 'docx' ? setExportingDocx : setExportingPdf
+    const endpoint = format === 'docx' ? '/api/export-docx' : '/api/export-pdf'
     setExporting(true)
     try {
-      const res = await fetch('/api/export-docx', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -43,32 +49,30 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
 
       if (!res.ok) {
         const errorBody = await res.text().catch(() => '')
-        console.error('[export-docx] Server error:', res.status, errorBody)
-        throw new Error(`Server vrátil ${res.status}: ${errorBody}`)
+        console.error(`[export-${format}] Server error:`, res.status, errorBody)
+        throw new Error(`Server returned ${res.status}: ${errorBody}`)
       }
 
       const blob = await res.blob()
-      if (blob.size === 0) {
-        throw new Error('Server vrátil prázdný soubor')
-      }
+      if (blob.size === 0) throw new Error('Empty file returned')
 
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${contractName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.docx`
+      a.download = `${contractName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.${format}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('[export-docx] Export failed:', err)
-      alert('Export do DOCX se nezdařil. Zkuste to znovu.')
+      console.error(`[export-${format}] Export failed:`, err)
+      alert(`${t.result.exportFailed} (${format.toUpperCase()})`)
     } finally {
       setExporting(false)
     }
   }
 
-  const modeBadge = modeToDisplay(result.mode)
+  const modeBadge = modeToDisplay(result.mode, t)
   const errorWarnings = result.warnings.filter((w) => w.code === 'LEGAL_CONSTRAINT')
   const modeWarnings = result.warnings.filter((w) => w.code !== 'LEGAL_CONSTRAINT')
 
@@ -87,7 +91,7 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       }}>
         <ShieldIcon />
         <span>
-          AI návrh · Vyžaduje kontrolu advokátem · Negeneruje právní poradenství dle zák. č. 85/1996 Sb.
+          {t.result.trustBanner}
         </span>
         <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontSize: '0.68rem', opacity: 0.7 }}>
           v{result.schemaId.split('-v')[1] ?? '1'}
@@ -106,22 +110,25 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
             </span>
           </div>
           <p style={{ fontSize: '0.78rem', color: 'var(--color-text-subtle)' }}>
-            Vygenerováno {formatDateTime(result.generatedAt)} · {result.schemaId}
+            {t.result.generatedAt} {formatDateTime(result.generatedAt, locale)} · {result.schemaId}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
           <button className="glass-btn" onClick={copyToClipboard} aria-live="polite">
-            {copied ? <><CheckIcon /> Zkopírováno</> : <><CopyIcon /> Kopírovat</>}
+            {copied ? <><CheckIcon /> {t.result.copied}</> : <><CopyIcon /> {t.result.copy}</>}
           </button>
-          <button className="glass-btn" onClick={exportDocx} disabled={exporting}>
-            {exporting ? <><SpinnerIcon /> Export…</> : <><DocxIcon /> DOCX</>}
+          <button className="glass-btn" onClick={() => exportDocument('docx')} disabled={exportingDocx}>
+            {exportingDocx ? <><SpinnerIcon /> {t.result.exportShort}</> : <><DocxIcon /> {t.result.docx}</>}
+          </button>
+          <button className="glass-btn" onClick={() => exportDocument('pdf')} disabled={exportingPdf}>
+            {exportingPdf ? <><SpinnerIcon /> {t.result.exportShort}</> : <><PdfIcon /> {t.result.pdf}</>}
           </button>
           <ActionButton action={onBack} className="glass-btn glass-btn--ghost">
-            Upravit
+            {t.result.edit}
           </ActionButton>
           <ActionButton action={onReset} className="glass-btn glass-btn--ghost">
-            Nová smlouva
+            {t.result.newContract}
           </ActionButton>
         </div>
       </div>
@@ -161,7 +168,7 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       {result.missingFields.length > 0 && result.mode !== 'review-needed' && (
         <details style={{ marginBottom: 'var(--space-md)' }}>
           <summary style={{ cursor: 'pointer', fontSize: '0.82rem', color: 'var(--color-text-muted)', padding: 'var(--space-xs) 0', userSelect: 'none' }}>
-            {result.missingFields.length} volitelných polí nebylo vyplněno (kliknutím zobrazíte)
+            {formatMsg(t.result.missingOptionalToggle, { count: result.missingFields.length })}
           </summary>
           <div style={{ marginTop: 'var(--space-sm)', display: 'flex', flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
             {result.missingFields.map((f) => (
@@ -186,10 +193,10 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: 'var(--space-sm) var(--space-lg)', borderBottom: '1px solid var(--glass-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            Text smlouvy
+            {t.result.contractTextHeading}
           </span>
           <span style={{ fontSize: '0.7rem', color: 'var(--color-text-subtle)' }}>
-            {result.contractText.length.toLocaleString('cs-CZ')} znaků
+            {result.contractText.length.toLocaleString(localeToNumberLocale(locale))} {t.result.chars}
           </span>
         </div>
         <pre
@@ -212,16 +219,19 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       {/* ── Bottom actions ── */}
       <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center', marginTop: 'var(--space-xl)', flexWrap: 'wrap' }}>
         <button className="glass-btn glass-btn--primary" onClick={copyToClipboard}>
-          {copied ? <><CheckIcon /> Zkopírováno</> : <><CopyIcon /> Kopírovat do schránky</>}
+          {copied ? <><CheckIcon /> {t.result.copied}</> : <><CopyIcon /> {t.result.copyToClipboard}</>}
         </button>
-        <button className="glass-btn" onClick={exportDocx} disabled={exporting}>
-          {exporting ? <><SpinnerIcon /> Exportuji…</> : <><DocxIcon /> Stáhnout DOCX</>}
+        <button className="glass-btn" onClick={() => exportDocument('docx')} disabled={exportingDocx}>
+          {exportingDocx ? <><SpinnerIcon /> {t.result.exporting}</> : <><DocxIcon /> {t.result.downloadDocx}</>}
+        </button>
+        <button className="glass-btn" onClick={() => exportDocument('pdf')} disabled={exportingPdf}>
+          {exportingPdf ? <><SpinnerIcon /> {t.result.exporting}</> : <><PdfIcon /> {t.result.downloadPdf}</>}
         </button>
         <ActionButton action={onBack} className="glass-btn">
-          Upravit a vygenerovat znovu
+          {t.result.editAndRegenerate}
         </ActionButton>
         <ActionButton action={onReset} className="glass-btn glass-btn--ghost">
-          Nová smlouva
+          {t.result.newContract}
         </ActionButton>
       </div>
 
@@ -236,15 +246,12 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
       }}>
         <ShieldIcon />
         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-subtle)', lineHeight: 1.6 }}>
-          <strong style={{ color: 'var(--color-text-muted)' }}>Právní upozornění</strong>
+          <strong style={{ color: 'var(--color-text-muted)' }}>{t.result.legalDisclaimerHeading}</strong>
           <br />
-          Tento dokument byl vygenerován umělou inteligencí a slouží výhradně jako <strong>pracovní návrh</strong>.
-          Před podpisem nebo právním použitím jej nechte zkontrolovat advokátem.
-          Systém neposkytuje právní poradenství ve smyslu zák. č. 85/1996 Sb., o advokacii.
-          Provozovatel nenese odpovědnost za obsah vygenerovaného textu ani za jeho právní účinky.
+          {t.result.legalDisclaimerBody}
           <br />
           <span style={{ fontFamily: 'monospace', opacity: 0.6 }}>
-            Schéma: {result.schemaId} · Mód: {result.mode} · {formatDateTime(result.generatedAt)}
+            {t.result.schema}: {result.schemaId} · {t.result.mode}: {result.mode} · {formatDateTime(result.generatedAt, locale)}
           </span>
         </div>
       </div>
@@ -267,30 +274,21 @@ function ActionButton({ action, className, children }: {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function modeToDisplay(mode: GenerationMode): {
+function modeToDisplay(
+  mode: GenerationMode,
+  t: ReturnType<typeof useTranslations>,
+): {
   label: string
   description: string
   alertType: 'info' | 'warning' | 'error'
 } {
   switch (mode) {
     case 'complete':
-      return {
-        label: 'Kompletní smlouva',
-        description: 'Všechna potřebná pole byla vyplněna. Smlouva je vygenerována bez mezer.',
-        alertType: 'info',
-      }
+      return { label: t.result.modeBadge.complete.label, description: t.result.modeBadge.complete.description, alertType: 'info' }
     case 'draft':
-      return {
-        label: 'Pracovní návrh',
-        description: 'Povinná pole jsou vyplněna. Volitelné údaje chybí — v textu hledejte [DOPLNIT].',
-        alertType: 'warning',
-      }
+      return { label: t.result.modeBadge.draft.label, description: t.result.modeBadge.draft.description, alertType: 'warning' }
     case 'review-needed':
-      return {
-        label: 'Vyžaduje kontrolu',
-        description: 'Povinná pole chybí. V textu hledejte ⚠️ ZKONTROLOVAT a doplňte chybějící údaje.',
-        alertType: 'error',
-      }
+      return { label: t.result.modeBadge.reviewNeeded.label, description: t.result.modeBadge.reviewNeeded.description, alertType: 'error' }
   }
 }
 
@@ -302,8 +300,14 @@ function badgeClass(mode: GenerationMode): string {
   }
 }
 
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('cs-CZ', {
+function localeToNumberLocale(locale: string): string {
+  if (locale === 'de') return 'de-DE'
+  if (locale === 'en') return 'en-GB'
+  return 'cs-CZ'
+}
+
+function formatDateTime(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(localeToNumberLocale(locale), {
     day: 'numeric', month: 'numeric', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
@@ -353,6 +357,16 @@ function DocxIcon() {
       <polyline points="14 2 14 8 20 8" />
       <line x1="12" y1="18" x2="12" y2="12" />
       <polyline points="9 15 12 12 15 15" />
+    </svg>
+  )
+}
+
+function PdfIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <text x="7" y="18" fontSize="6" fontFamily="sans-serif" fontWeight="bold" stroke="none" fill="currentColor">PDF</text>
     </svg>
   )
 }
