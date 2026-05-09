@@ -66,6 +66,27 @@ describe('Model routing', () => {
     )
   })
 
+  it('uses max_completion_tokens for GPT-5 family (not max_tokens)', async () => {
+    mockOpenAIResponse('contract text')
+    await generateText(BASE_OPTIONS)
+    const args = mockCreate.mock.calls[0][0]
+    expect(args).toMatchObject({ max_completion_tokens: 16384 })
+    expect(args).not.toHaveProperty('max_tokens')
+  })
+
+  it('uses max_tokens for non–GPT-5 models when OPENAI_MODEL_DEFAULT is overridden', async () => {
+    vi.stubEnv('OPENAI_MODEL_DEFAULT', 'gpt-4o')
+    try {
+      mockOpenAIResponse('text')
+      await generateText(BASE_OPTIONS)
+      const args = mockCreate.mock.calls[0][0]
+      expect(args).toMatchObject({ model: 'gpt-4o', max_tokens: 16384 })
+      expect(args).not.toHaveProperty('max_completion_tokens')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
   it('uses gpt-5.4-pro when premium=true', async () => {
     mockOpenAIResponse('polished text')
     await generateText({ ...BASE_OPTIONS, premium: true })

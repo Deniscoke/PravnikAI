@@ -19,6 +19,8 @@
  *   OPENAI_MODEL_PREMIUM=gpt-5.5-pro
  *   OPENAI_MODEL_QUALITY_GATE=gpt-5.4
  *
+ * GPT-5 / o-series: Chat Completions must use max_completion_tokens (this file does); max_tokens breaks requests.
+ *
  * To switch providers in future: replace this file only.
  */
 
@@ -61,6 +63,17 @@ const TEMPERATURE = 0.1
 /** Increased from 4096 to support longer, more thorough contracts */
 const MAX_TOKENS = 16384
 
+/**
+ * GPT-5+ and o-series reasoning models bill hidden "reasoning" output tokens.
+ * For those models, `max_tokens` is deprecated and rejected — the API expects
+ * `max_completion_tokens` (covers reasoning + visible completion tokens).
+ * @see https://github.com/openai/openai-node/blob/master/src/resources/chat/completions/completions.ts
+ */
+function needsMaxCompletionTokens(model: string): boolean {
+  const m = model.trim().toLowerCase()
+  return m.startsWith('gpt-5') || /^o\d/.test(m)
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type LLMStage = 'draft' | 'quality-gate' | 'premium' | 'review'
@@ -70,7 +83,7 @@ export interface LLMGenerateOptions {
   userPrompt: string
   /** Override default temperature (0.1) for this call */
   temperature?: number
-  /** Override default max_tokens (16384) for this call */
+  /** Override max output budget (16384). Mapped to max_completion_tokens for GPT‑5 / o‑series, else max_tokens. */
   maxTokens?: number
   /** Request structured JSON output (requires "JSON" in system prompt) */
   jsonMode?: boolean
@@ -127,11 +140,14 @@ export async function generateText(options: LLMGenerateOptions): Promise<LLMGene
       : getDefaultModel()
 
   const reasoning = options.reasoning ?? 'high'
+  const tokenLimit = options.maxTokens ?? MAX_TOKENS
 
   const completion = await getOpenAI().chat.completions.create({
     model,
     temperature: options.temperature ?? TEMPERATURE,
-    max_tokens: options.maxTokens ?? MAX_TOKENS,
+    ...(needsMaxCompletionTokens(model)
+      ? { max_completion_tokens: tokenLimit }
+      : { max_tokens: tokenLimit }),
     messages: [
       { role: 'system', content: options.systemPrompt },
       { role: 'user', content: options.userPrompt },
