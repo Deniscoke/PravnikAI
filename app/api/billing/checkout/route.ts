@@ -113,7 +113,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 3. Get or create Stripe customer ───────────────────────────────────────
   const serviceClient = await createServiceClient()
 
-  // Fetch display_name for Stripe customer creation
   const { data: profile } = await serviceClient
     .from('profiles')
     .select('display_name')
@@ -175,9 +174,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ url: session.url })
   } catch (err) {
     console.error('[checkout] Stripe session creation failed:', err)
-    return NextResponse.json(
-      { error: 'Nepodařilo se vytvořit platební relaci. Zkuste to znovu.' },
-      { status: 502 },
-    )
+    const message = err instanceof Error ? err.message : ''
+    const hint = message.includes('pk_') || message.includes('Secret key')
+      ? 'Stripe Secret key (sk_live_...) je v env nastavený špatně — použijte Secret key, ne Publishable key (pk_).'
+      : 'Nepodařilo se vytvořit platební relaci. Zkuste to znovu.'
+    return NextResponse.json({ error: hint }, { status: 502 })
   }
 }

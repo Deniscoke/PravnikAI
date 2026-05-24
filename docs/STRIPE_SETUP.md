@@ -55,13 +55,15 @@ Pridajte produkty Pro a Team.
 | Premenná | Príklad / zdroj |
 |----------|-----------------|
 | `NEXT_PUBLIC_APP_URL` | `https://pravo365.cz` |
-| `STRIPE_SECRET_KEY` | Developers → API keys → **Secret key** (`sk_live_...`) |
+| `STRIPE_SECRET_KEY` | Developers → API keys → **Secret key** → Reveal (`sk_live_...`) |
 | `STRIPE_WEBHOOK_SECRET` | Webhook → Signing secret |
 | `STRIPE_PRO_MONTHLY_PRICE_ID` | Pro → 19 €/mesiac |
 | `STRIPE_PRO_YEARLY_PRICE_ID` | Pro → 180 €/rok |
 | `STRIPE_TEAM_MONTHLY_PRICE_ID` | Team → 49 €/mesiac |
 
 **Dôležité:** Všetky kľúče musia byť z **live** režimu. Test `price_` + live `sk_live_` nefunguje.
+
+**Častá chyba:** Do `STRIPE_SECRET_KEY` dajte **Secret key** (`sk_live_...`), nie Publishable key (`pk_live_...`) z API keys boxu.
 
 Po uložení: **Deployments → Redeploy** (bez redeploy sa env neaplikujú).
 

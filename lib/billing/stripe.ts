@@ -23,6 +23,19 @@ function getStripe(): Stripe {
     )
   }
 
+  if (key.startsWith('pk_')) {
+    throw new Error(
+      '[billing] STRIPE_SECRET_KEY must be the Secret key (sk_live_... or sk_test_...), ' +
+      'not the Publishable key (pk_...). Copy it from Stripe Dashboard → Developers → API keys → Secret key → Reveal.',
+    )
+  }
+
+  if (!key.startsWith('sk_')) {
+    throw new Error(
+      '[billing] STRIPE_SECRET_KEY has an invalid format. Expected sk_live_... or sk_test_...',
+    )
+  }
+
   _stripe = new Stripe(key, {
     apiVersion: '2026-02-25.clover',
     typescript: true,
