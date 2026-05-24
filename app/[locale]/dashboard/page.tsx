@@ -9,9 +9,11 @@ import { HistoryList } from '@/components/dashboard/HistoryList'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { PricingSection } from '@/components/billing/PricingSection'
+import { BillingAlert } from '@/components/billing/BillingAlert'
 import type { SubscriptionTier } from '@/lib/billing/plans'
 import { getMessages, isValidLocale } from '@/lib/i18n'
 import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
+import { Suspense } from 'react'
 
 type DashboardParams = Promise<{ locale: string }>
 
@@ -81,6 +83,10 @@ export default async function DashboardPage({ params }: { params: DashboardParam
       </header>
 
       <div style={{ maxWidth: 920, margin: '0 auto', paddingBottom: 'var(--space-3xl)' }}>
+        <Suspense fallback={null}>
+          <BillingAlert />
+        </Suspense>
+
         <div style={{ marginBottom: 'var(--space-xl)' }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>
             {t.accountMenu.history}
@@ -109,7 +115,7 @@ export default async function DashboardPage({ params }: { params: DashboardParam
           paddingTop: 'var(--space-3xl)',
           borderTop: '1px solid var(--glass-border-subtle)',
           marginTop: 'var(--space-3xl)',
-        }}>
+        }} id="cenik">
           <PricingSection currentTier={currentTier} />
         </div>
       </div>

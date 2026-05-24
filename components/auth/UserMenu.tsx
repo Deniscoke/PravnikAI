@@ -16,6 +16,7 @@ export function UserMenu() {
   const base = `/${locale}`
   const { user, signOut } = useAuth()
   const [open, setOpen] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -28,6 +29,28 @@ export function UserMenu() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
+
+  async function openBillingPortal() {
+    setPortalLoading(true)
+    setOpen(false)
+    try {
+      const res = await fetch('/api/billing/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert(data.error ?? t.billing.portalError)
+      }
+    } catch {
+      alert(t.billing.portalError)
+    } finally {
+      setPortalLoading(false)
+    }
+  }
 
   if (!user) {
     return (
@@ -144,6 +167,25 @@ export function UserMenu() {
           >
             {t.accountMenu.settings}
           </Link>
+          <button
+            type="button"
+            disabled={portalLoading}
+            onClick={() => void openBillingPortal()}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '8px 12px',
+              fontSize: '0.82rem',
+              color: 'var(--color-text)',
+              background: 'none',
+              border: 'none',
+              cursor: portalLoading ? 'wait' : 'pointer',
+              textAlign: 'left',
+              borderRadius: 4,
+            }}
+          >
+            {portalLoading ? t.billing.portalOpening : t.accountMenu.manageSubscription}
+          </button>
           <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border-subtle)', margin: '4px 0' }} />
           <button
             type="button"

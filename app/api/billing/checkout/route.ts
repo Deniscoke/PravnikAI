@@ -21,15 +21,16 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/billing/stripe'
 import { getOrCreateStripeCustomerForUser } from '@/lib/billing/helpers'
 import { getStripePriceId, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
+import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
+import { isValidLocale } from '@/lib/i18n'
 
 /** Allowlist of valid Stripe price IDs from environment. Rejects arbitrary priceId injection. */
-function isAllowedPriceId(id: string): boolean {
-  const allowed = new Set([
+function getConfiguredPriceIds(): string[] {
+  return [
     process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
     process.env.STRIPE_PRO_YEARLY_PRICE_ID,
     process.env.STRIPE_TEAM_MONTHLY_PRICE_ID,
-  ].filter(Boolean))
-  return allowed.has(id)
+  ].filter((id): id is string => Boolean(id))
 }
 
 /** Validate tier at runtime — TypeScript types are erased. */
@@ -50,7 +51,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── 2. Parse & validate request ────────────────────────────────────────────
-  let body: { priceId?: string; tier?: SubscriptionTier; interval?: BillingInterval }
+  let body: {
+    priceId?: string
+    tier?: SubscriptionTier
+    interval?: BillingInterval
+    locale?: string
+  }
   try {
     body = await req.json()
   } catch {
@@ -68,9 +74,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
+  const configuredPrices = getConfiguredPriceIds()
+  if (configuredPrices.length === 0) {
+    console.error('[checkout] No STRIPE_*_PRICE_ID env vars configured')
+    return NextResponse.json(
+      { error: 'Platební systém není nakonfigurován. Kontaktujte podporu.' },
+      { status: 503 },
+    )
+  }
+
+  const locale: Locale =
+    body.locale && isValidLocale(body.locale) ? body.locale : DEFAULT_LOCALE
+
+  // Team tier is monthly-only — ignore yearly interval for checkout
+  const interval: BillingInterval =
+    body.tier === 'team' ? 'monthly' : (body.interval ?? 'monthly')
+
   // Accept either a direct priceId or a tier + interval → resolve to priceId
   const priceId = body.priceId
-    ?? (body.tier ? getStripePriceId(body.tier, body.interval ?? 'monthly') : null)
+    ?? (body.tier ? getStripePriceId(body.tier, interval) : null)
 
   if (!priceId) {
     return NextResponse.json(
@@ -80,7 +102,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Reject arbitrary priceIds — only allow our known product prices
-  if (!isAllowedPriceId(priceId)) {
+  if (!configuredPrices.includes(priceId)) {
     return NextResponse.json(
       { error: 'Neplatný cenový plán.' },
       { status: 400 },
@@ -134,9 +156,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         },
       },
 
-      // Redirect URLs
-      success_url: `${appUrl}/dashboard?billing=success`,
-      cancel_url: `${appUrl}/dashboard?billing=canceled`,
+      // Redirect URLs (locale-aware)
+      success_url: `${appUrl}/${locale}/dashboard?billing=success`,
+      cancel_url: `${appUrl}/${locale}/dashboard?billing=canceled`,
 
       // Prefill email (already known from auth)
       customer_email: undefined, // Not needed — customer already set

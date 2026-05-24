@@ -207,8 +207,21 @@ export const de: Messages = {
   accountMenu: {
     history: 'Verlauf',
     settings: 'Einstellungen',
+    manageSubscription: 'Abonnement verwalten',
     signOut: 'Abmelden',
     accountFallback: 'Konto',
+  },
+
+  billing: {
+    checkoutRedirecting: 'Weiterleitung…',
+    checkoutError: 'Zahlung konnte nicht gestartet werden. Bitte erneut versuchen.',
+    successTitle: 'Zahlung erfolgreich',
+    successBody: 'Ihr Abonnement wird in wenigen Sekunden aktiv. Seite ggf. aktualisieren.',
+    canceledTitle: 'Zahlung abgebrochen',
+    canceledBody: 'Es wurde nichts berechnet. Sie können es jederzeit erneut versuchen.',
+    dismiss: 'Schließen',
+    portalOpening: 'Portal wird geöffnet…',
+    portalError: 'Abonnement-Verwaltung konnte nicht geöffnet werden.',
   },
 
   auth: {

@@ -207,8 +207,21 @@ export const cs: Messages = {
   accountMenu: {
     history: 'Historie',
     settings: 'Nastavení',
+    manageSubscription: 'Správa předplatného',
     signOut: 'Odhlásit se',
     accountFallback: 'Účet',
+  },
+
+  billing: {
+    checkoutRedirecting: 'Přesměrování…',
+    checkoutError: 'Nepodařilo se spustit platbu. Zkuste to znovu nebo nás kontaktujte.',
+    successTitle: 'Platba proběhla úspěšně',
+    successBody: 'Vaše předplatné bude aktivní během několika sekund. Pokud se tarif neaktualizuje, obnovte stránku.',
+    canceledTitle: 'Platba byla zrušena',
+    canceledBody: 'Nic se neúčtovalo. Můžete to zkusit znovu kdykoli z ceníku.',
+    dismiss: 'Zavřít',
+    portalOpening: 'Otevírám portál…',
+    portalError: 'Nepodařilo se otevřít správu předplatného.',
   },
 
   auth: {
@@ -471,8 +484,20 @@ export interface Messages {
   accountMenu: {
     history: string
     settings: string
+    manageSubscription: string
     signOut: string
     accountFallback: string
+  }
+  billing: {
+    checkoutRedirecting: string
+    checkoutError: string
+    successTitle: string
+    successBody: string
+    canceledTitle: string
+    canceledBody: string
+    dismiss: string
+    portalOpening: string
+    portalError: string
   }
   auth: {
     continueWithGoogle: string

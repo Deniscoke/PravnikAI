@@ -19,6 +19,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 import { stripe } from '@/lib/billing/stripe'
+import { DEFAULT_LOCALE } from '@/lib/contracts/types'
+import { isValidLocale } from '@/lib/i18n'
 
 export const runtime = 'nodejs'
 
@@ -53,10 +55,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 3. Create Portal session ───────────────────────────────────────────────
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
+  let locale = DEFAULT_LOCALE
+  try {
+    const body = await req.json().catch(() => ({})) as { locale?: string }
+    if (body.locale && isValidLocale(body.locale)) {
+      locale = body.locale
+    }
+  } catch {
+    // empty body is fine
+  }
+
   try {
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${appUrl}/dashboard`,
+      return_url: `${appUrl}/${locale}/dashboard`,
     })
 
     return NextResponse.json({ url: portalSession.url })

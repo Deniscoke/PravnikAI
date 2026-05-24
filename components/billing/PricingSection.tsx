@@ -10,7 +10,10 @@
  */
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { PLAN_INFO, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -43,27 +46,50 @@ interface PricingSectionProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function PricingSection({ currentTier }: PricingSectionProps) {
+  const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations()
+  const { user } = useAuth()
+  const base = `/${locale}`
   const [interval, setInterval] = useState<BillingInterval>('monthly')
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   async function handleUpgrade(tier: SubscriptionTier) {
     if (tier === 'free' || tier === currentTier || loadingTier) return
 
+    if (!user) {
+      router.push(`${base}/login?redirect=${encodeURIComponent(`${base}/dashboard#cenik`)}`)
+      return
+    }
+
+    setErrorMessage(null)
     setLoadingTier(tier)
     try {
+      const checkoutInterval: BillingInterval =
+        tier === 'team' ? 'monthly' : interval
+
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, interval }),
+        body: JSON.stringify({ tier, interval: checkoutInterval, locale }),
       })
-      const data = await res.json()
+      const data = await res.json() as { url?: string; error?: string }
+
+      if (res.status === 401) {
+        router.push(`${base}/login?redirect=${encodeURIComponent(`${base}/dashboard#cenik`)}`)
+        return
+      }
+
       if (data.url) {
         window.location.href = data.url
-      } else {
-        console.error('[billing] No checkout URL:', data)
+        return
       }
+
+      setErrorMessage(data.error ?? t.billing.checkoutError)
     } catch (err) {
       console.error('[billing] Checkout request failed:', err)
+      setErrorMessage(t.billing.checkoutError)
     } finally {
       setLoadingTier(null)
     }
@@ -73,6 +99,12 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
 
   return (
     <section aria-labelledby="pricing-heading" style={{ marginTop: 'var(--space-3xl)' }}>
+
+      {errorMessage && (
+        <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)' }} role="alert">
+          {errorMessage}
+        </div>
+      )}
 
       {/* ── Section header ─────────────────────────────────────────────────── */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}>
@@ -171,9 +203,10 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
           const isPro     = tier === 'pro'
           const isCurrent = tier === currentTier
           const isLoading = loadingTier === tier
-          const price     = interval === 'yearly' && plan.pricing.yearlyPerMonth != null
-            ? plan.pricing.yearlyPerMonth
-            : plan.pricing.monthly
+          const price     = tier === 'team' || interval === 'monthly' || plan.pricing.yearlyPerMonth == null
+            ? plan.pricing.monthly
+            : plan.pricing.yearlyPerMonth
+          const showYearlyNote = tier !== 'team' && interval === 'yearly' && plan.pricing.yearlyPerMonth != null
 
           // ── Card inner ──────────────────────────────────────────────────
           const inner = (
@@ -275,7 +308,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                 {price > 0 && (
                   <span style={{ fontSize: '0.78rem', color: 'var(--color-text-subtle)', lineHeight: 1.4 }}>
                     / měsíc
-                    {interval === 'yearly' && (
+                    {showYearlyNote && (
                       <><br /><span style={{ fontSize: '0.72rem' }}>účtováno ročně</span></>
                     )}
                   </span>
@@ -360,7 +393,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                 }}
               >
                 {isLoading ? (
-                  <><SpinnerIcon /> Přesměrování…</>
+                  <><SpinnerIcon /> {t.billing.checkoutRedirecting}</>
                 ) : isCurrent ? (
                   '✓ Aktuální tarif'
                 ) : tier === 'free' ? (

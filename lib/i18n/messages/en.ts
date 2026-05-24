@@ -207,8 +207,21 @@ export const en: Messages = {
   accountMenu: {
     history: 'History',
     settings: 'Settings',
+    manageSubscription: 'Manage subscription',
     signOut: 'Sign out',
     accountFallback: 'Account',
+  },
+
+  billing: {
+    checkoutRedirecting: 'Redirecting…',
+    checkoutError: 'Could not start checkout. Please try again or contact support.',
+    successTitle: 'Payment successful',
+    successBody: 'Your subscription will activate within a few seconds. Refresh if the plan does not update.',
+    canceledTitle: 'Payment canceled',
+    canceledBody: 'You were not charged. You can try again anytime from pricing.',
+    dismiss: 'Dismiss',
+    portalOpening: 'Opening portal…',
+    portalError: 'Could not open subscription management.',
   },
 
   auth: {
