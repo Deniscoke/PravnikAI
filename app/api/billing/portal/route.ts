@@ -21,6 +21,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/billing/stripe'
 import { DEFAULT_LOCALE } from '@/lib/contracts/types'
 import { isValidLocale } from '@/lib/i18n'
+import { getSiteUrl } from '@/lib/seo/site'
 
 export const runtime = 'nodejs'
 
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── 3. Create Portal session ───────────────────────────────────────────────
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const appUrl = getSiteUrl()
 
   let locale = DEFAULT_LOCALE
   try {

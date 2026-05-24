@@ -23,6 +23,7 @@ import { getOrCreateStripeCustomerForUser } from '@/lib/billing/helpers'
 import { getStripePriceId, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
 import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
 import { isValidLocale } from '@/lib/i18n'
+import { getSiteUrl } from '@/lib/seo/site'
 
 /** Allowlist of valid Stripe price IDs from environment. Rejects arbitrary priceId injection. */
 function getConfiguredPriceIds(): string[] {
@@ -136,7 +137,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── 4. Create Checkout Session ─────────────────────────────────────────────
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const appUrl = getSiteUrl()
 
   try {
     const session = await stripe.checkout.sessions.create({
