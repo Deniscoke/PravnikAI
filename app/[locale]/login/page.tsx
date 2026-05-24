@@ -30,7 +30,7 @@ export default function LoginPage() {
               backgroundClip: 'text',
               lineHeight: 1.2,
             }}>
-              PrávníkAI
+              Právo365
             </h1>
           </Link>
           <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: 'var(--space-xs)' }}>

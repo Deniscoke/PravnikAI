@@ -24,6 +24,7 @@ import { assertBillingAccess, recordExport } from '@/lib/billing/guard'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { getSchema, resolveSchemaId } from '@/lib/contracts/contractSchemas'
 import { getExportStrings, formatExportDate, type ExportStrings } from '@/lib/export/strings'
+import { SITE_NAME } from '@/lib/seo/site'
 import type { Jurisdiction } from '@/lib/contracts/types'
 
 // pdfkit needs the Node.js runtime
@@ -142,10 +143,10 @@ function renderPdf(input: RenderInput): Promise<Buffer> {
       margins: { top: MARGIN, right: MARGIN, bottom: MARGIN + 30, left: MARGIN },
       info: {
         Title: input.contractName,
-        Author: 'PrávníkAI',
+        Author: SITE_NAME,
         Subject: `${input.jurisdiction} legal contract`,
-        Producer: 'PrávníkAI (pdfkit)',
-        Creator: 'PrávníkAI',
+        Producer: `${SITE_NAME} (pdfkit)`,
+        Creator: SITE_NAME,
       },
       bufferPages: true,
     })
@@ -325,7 +326,7 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
       .fontSize(8)
       .fillColor('#888888')
       .text(
-        `${input.contractName} — PrávníkAI`,
+        `${input.contractName} — ${SITE_NAME}`,
         doc.page.margins.left,
         20,
         { width: pageWidth - 2 * doc.page.margins.left, align: 'right' },

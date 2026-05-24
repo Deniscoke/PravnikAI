@@ -27,7 +27,7 @@ function getStripe(): Stripe {
     apiVersion: '2026-02-25.clover',
     typescript: true,
     appInfo: {
-      name: 'PrávníkAI',
+      name: 'Právo365',
       version: '0.1.0',
     },
   })

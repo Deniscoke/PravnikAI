@@ -17,12 +17,6 @@ import { ALL_LOCALES, localeToJurisdiction, type Locale } from '@/lib/contracts/
 const LOCALE_COOKIE = 'pravnikai-locale'
 const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
-const FLAG: Record<Locale, string> = {
-  cs: '🇨🇿',
-  de: '🇩🇪',
-  en: '🇬🇧',
-}
-
 interface Props {
   /** Visual variant — 'inline' for header bars, 'menu' for dropdown menus. */
   variant?: 'inline' | 'menu'
@@ -102,19 +96,15 @@ export function LanguageSwitcher({ variant = 'inline', style }: Props) {
             onClick={() => switchTo(l)}
             disabled={isActive || isPending}
             aria-pressed={isActive}
-            aria-label={`${t.locale[l]} (${t.jurisdiction.full[jurisdiction]})`}
-            title={t.jurisdiction.full[jurisdiction]}
+            aria-label={`${t.locale[l]} — ${t.jurisdiction.full[jurisdiction]}`}
+            title={`${t.locale[l]} · ${t.jurisdiction.full[jurisdiction]}`}
             style={{
               ...buttonStyle,
               ...(isActive ? activeStyle : {}),
               cursor: isActive ? 'default' : 'pointer',
             }}
           >
-            <span aria-hidden="true">{FLAG[l]}</span>
-            <span style={{ fontWeight: 600, letterSpacing: '0.02em' }}>{labelShort}</span>
-            {variant === 'menu' && (
-              <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{t.locale[l]}</span>
-            )}
+            <span style={{ fontWeight: 600, letterSpacing: '0.04em' }}>{labelShort}</span>
           </button>
         )
       })}

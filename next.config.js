@@ -23,7 +23,13 @@ const nextConfig = {
           // Disable browser features not needed
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           // Force HTTPS for 1 year (set by Vercel too, belt-and-suspenders)
-          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
+          // Reduce XSS / MIME / cross-origin leakage surface
+          { key: 'X-DNS-Prefetch-Control', value: 'off' },
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+          // Google OAuth popup needs same-origin-allow-popups
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
         ],
       },
     ]

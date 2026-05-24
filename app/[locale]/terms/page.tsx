@@ -1,44 +1,70 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
+import { isValidLocale } from '@/lib/i18n'
+import type { Locale } from '@/lib/contracts/types'
 
-const canonical = `${getSiteUrl()}/terms`
+const APP_URL = getSiteUrl()
 
-export const metadata: Metadata = {
-  title: 'Obchodní podmínky',
-  description:
-    `Obchodní podmínky služby ${SITE_NAME}: popis služby AI generátoru smluv, práva a povinnosti uživatele a provozovatele IndiWeb.`,
-  alternates: { canonical },
-  openGraph: {
-    url: canonical,
-    title: `Obchodní podmínky — ${SITE_NAME}`,
-  },
+type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: raw } = await params
+  if (!isValidLocale(raw)) return {}
+  const locale = raw as Locale
+  const canonical = `${APP_URL}/${locale}/terms`
+  return {
+    title: 'Obchodní podmínky',
+    description: `Obchodní podmínky služby ${SITE_NAME}: popis služby AI generátoru smluv, práva a povinnosti uživatele a provozovatele IndiWeb.`,
+    alternates: {
+      canonical,
+      languages: {
+        cs: `${APP_URL}/cs/terms`,
+        de: `${APP_URL}/de/terms`,
+        en: `${APP_URL}/en/terms`,
+        'x-default': `${APP_URL}/cs/terms`,
+      },
+    },
+    openGraph: {
+      url: canonical,
+      title: `Obchodní podmínky — ${SITE_NAME}`,
+    },
+  }
 }
 
-export default function TermsPage() {
+export default async function TermsPage({ params }: Props) {
+  const { locale: raw } = await params
+  if (!isValidLocale(raw)) notFound()
+  const locale = raw as Locale
+
   return (
     <main className="legal-page">
       <div className="legal-card">
-        <Link href="/" className="legal-back">&larr; Zpět na hlavní stránku</Link>
+        <Link href={`/${locale}`} className="legal-back">
+          &larr; Zpět na hlavní stránku
+        </Link>
         <h1>Obchodní podmínky</h1>
         <p className="legal-updated">Poslední aktualizace: 24. března 2026</p>
 
         <section>
           <h2>1. Úvodní ustanovení</h2>
           <p>
-            Tyto obchodní podmínky (dále jen &bdquo;Podmínky&ldquo;) upravují práva a povinnosti
-            mezi provozovatelem služby PrávníkAI &mdash; IndiWeb (dále jen &bdquo;Provozovatel&ldquo;)
-            a uživatelem služby (dále jen &bdquo;Uživatel&ldquo;).
+            Tyto obchodní podmínky (dále jen &bdquo;Podmínky&ldquo;) upravují práva a povinnosti mezi
+            provozovatelem služby {SITE_NAME} &mdash; IndiWeb (dále jen &bdquo;Provozovatel&ldquo;) a
+            uživatelem služby (dále jen &bdquo;Uživatel&ldquo;).
           </p>
-          <p>Kontaktní e-mail: <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a></p>
+          <p>
+            Kontaktní e-mail: <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a>
+          </p>
         </section>
 
         <section>
           <h2>2. Popis služby</h2>
           <p>
-            PrávníkAI je webová aplikace využívající umělou inteligenci pro generování
-            a kontrolu právních smluv v rámci české právní praxe. Služba je poskytována
-            v režimu SaaS (Software as a Service).
+            {SITE_NAME} je webová aplikace využívající umělou inteligenci pro generování a kontrolu
+            právních smluv v rámci zvolené jurisdikce (např. Česká republika, Německo, Spojené
+            království). Služba je poskytována v režimu SaaS (Software as a Service).
           </p>
           <p>
             <strong>Upozornění:</strong> Služba neposkytuje právní poradenství. Výstupy AI jsou
@@ -49,42 +75,41 @@ export default function TermsPage() {
         <section>
           <h2>3. Registrace a uživatelský účet</h2>
           <p>
-            Pro využívání služby je nutná registrace prostřednictvím Google účtu.
-            Uživatel je povinen uvádět pravdivé údaje a chránit přístup ke svému účtu.
+            Pro využívání služby je nutná registrace prostřednictvím Google účtu. Uživatel je povinen
+            uvádět pravdivé údaje a chránit přístup ke svému účtu.
           </p>
         </section>
 
         <section>
           <h2>4. Platební podmínky</h2>
           <p>
-            Služba nabízí bezplatný tarif s omezeními a placené tarify (Pro, Team).
-            Platby jsou zpracovávány prostřednictvím Stripe. Předplatné se automaticky
-            obnovuje, pokud není zrušeno před koncem fakturačního období.
+            Služba nabízí bezplatný tarif s omezeními a placené tarify (Pro, Team). Platby jsou
+            zpracovávány prostřednictvím Stripe. Předplatné se automaticky obnovuje, pokud není zrušeno
+            před koncem fakturačního období.
           </p>
         </section>
 
         <section>
           <h2>5. Omezení odpovědnosti</h2>
           <p>
-            Provozovatel nenese odpovědnost za škody vzniklé použitím AI-generovaných
-            dokumentů bez odborné právní revize. Uživatel používá výstupy služby
-            na vlastní odpovědnost.
+            Provozovatel nenese odpovědnost za škody vzniklé použitím AI-generovaných dokumentů bez
+            odborné právní revize. Uživatel používá výstupy služby na vlastní odpovědnost.
           </p>
         </section>
 
         <section>
           <h2>6. Ukončení služby</h2>
           <p>
-            Uživatel může svůj účet kdykoli smazat v nastavení účtu. Smazáním účtu
-            dojde k nevratnému odstranění všech osobních údajů v souladu s GDPR.
+            Uživatel může svůj účet kdykoli smazat v nastavení účtu. Smazáním účtu dojde k nevratnému
+            odstranění všech osobních údajů v souladu s GDPR.
           </p>
         </section>
 
         <section>
           <h2>7. Závěrečná ustanovení</h2>
           <p>
-            Tyto Podmínky se řídí právním řádem České republiky. Provozovatel si vyhrazuje
-            právo Podmínky jednostranně měnit s oznámením uživatelům.
+            Tyto Podmínky se řídí právním řádem České republiky. Provozovatel si vyhrazuje právo
+            Podmínky jednostranně měnit s oznámením uživatelům.
           </p>
         </section>
       </div>

@@ -102,7 +102,19 @@
 }
 
 /* ── Base page ───────────────────────────────────────────────────────────── */
-html { font-size: 16px; scroll-behavior: smooth; }
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Prefer native inertia scrolling on phones; programmatic smooth scroll stays available in JS */
+@media (pointer: coarse) {
+  html { scroll-behavior: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
 
 body {
   font-family: var(--font-body);
@@ -470,6 +482,15 @@ body {
   100% { transform: translate(30px, 30px) scale(1.04); }
 }
 
+/* Large animated blurs are expensive on mobile GPUs and often make scrolling feel choppy */
+@media (max-width: 768px), (pointer: coarse) {
+  .scene__blob {
+    animation: none !important;
+    filter: blur(48px);
+    transform: translateZ(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scene__blob { animation: none !important; }
 }
@@ -507,8 +528,16 @@ body {
   font-size: clamp(1rem, 2.5vw, 1.2rem);
   color: var(--color-text-muted);
   max-width: 600px;
-  margin: 0 auto var(--space-xl);
+  margin: 0 auto var(--space-lg);
   line-height: 1.7;
+}
+
+.hero__trust {
+  font-size: clamp(0.82rem, 2vw, 0.88rem);
+  color: var(--color-text-muted);
+  max-width: 640px;
+  margin: 0 auto var(--space-xl);
+  line-height: 1.65;
 }
 
 .hero__cta {
@@ -731,7 +760,9 @@ body {
   overflow: hidden;
   transition: max-height 300ms var(--ease-smooth);
 }
-.faq-item[data-open="true"] .faq-panel { max-height: 300px; }
+.faq-item[data-open="true"] .faq-panel {
+  max-height: min(1200px, 85vh);
+}
 
 .faq-panel__content {
   padding: 0 var(--space-lg) var(--space-lg);
@@ -830,6 +861,57 @@ body {
   text-align: center;
   color: var(--color-text-subtle);
   font-size: 0.75rem;
+}
+
+/* ── Home: mobile bottom CTA bar (Conversion / thumb reach) ─────────────── */
+.home-mobile-sticky {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .home-mobile-sticky {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 700;
+    gap: var(--space-sm);
+    justify-content: stretch;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md) calc(var(--space-sm) + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, var(--color-bg) 70%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--glass-border-subtle);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme="dark"] .home-mobile-sticky,
+  :root:not([data-theme="light"]) .home-mobile-sticky {
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .home-mobile-sticky__btn {
+    flex: 1;
+    min-height: 48px;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.9rem;
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+
+  .home-mobile-sticky__btn--secondary {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
 }
 
 /* ── Theme toggle button ───────────────────────────────────────────────── */

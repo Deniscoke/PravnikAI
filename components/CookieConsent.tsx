@@ -1,33 +1,26 @@
 'use client'
 
 /**
- * Cookie consent banner — PrávníkAI
- *
- * Minimal GDPR-compliant cookie banner. Since we only use essential
- * technical cookies (Supabase auth session), we technically don't need
- * opt-in consent under ePrivacy Directive Art. 5(3). However, displaying
- * the banner builds trust and informs users about cookie usage.
- *
- * The consent state is stored in localStorage (not a cookie, to avoid
- * the irony of using a cookie to track cookie consent).
+ * Cookie consent banner — minimal transparency for essential cookies only.
  */
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
 
 const CONSENT_KEY = 'pravnik-cookie-consent'
 
 export function CookieConsent() {
+  const locale = useLocale()
+  const t = useTranslations()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Check if user has already acknowledged
     try {
       if (!localStorage.getItem(CONSENT_KEY)) {
         setVisible(true)
       }
     } catch {
-      // localStorage unavailable — show banner
       setVisible(true)
     }
   }, [])
@@ -36,7 +29,7 @@ export function CookieConsent() {
     try {
       localStorage.setItem(CONSENT_KEY, 'accepted')
     } catch {
-      // Silently fail if localStorage is blocked
+      /* ignore */
     }
     setVisible(false)
   }
@@ -46,16 +39,16 @@ export function CookieConsent() {
   return (
     <div className="cookie-banner" role="alert" aria-live="polite">
       <p className="cookie-banner__text">
-        Používáme pouze nezbytné technické cookies pro přihlášení.
-        Žádné reklamní ani analytické cookies.{' '}
-        <Link href="/gdpr">Více informací</Link>
+        {t.cookies.bannerText}{' '}
+        <Link href={`/${locale}/gdpr`}>{t.cookies.learnMore}</Link>
       </p>
       <button
+        type="button"
         className="cookie-banner__btn"
         onClick={handleAccept}
-        aria-label="Rozumím, zavřít informaci o cookies"
+        aria-label={t.cookies.acceptAria}
       >
-        Rozumím
+        {t.cookies.accept}
       </button>
     </div>
   )

@@ -204,9 +204,9 @@ beforeEach(() => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('1 — Selecting state (initial load)', () => {
-  it('shows the page title "PrávníkAI"', () => {
+  it('shows the product name in the page title', () => {
     render(<GeneratorPage />)
-    expect(screen.getByText('PrávníkAI')).toBeInTheDocument()
+    expect(screen.getByText('Právo365')).toBeInTheDocument()
   })
 
   it('shows the "Vyberte typ smlouvy" heading', () => {

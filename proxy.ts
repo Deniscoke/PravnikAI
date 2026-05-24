@@ -26,6 +26,7 @@ import {
   isValidLocale,
   negotiateLocaleFromHeader,
 } from '@/lib/i18n'
+import { secureCookieOptions } from '@/lib/security/cookies'
 
 const LOCALE_COOKIE = 'pravnikai-locale'
 const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
@@ -74,11 +75,9 @@ export async function proxy(request: NextRequest) {
       url.pathname = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`
       const redirectResponse = NextResponse.redirect(url)
       // Persist preference so the next visit lands directly
-      redirectResponse.cookies.set(LOCALE_COOKIE, locale, {
+      redirectResponse.cookies.set(LOCALE_COOKIE, locale, secureCookieOptions({
         maxAge: LOCALE_COOKIE_MAX_AGE,
-        path: '/',
-        sameSite: 'lax',
-      })
+      }))
       return redirectResponse
     }
 
@@ -164,11 +163,9 @@ export async function proxy(request: NextRequest) {
   supabaseResponse.headers.set('x-locale', activeLocale)
   // Also persist the cookie if we just resolved a fresh locale
   if (request.cookies.get(LOCALE_COOKIE)?.value !== activeLocale) {
-    supabaseResponse.cookies.set(LOCALE_COOKIE, activeLocale, {
+    supabaseResponse.cookies.set(LOCALE_COOKIE, activeLocale, secureCookieOptions({
       maxAge: LOCALE_COOKIE_MAX_AGE,
-      path: '/',
-      sameSite: 'lax',
-    })
+    }))
   }
 
   return supabaseResponse

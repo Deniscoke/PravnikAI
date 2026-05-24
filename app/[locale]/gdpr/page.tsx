@@ -1,43 +1,75 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
+import { isValidLocale } from '@/lib/i18n'
+import type { Locale } from '@/lib/contracts/types'
 
-const canonical = `${getSiteUrl()}/gdpr`
+const APP_URL = getSiteUrl()
 
-export const metadata: Metadata = {
-  title: 'GDPR',
-  description: `Informace o zpracování osobních údajů ve službě ${SITE_NAME} v souladu s nařízením GDPR (EU) 2016/679.`,
-  alternates: { canonical },
-  openGraph: {
-    url: canonical,
-    title: `GDPR — ${SITE_NAME}`,
-  },
+type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: raw } = await params
+  if (!isValidLocale(raw)) return {}
+  const locale = raw as Locale
+  const canonical = `${APP_URL}/${locale}/gdpr`
+  return {
+    title: 'GDPR',
+    description: `Informace o zpracování osobních údajů ve službě ${SITE_NAME} v souladu s nařízením GDPR (EU) 2016/679.`,
+    alternates: {
+      canonical,
+      languages: {
+        cs: `${APP_URL}/cs/gdpr`,
+        de: `${APP_URL}/de/gdpr`,
+        en: `${APP_URL}/en/gdpr`,
+        'x-default': `${APP_URL}/cs/gdpr`,
+      },
+    },
+    openGraph: {
+      url: canonical,
+      title: `GDPR — ${SITE_NAME}`,
+    },
+  }
 }
 
-export default function GdprPage() {
+export default async function GdprPage({ params }: Props) {
+  const { locale: raw } = await params
+  if (!isValidLocale(raw)) notFound()
+  const locale = raw as Locale
+
   return (
     <main className="legal-page">
       <div className="legal-card">
-        <Link href="/" className="legal-back">&larr; Zpět na hlavní stránku</Link>
+        <Link href={`/${locale}`} className="legal-back">
+          &larr; Zpět na hlavní stránku
+        </Link>
         <h1>GDPR &mdash; Zpracování osobních údajů</h1>
         <p className="legal-updated">Poslední aktualizace: 24. března 2026</p>
 
         <section>
           <h2>Prohlášení o souladu s GDPR</h2>
           <p>
-            Služba PrávníkAI provozovaná společností IndiWeb plně respektuje Nařízení
-            Evropského parlamentu a Rady (EU) 2016/679 (GDPR). Tato stránka shrnuje,
-            jak zajišťujeme ochranu vašich osobních údajů.
+            Služba {SITE_NAME} provozovaná společností IndiWeb plně respektuje Nařízení Evropského parlamentu a Rady (EU)
+            2016/679 (GDPR). Tato stránka shrnuje, jak zajišťujeme ochranu vašich osobních údajů.
           </p>
         </section>
 
         <section>
           <h2>Zásady zpracování údajů</h2>
           <ul>
-            <li><strong>Minimalizace dat:</strong> Shromažďujeme pouze údaje nezbytné pro poskytování služby.</li>
-            <li><strong>Účelové omezení:</strong> Údaje používáme výhradně pro účely, ke kterým byly shromážděny.</li>
-            <li><strong>Omezení uložení:</strong> Údaje uchováváme pouze po dobu nezbytnou pro účel zpracování.</li>
-            <li><strong>Integrita a důvěrnost:</strong> Údaje jsou chráněny technickými a organizačními opatřeními.</li>
+            <li>
+              <strong>Minimalizace dat:</strong> Shromažďujeme pouze údaje nezbytné pro poskytování služby.
+            </li>
+            <li>
+              <strong>Účelové omezení:</strong> Údaje používáme výhradně pro účely, ke kterým byly shromážděny.
+            </li>
+            <li>
+              <strong>Omezení uložení:</strong> Údaje uchováváme pouze po dobu nezbytnou pro účel zpracování.
+            </li>
+            <li>
+              <strong>Integrita a důvěrnost:</strong> Údaje jsou chráněny technickými a organizačními opatřeními.
+            </li>
           </ul>
         </section>
 
@@ -56,8 +88,8 @@ export default function GdprPage() {
         <section>
           <h2>Právo na výmaz (čl. 17 GDPR)</h2>
           <p>
-            Máte právo kdykoli požádat o smazání svého účtu a všech souvisejících dat.
-            Smazání provedete v nastavení účtu nebo kontaktováním podpory.
+            Máte právo kdykoli požádat o smazání svého účtu a všech souvisejících dat. Smazání provedete v nastavení účtu
+            nebo kontaktováním podpory.
           </p>
           <p>Při smazání účtu dojde k odstranění:</p>
           <ul>
@@ -67,53 +99,56 @@ export default function GdprPage() {
             <li>Autentizačních údajů</li>
           </ul>
           <p>
-            Anonymizované auditní záznamy (bez osobních údajů) mohou být uchovány
-            pro účely bezpečnosti a souladu se zákonem.
+            Anonymizované auditní záznamy (bez osobních údajů) mohou být uchovány pro účely bezpečnosti a souladu se
+            zákonem.
           </p>
         </section>
 
         <section>
           <h2>Právo na přenositelnost (čl. 20 GDPR)</h2>
           <p>
-            Máte právo získat své osobní údaje ve strojově čitelném formátu.
-            Kontaktujte nás na <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a>.
+            Máte právo získat své osobní údaje ve strojově čitelném formátu. Kontaktujte nás na{' '}
+            <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a>.
           </p>
         </section>
 
         <section>
           <h2>Cookies</h2>
           <p>
-            PrávníkAI používá výhradně <strong>nezbytné technické cookies</strong> pro:
+            {SITE_NAME} používá výhradně <strong>nezbytné technické cookies</strong> pro:
           </p>
           <ul>
             <li>Autentizaci a udržení přihlášení (Supabase session cookies)</li>
             <li>Zapamatování zvoleného tématu vzhledu (localStorage, ne cookie)</li>
           </ul>
           <p>
-            Nepoužíváme analytické, reklamní ani cookies třetích stran pro sledování.
-            Proto nevyžadujeme souhlas s cookies dle směrnice ePrivacy &mdash; nezbytné
-            technické cookies jsou povoleny bez souhlasu (čl. 5 odst. 3 směrnice 2002/58/ES).
+            Nepoužíváme analytické, reklamní ani cookies třetích stran pro sledování. Proto nevyžadujeme souhlas s
+            cookies dle směrnice ePrivacy &mdash; nezbytné technické cookies jsou povoleny bez souhlasu (čl. 5 odst. 3
+            směrnice 2002/58/ES).
           </p>
         </section>
 
         <section>
           <h2>Dozorový úřad</h2>
+          <p>V případě pochybností o zpracování osobních údajů máte právo podat stížnost u Úřadu pro ochranu osobních údajů (ÚOOÚ):</p>
           <p>
-            V případě pochybností o zpracování osobních údajů máte právo podat stížnost
-            u Úřadu pro ochranu osobních údajů (ÚOOÚ):
-          </p>
-          <p>
-            Úřad pro ochranu osobních údajů<br />
-            Pplk. Sochora 27, 170 00 Praha 7<br />
-            <a href="https://www.uoou.cz" target="_blank" rel="noopener noreferrer">www.uoou.cz</a>
+            Úřad pro ochranu osobních údajů
+            <br />
+            Pplk. Sochora 27, 170 00 Praha 7
+            <br />
+            <a href="https://www.uoou.cz" target="_blank" rel="noopener noreferrer">
+              www.uoou.cz
+            </a>
           </p>
         </section>
 
         <section>
           <h2>Kontakt</h2>
           <p>
-            S dotazy ohledně ochrany osobních údajů se obraťte na:<br />
-            <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a><br />
+            S dotazy ohledně ochrany osobních údajů se obraťte na:
+            <br />
+            <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a>
+            <br />
             Tel: <a href="tel:+420728523267">728 523 267</a>
           </p>
         </section>

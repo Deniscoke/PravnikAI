@@ -67,8 +67,13 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const limiter = getInstance(max, windowMs)
 
-  // No Redis configured — allow all (local dev / CI)
+  // No Redis configured — allow all in dev/CI; warn in production
   if (!limiter) {
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL === '1') {
+      console.warn(
+        '[rateLimit] UPSTASH_REDIS_REST_URL/TOKEN not set — distributed rate limiting disabled in production.',
+      )
+    }
     return { allowed: true, remaining: max - 1, resetAt: Date.now() + windowMs }
   }
 

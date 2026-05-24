@@ -7,7 +7,7 @@
 export const cs: Messages = {
   meta: {
     locale: 'cs',
-    siteName: 'PrávníkAI',
+    siteName: 'Právo365',
     htmlLang: 'cs',
     legalLabel: 'české právo',
   },
@@ -54,18 +54,20 @@ export const cs: Messages = {
   },
 
   home: {
-    kicker: 'AI asistent pro právníky',
+    kicker: 'Online generátor smluv pro ČR',
     heroSubtitle:
-      'Generujte právní smlouvy za minuty, ne hodiny. Inteligentní nástroj, který rozumí českému, německému i anglickému právu — v jazyce vašeho klienta.',
-    ctaGenerate: 'Generovat smlouvu',
-    ctaReview: 'Zkontrolovat smlouvu',
+      'Smlouva online během několika minut — kupní, pracovní, nájem, NDA i smlouva o dílo. Právní rámec dle NOZ, ZP a ZOK. Pro OSVČ, živnostníky a malé firmy, které nechtějí ztrácet čas šablonami z nejistých zdrojů.',
+    heroTrustNote:
+      'Důležité: Právo365 negeneruje individuální právní poradenství. Platby bezpečně přes Stripe. Osobní údaje zpracováváme v souladu s GDPR.',
+    ctaGenerate: 'Vytvořit smlouvu',
+    ctaReview: 'Zkontrolovat text',
     statContractTypes: 'Typů smluv',
-    statTime: 'Průměrný čas',
-    statJurisdictions: 'Jurisdikce',
-    sectionFeaturesTitle: 'Proč PrávníkAI',
-    sectionFeaturesSubtitle: 'Nástroj navržený právníky pro právníky',
+    statTime: 'Orientační čas',
+    statJurisdictions: 'Právní řády',
+    sectionFeaturesTitle: 'Proč Právo365 místo „nějakého vzoru z internetu“',
+    sectionFeaturesSubtitle: 'Méně stresu, jasná struktura dokumentu, právní citace kde dává smysl — vy si nechte finální verzi zkontrolovat advokátem.',
     sectionHowTitle: 'Jak to funguje',
-    sectionHowSubtitle: 'Smlouva za 3 jednoduché kroky',
+    sectionHowSubtitle: 'Od výběru typu dokumentu po stažení DOCX nebo PDF',
     sectionTypesTitle: 'Podporované typy smluv',
     sectionTypesSubtitle: 'CZ · DE · UK — neustále rozšiřujeme knihovnu',
     sectionFaqTitle: 'Časté otázky',
@@ -74,29 +76,29 @@ export const cs: Messages = {
     sectionPricingSubtitle: 'Začněte zdarma, upgradujte až budete připraveni',
     ctaCardTitle: 'Začněte generovat smlouvy ještě dnes',
     ctaCardBody:
-      'Připravte právně korektní smlouvy za minuty místo hodin. Tři jurisdikce, profesionální AI návrh, export do DOCX a PDF.',
-    ctaCardPrimary: 'Vyzkoušet zdarma',
-    ctaCardSecondary: 'Mám otázky',
+      'Začněte na tarifu Zdarma, vylaďte dokument a exportujte. Placený plán rozšíří limity a podporuje intenzivnější práci s dokumenty napříč CZ · DE · UK.',
+    ctaCardPrimary: 'Začít zdarma',
+    ctaCardSecondary: 'Zjistit více ve FAQ',
     feature: {
       automated: {
-        title: 'Automatizované smlouvy',
-        body: 'Vyberte typ smlouvy, vyplňte údaje stran a nechte AI vygenerovat kompletní právní dokument v souladu s místní legislativou.',
+        title: 'Chytrý návrh smlouvy',
+        body: 'Vyberete typ (např. kupní smlouva online, pracovní smlouva, NDA), doplníte údaje stran a Právo365 sestaví strukturovaný text s odkazem na příslušné ustanovení — podle zvolené jurisdikce.',
       },
       time: {
-        title: 'Úspora času',
-        body: 'Smlouva, která by vám zabrala hodiny manuální práce, je připravena za několik minut. Více času na to, co skutečně vyžaduje vaši expertízu.',
+        title: 'Hodiny u právníka vs. minuty u vás',
+        body: 'Kompletní podklady pro advokáta nebo interní schválení často zvládnete za pár minut místo hodin s prázdnou šablonou. U sporů s vysokou hodnotou vždy počítejte s revizí advokátem.',
       },
       legal: {
-        title: 'Právní jistota',
-        body: 'Každá vygenerovaná smlouva vychází z aktuálních právních předpisů — NOZ, ZP, ZOK pro CZ; BGB, HGB pro DE; common law a statutory law pro UK. Systém cituje konkrétní ustanovení.',
+        title: 'Opřeno o legislativu',
+        body: 'Pro ČR pracujeme s rámcem NOZ, ZP a ZOK; pro DE a UK s tamními předpisy. Výstup je pracovní návrh s citacemi — nikoli individuální právní závěr.',
       },
       security: {
         title: 'Bezpečnost dat',
         body: 'Všechny údaje jsou zpracovány server-side v souladu s GDPR. API klíč nikdy neopustí server. Citlivá pole jsou označena a chráněna.',
       },
       review: {
-        title: 'AI kontrola smluv',
-        body: 'Vložte existující smlouvu a AI identifikuje rizikové klauzule, chybějící ustanovení a vyjednávací body dle zvolené jurisdikce.',
+        title: 'Kontrola smlouvy',
+        body: 'Vložíte text a Právo365 vyznačí rizikové pasáže, mezery a témata k dojednání — podle zvoleného práva. Slouží k orientaci, ne k závaznému právnímu posouzení.',
       },
       export: {
         title: 'Export do DOCX a PDF',
@@ -104,9 +106,9 @@ export const cs: Messages = {
       },
     },
     step: {
-      one: { title: 'Vyberte typ smlouvy', body: 'Zvolte z nabídky pro CZ, DE nebo UK — kupní, pracovní, nájemní, NDA, smlouva o dílo a další.' },
-      two: { title: 'Vyplňte údaje', body: 'Zadejte údaje smluvních stran, předmět smlouvy a specifické podmínky. Formulář se dynamicky přizpůsobí.' },
-      three: { title: 'Stáhněte smlouvu', body: 'AI vygeneruje kompletní smlouvu s citacemi zákonů. Zkontrolujte, upravte a exportujte do DOCX nebo PDF.' },
+      one: { title: 'Vyberte typ dokumentu', body: 'Kupní smlouva online, pracovní smlouva, nájem, NDA a další — podle jurisdikce CZ, DE nebo UK.' },
+      two: { title: 'Vyplňte konkrétní údaje', body: 'Strany, předmět, splatnost, výjimky. Formulář se přizpůsobí typu smlouvy a skryje nepotřebná pole.' },
+      three: { title: 'Export a revize', body: 'Stáhnete DOCX nebo PDF, upravíte v editoru a před podpisem necháte projít advokátem — tak minimalizujete riziko.' },
     },
     footer: {
       productHeading: 'Produkt',
@@ -116,12 +118,13 @@ export const cs: Messages = {
         features: 'Funkce',
         generator: 'Generátor',
         review: 'Kontrola smluv',
+        pricing: 'Ceník',
         faq: 'FAQ',
         terms: 'Obchodní podmínky',
         privacy: 'Ochrana osobních údajů',
-        gdpr: 'GDPR',
+        gdpr: 'GDPR / cookies',
       },
-      tagline: 'Inteligentní generátor smluv pro CZ, DE a UK právo. AI technologie, profesionální výstup.',
+      tagline: 'Právo365 — online právní dokumenty a generátor smluv pro české podnikatele. Profesionální výstup, bezpečné platby, transparentní zpracování dat.',
       rights: 'Všechna práva vyhrazena.',
       support: 'Podpora',
     },
@@ -201,6 +204,138 @@ export const cs: Messages = {
       'Stažení se nepodařilo dokončit (síť nebo časový limit serveru). Zkuste to znovu; u velké smlouvy na bezplatném hostingu zkraťte text nebo zkuste PDF/DOCX opakovat.',
   },
 
+  accountMenu: {
+    history: 'Historie',
+    settings: 'Nastavení',
+    signOut: 'Odhlásit se',
+    accountFallback: 'Účet',
+  },
+
+  auth: {
+    continueWithGoogle: 'Pokračovat přes Google',
+    redirecting: 'Přesměrování…',
+  },
+
+  cookies: {
+    bannerText:
+      'Používáme pouze nezbytné technické cookies pro přihlášení. Žádné reklamní ani analytické cookies.',
+    learnMore: 'Více informací',
+    accept: 'Rozumím',
+    acceptAria: 'Rozumím, zavřít informaci o cookies',
+  },
+
+  dashboard: {
+    historySubtitle: 'Vaše vygenerované smlouvy a provedené kontroly.',
+    tabGenerations: 'Generované smlouvy',
+    tabReviews: 'Kontroly smluv',
+    emptyGenTitle: 'Zatím žádné generované smlouvy',
+    emptyGenDescription:
+      'Vytvořte první smlouvu pomocí generátoru a uloží se sem automaticky.',
+    emptyGenCta: 'Generovat smlouvu',
+    emptyRevTitle: 'Zatím žádné kontroly smluv',
+    emptyRevDescription:
+      'Zkontrolujte existující smlouvu a výsledky se uloží sem automaticky.',
+    emptyRevCta: 'Zkontrolovat smlouvu',
+    deleteConfirm: 'Opravdu chcete smazat tento záznam?',
+    deleteFailed: 'Smazání se nezdařilo. Zkuste to znovu.',
+    unknownContractType: 'Neznámý typ',
+    viewDetail: 'Zobrazit',
+    viewTitleTooltip: 'Zobrazit detail',
+    deleteTooltip: 'Smazat',
+    viewAriaPattern: 'Zobrazit {title}',
+    deleteAriaPattern: 'Smazat {title}',
+  },
+
+  onboarding: {
+    consentSubtitle: 'Než začnete, potřebujeme váš souhlas s podmínkami.',
+    welcomeTitle: 'Vítejte v Právo365',
+    welcomeLead:
+      'Právo365 je nástroj pro přípravu návrhů smluv a orientační kontrolu textu podle zvolené jurisdikce (ČR, DE, UK). Nejde o právní poradenství — výstupy před podpisem ověřte u advokáta.',
+    cardHeadline: 'Shrnutí před startem',
+    termsAgreePrefix: 'Souhlasím s',
+    termsLinkLabel: 'podmínkami používání',
+    privacyAgreePrefix: 'Souhlasím se',
+    privacyLinkLabel: 'zpracováním osobních údajů',
+    privacyGdprBridge: 'a beru na vědomí',
+    gdprLinkLabel: 'informace o GDPR / cookies',
+    marketingOptIn: 'Souhlasím se zasíláním novinek a nabídek e-mailem',
+    optionalTag: '(nepovinné)',
+    requiredLegend: 'Povinné pole',
+    submitting: 'Ukládám…',
+    submitCta: 'Začít používat {siteName}',
+    submitError: 'Něco se pokazilo. Zkuste to prosím znovu.',
+    viewWelcomeLine: 'Vítejte',
+    viewHeading: 'AI-asistovaný nástroj',
+    viewBody:
+      '{siteName} pomáhá připravovat návrhy smluv a orientační kontrolu textu. Neposkytuje právní poradenství ve smyslu zákona č. 85/1996 Sb., o advokacii. Dokumenty slouží jako pracovní návrh.',
+    viewAckTerms:
+      'Rozumím, že {siteName} je AI nástroj a neposkytuje právní poradenství. Souhlasím s podmínkami použití.',
+    viewAckPrivacy: 'Souhlasím se zpracováním osobních údajů dle zásad ochrany soukromí.',
+    viewMarketing: 'Souhlasím se zasíláním informací o novinkách a vylepšeních {siteName}.',
+    optionalWord: 'volitelné',
+    submitErrorBanner: 'Nepodařilo se dokončit registraci. Zkuste to znovu.',
+    guestName: 'uživateli',
+    dashboardIntro: 'Před prvním použitím prosím projděte následující informace.',
+    viewPrivacyTitle: 'Ochrana osobních údajů',
+    viewPrivacyBody:
+      'Ukládáme pouze údaje nezbytné pro fungování služby: vaše jméno a e-mail z Google účtu, historii vygenerovaných smluv a provedených kontrol. Data jsou zpracovávána na serverech v EU. Vaše údaje neprodáváme třetím stranám. Svůj účet a data můžete kdykoli smazat.',
+    welcomeNamed: 'Vítejte, {name}',
+    dashboardSubmitting: 'Dokončuji…',
+    continueToApp: 'Pokračovat do aplikace',
+    requiredStarsNote: 'Pole označená * jsou povinná pro používání služby.',
+  },
+
+  reviewPage: {
+    notice:
+      'AI-asistovaná kontrola smluv podle práva země ({law}). Neposkytuje právní poradenství — výsledek před použitím konzultujte s advokátem.',
+    crumbReview: 'Kontrola smlouvy',
+    crumbAnalyzing: 'Analyzuji…',
+    crumbResults: 'Výsledky',
+    crumbError: 'Chyba',
+    inputSectionTitle: 'Zkontrolovat existující smlouvu',
+    contractLabel: 'Text smlouvy',
+    contractPlaceholder:
+      'Vložte celý text smlouvy, kterou chcete zkontrolovat…',
+    contractHelper:
+      'Vložte kompletní text smlouvy včetně podpisových bloků. Minimum 50 znaků.',
+    charCounter: '{count} znaků',
+    typeHintLabel: 'Typ smlouvy (volitelné)',
+    typeHintHelper:
+      'Pomáhá AI zaměřit analýzu. Pokud nevíte, zvolte automatické rozpoznání.',
+    submitAnalyzing: 'Analyzuji smlouvu…',
+    submitIdle: 'Zkontrolovat smlouvu',
+    trustServer: 'Server-side zpracování',
+    trustNoPersist: 'Pro tuto funkci neskladáme smluvní text jako soubor.',
+    trustJurisdictionContext: 'Kontekst práva podle nastaveného jazyka',
+    trustStructured: 'Strukturovaná analýza rizik',
+    analyzingTitle: 'Analyzuji smlouvu',
+    analyzingSubtitle: 'AI prochází klauzule v kontextu zvolené jurisdikce.',
+    step1: 'Analyzuji text smlouvy…',
+    step2: 'Zjistuji typ dokumentu a kontext…',
+    step3: 'Kontroluji rizikové klauzule…',
+    step4: 'Hledám chybějící ujednání…',
+    step5: 'Připravuji shrnutí…',
+    errorLead: 'Chyba při analýze',
+    retry: 'Zkusit znovu',
+    newReview: 'Nová kontrola',
+    fetchErrorFallback: 'Chyba při analýze smlouvy.',
+    networkError: 'Síťová chyba. Zkuste to prosím znovu.',
+    typeOptions: {
+      auto: '— Automaticky rozpoznat —',
+      purchase: 'Kupní smlouva',
+      work: 'Smlouva o dílo',
+      tenancy: 'Nájemní smlouva',
+      employment: 'Pracovní smlouva',
+      nda: 'Smlouva o mlčenlivosti (NDA)',
+      mandate: 'Mandátní smlouva',
+      license: 'Licenční smlouva',
+      gift: 'Darovací smlouva',
+      loan: 'Smlouva o půjčce',
+      other: 'Jiný typ smlouvy',
+    },
+    errorDetailPrefix: 'Chyba při analýze:',
+  },
+
   langSwitch: {
     label: 'Jazyk a jurisdikce',
     legalBasisCs: 'Generuje dle českého práva',
@@ -225,6 +360,7 @@ export interface Messages {
   home: {
     kicker: string
     heroSubtitle: string
+    heroTrustNote: string
     ctaGenerate: string
     ctaReview: string
     statContractTypes: string
@@ -265,6 +401,7 @@ export interface Messages {
         features: string
         generator: string
         review: string
+        pricing: string
         faq: string
         terms: string
         privacy: string
@@ -330,6 +467,121 @@ export interface Messages {
     exportRateLimited: string
     exportServerError: string
     exportNetworkOrTimeout: string
+  }
+  accountMenu: {
+    history: string
+    settings: string
+    signOut: string
+    accountFallback: string
+  }
+  auth: {
+    continueWithGoogle: string
+    redirecting: string
+  }
+  cookies: {
+    bannerText: string
+    learnMore: string
+    accept: string
+    acceptAria: string
+  }
+  dashboard: {
+    historySubtitle: string
+    tabGenerations: string
+    tabReviews: string
+    emptyGenTitle: string
+    emptyGenDescription: string
+    emptyGenCta: string
+    emptyRevTitle: string
+    emptyRevDescription: string
+    emptyRevCta: string
+    deleteConfirm: string
+    deleteFailed: string
+    unknownContractType: string
+    viewDetail: string
+    viewTitleTooltip: string
+    deleteTooltip: string
+    viewAriaPattern: string
+    deleteAriaPattern: string
+  }
+  onboarding: {
+    consentSubtitle: string
+    welcomeTitle: string
+    welcomeLead: string
+    cardHeadline: string
+    termsAgreePrefix: string
+    termsLinkLabel: string
+    privacyAgreePrefix: string
+    privacyLinkLabel: string
+    privacyGdprBridge: string
+    gdprLinkLabel: string
+    marketingOptIn: string
+    optionalTag: string
+    requiredLegend: string
+    submitting: string
+    submitCta: string
+    submitError: string
+    viewWelcomeLine: string
+    viewHeading: string
+    viewBody: string
+    viewAckTerms: string
+    viewAckPrivacy: string
+    viewMarketing: string
+    optionalWord: string
+    submitErrorBanner: string
+    guestName: string
+    dashboardIntro: string
+    viewPrivacyTitle: string
+    viewPrivacyBody: string
+    welcomeNamed: string
+    dashboardSubmitting: string
+    continueToApp: string
+    requiredStarsNote: string
+  }
+  reviewPage: {
+    notice: string
+    crumbReview: string
+    crumbAnalyzing: string
+    crumbResults: string
+    crumbError: string
+    inputSectionTitle: string
+    contractLabel: string
+    contractPlaceholder: string
+    contractHelper: string
+    charCounter: string
+    typeHintLabel: string
+    typeHintHelper: string
+    submitAnalyzing: string
+    submitIdle: string
+    trustServer: string
+    trustNoPersist: string
+    trustJurisdictionContext: string
+    trustStructured: string
+    analyzingTitle: string
+    analyzingSubtitle: string
+    step1: string
+    step2: string
+    step3: string
+    step4: string
+    step5: string
+    errorLead: string
+    retry: string
+    newReview: string
+    fetchErrorFallback: string
+    networkError: string
+    typeOptions: {
+      auto: string
+      purchase: string
+      work: string
+      tenancy: string
+      employment: string
+      nda: string
+      mandate: string
+      license: string
+      gift: string
+      loan: string
+      other: string
+    }
+    errorDetailPrefix: string
   }
   langSwitch: {
     label: string

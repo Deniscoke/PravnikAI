@@ -12,85 +12,100 @@ export interface FaqItem {
 
 const HOME_FAQ_CS: ReadonlyArray<FaqItem> = [
   {
-    question: 'Jsou vygenerované smlouvy právně závazné?',
+    question: 'Nahrazuje Právo365 advokáta nebo právní poradenství?',
     answer:
-      'PrávníkAI generuje smlouvy podle aktuální legislativy zvolené jurisdikce — pro CZ dle NOZ, ZP, ZOK; pro DE dle BGB, HGB, GewO; pro UK dle Sale of Goods Act, Employment Rights Act a anglického common law. Vygenerovaný dokument slouží jako profesionální základ — před podpisem ho doporučujeme nechat zkontrolovat advokátem či solicitorem.',
+      'Ne. Právo365 je nástroj na rychlou přípravu návrhů smluv a orientační kontrolu textu podle zvolené jurisdikce. Nenahrazuje individuální právní poradenství, posouzení vašeho konkrétního sporu ani zastupování před soudem. Před závaznými kroky a podpisem dokumentu doporučujeme konzultaci s advokátem.',
   },
   {
-    question: 'Jak jsou chráněny moje údaje a údaje klientů?',
+    question: 'Jsou vygenerované smlouvy „hotové k podpisu“?',
     answer:
-      'Bezpečnost je naše priorita. Všechna data jsou zpracována na serveru — API klíč nikdy neopustí server. Zpracování probíhá v souladu s GDPR (data residency v EU). Vaše dokumenty nejsou nikdy použity na trénování AI modelů.',
+      'Právo365 vychází z aktuální legislativy zvolené jurisdikce — pro ČR z rámce NOZ, ZP, ZOK; pro Německo z BGB, HGB, GewO; pro UK z relevantních zákonů a common law. Dokument je profesionálně strukturovaný návrh — u složitých transakcí, vysokých částek nebo regulovaných odvětví jej nechte před podpisem zkontrolovat advokátem.',
   },
   {
-    question: 'Mohu vygenerované smlouvy dále upravovat?',
+    question: 'Jsou moje údaje v bezpečí? Jak je to s GDPR?',
     answer:
-      'Samozřejmě. Každou vygenerovanou smlouvu můžete exportovat do DOCX nebo PDF a upravit v libovolném textovém editoru. Smlouvy jsou vaše — máte nad nimi plnou kontrolu.',
+      'Zpracování probíhá na serveru v souladu s GDPR. API klíč k umělé inteligenci na serveru zůstává — neukládá se do prohlížeče. Údaje nepoužíváme k trénování veřejných modelů. Platební údaje zpracovává Stripe; podrobnosti jsou v Zásadách ochrany osobních údajů a GDPR / cookies stránce.',
   },
   {
-    question: 'Pro koho je PrávníkAI určen?',
+    question: 'Mohu dokument dál upravovat a exportovat?',
     answer:
-      'PrávníkAI je primárně navržen pro advokáty, advokátní kanceláře, firemní právníky a notáře — v ČR, Německu i UK. Využít ho však může kdokoli, kdo potřebuje připravit právní dokumenty napříč jurisdikcemi.',
+      'Ano. Každý výstup lze stáhnout jako DOCX nebo PDF a upravit v Wordu či jiném editoru. Dokumenty jsou vaše; odpovědnost za obsah po úpravách a za právní použití nese uživatel.',
   },
   {
-    question: 'Jaké typy smluv a jurisdikce PrávníkAI podporuje?',
+    question: 'Pro koho je Právo365?',
     answer:
-      'Aktuálně podporujeme 3 jurisdikce — Českou republiku, Německo a Spojené království. Pro každou nabízíme klíčové typy smluv (NDA, kupní/pracovní/nájemní smlouva, smlouva o dílo). Knihovnu neustále rozšiřujeme — chybí vám konkrétní typ? Napište nám.',
+      'Pro živnostníky, OSVČ, malé firmy a kohokoli, kdo potřebuje smlouvu online rychleji než z nekonečných šablon — a zároveň má rozumný právní rámec (CZ, případně DE a UK). Vyhovuje i advokátům jako startovní návrh, pokud si obsah sami dohlížejí.',
+  },
+  {
+    question: 'Které typy smluv a jurisdikce podporujete?',
+    answer:
+      'Podporujeme jurisdikce CZ, DE a UK — včetně kupní smlouvy, pracovní smlouvy, nájemní smlouvy, NDA / mlčenlivosti a smlouvy o dílo (a obdobných typů dle knihovny šablon). Knihovnu rozšiřujeme; chybí vám konkrétní typ — napište nám přes kontakt v patičce.',
   },
 ]
 
 const HOME_FAQ_DE: ReadonlyArray<FaqItem> = [
   {
-    question: 'Sind die generierten Verträge rechtsverbindlich?',
+    question: 'Ersetzt Právo365 eine Anwaltsberatung?',
     answer:
-      'PrávníkAI erstellt Verträge nach der aktuellen Gesetzgebung der gewählten Jurisdiktion — für DE nach BGB, HGB, GewO; für CZ nach NOZ, ZP, ZOK; für UK nach Sale of Goods Act, Employment Rights Act und englischem Common Law. Das generierte Dokument ist eine professionelle Vorlage — vor Unterzeichnung sollte es ein Anwalt oder Solicitor prüfen.',
+      'Nein. Právo365 hilft beim schnellen Aufsetzen von Vertragsentwürfen und bei einer orientierenden Prüfung nach gewähltem Recht. Es ist kein Ersatz für individuelle Rechtsberatung. Vor verbindlichen Schritten sollte ein Anwalt eingeschaltet werden.',
   },
   {
-    question: 'Wie werden meine Daten und die meiner Mandanten geschützt?',
+    question: 'Sind die generierten Verträge „unterschriftsreif“?',
     answer:
-      'Sicherheit hat Priorität. Alle Daten werden serverseitig verarbeitet — der API-Schlüssel verlässt nie den Server. Verarbeitung DSGVO-konform (Data Residency in der EU). Ihre Dokumente werden niemals zum Trainieren von KI-Modellen verwendet.',
+      'Právo365 erstellt gut strukturierte Entwürfe mit Verweisen auf die gewählte Jurisdiktion (CZ, DE, UK). Bei hohen Beträgen, regulierten Bereichen oder Grenzfällen soll der Entwurf immer von einem Anwalt geprüft werden.',
   },
   {
-    question: 'Kann ich die generierten Verträge weiter bearbeiten?',
+    question: 'Wie werden meine Daten geschützt?',
     answer:
-      'Selbstverständlich. Jeder generierte Vertrag lässt sich als DOCX oder PDF exportieren und in einem beliebigen Texteditor bearbeiten. Die Verträge gehören Ihnen — Sie haben die volle Kontrolle.',
+      'Verarbeitung serverseitig, DSGVO-konform. Der API-Schlüssel bleibt auf dem Server; Ihre Dokumente werden nicht zum Training öffentlicher Modelle genutzt. Zahlungen laufen über Stripe — Details in Datenschutz und Cookie-Hinweisen.',
   },
   {
-    question: 'Für wen ist PrávníkAI gedacht?',
+    question: 'Kann ich Verträge weiter bearbeiten?',
     answer:
-      'PrávníkAI richtet sich primär an Anwälte, Kanzleien, Unternehmensjuristen und Notare — in Deutschland, Tschechien und im UK. Es kann aber jeder nutzen, der grenzübergreifende Vertragsdokumente erstellen muss.',
+      'Ja — Export als DOCX oder PDF, Bearbeitung im Editor Ihrer Wahl. Sie behalten die Hoheit über den Text; die Verantwortung für die finale Fassung liegt bei Ihnen.',
   },
   {
-    question: 'Welche Vertragsarten und Rechtsräume unterstützt PrávníkAI?',
+    question: 'Für wen ist Právo365 gedacht?',
     answer:
-      'Wir unterstützen derzeit 3 Rechtsräume — Deutschland, Tschechien und das Vereinigte Königreich. Für jeden bieten wir die wichtigsten Vertragsarten (NDA, Kaufvertrag, Arbeitsvertrag, Mietvertrag, Werkvertrag). Die Bibliothek wächst laufend — fehlt Ihnen ein Typ? Schreiben Sie uns.',
+      'Für Selbstständige, KMU und alle, die grenzübergreifend arbeiten (CZ, DE, UK). Auch Kanzleien können es als Ausgangspunkt nutzen, wenn die fachliche Kontrolle erfolgt.',
+  },
+  {
+    question: 'Welche Vertragstypen werden unterstützt?',
+    answer:
+      'u. a. NDA, Kauf, Arbeit, Miete, Werkvertrag — siehe Generator pro Jurisdiktion. Die Bibliothek wächst; fehlt etwas, kontaktieren Sie uns.',
   },
 ]
 
 const HOME_FAQ_EN: ReadonlyArray<FaqItem> = [
   {
-    question: 'Are the generated contracts legally binding?',
+    question: 'Does Právo365 replace a solicitor or lawyer?',
     answer:
-      'PrávníkAI drafts contracts under the current law of the chosen jurisdiction — for UK under common law and statutes such as the Sale of Goods Act and Employment Rights Act; for DE under BGB, HGB, GewO; for CZ under NOZ, ZP, ZOK. The generated document is a professional starting point — please have a qualified solicitor or advokát review the final version before signing.',
+      'No. Právo365 helps you prepare draft contracts and get a structured review against the law you select. It does not provide regulated legal advice. For high-stakes deals, please instruct a qualified lawyer before you sign.',
   },
   {
-    question: 'How are my data and my clients’ data protected?',
+    question: 'Are generated contracts ready to sign?',
     answer:
-      'Security is our priority. All data is processed server-side — the API key never leaves the server. Processing is GDPR-compliant (EU data residency). Your documents are never used to train AI models.',
+      'You get a professionally structured draft with citations to the chosen jurisdiction (CZ / DE / UK). For complex deals or regulated sectors you should still have a solicitor or Rechtsanwalt review the final version.',
   },
   {
-    question: 'Can I edit the generated contracts further?',
+    question: 'How are my data protected?',
     answer:
-      'Of course. Every generated contract can be exported as DOCX or PDF and edited in any word processor. The contracts are yours — you keep full control.',
+      'Processing is server-side and GDPR-aware. The AI API key stays on the server. We do not use your documents to train public models. Card payments are handled by Stripe — see Privacy and cookie information.',
   },
   {
-    question: 'Who is PrávníkAI for?',
+    question: 'Can I edit and export contracts?',
     answer:
-      'PrávníkAI is primarily designed for solicitors, barristers, law firms, in-house counsel and notaries — across the UK, Germany and the Czech Republic. Anyone preparing cross-border legal documents can use it.',
+      'Yes. Export to DOCX or PDF and edit in Word or any editor. You remain responsible for the final text and how you use it legally.',
   },
   {
-    question: 'Which contract types and jurisdictions does PrávníkAI support?',
+    question: 'Who is Právo365 for?',
     answer:
-      'We currently support 3 jurisdictions — the UK, Germany and the Czech Republic. For each we offer the key contract types (NDA, sale, employment, tenancy, services). The library keeps growing — missing a type? Let us know.',
+      'Freelancers, small businesses and teams working across CZ, DE and UK who need contract drafts quickly without starting from a blank page. Law firms may use it as a starting point where they retain professional oversight.',
+  },
+  {
+    question: 'Which contract types are supported?',
+    answer:
+      'NDA, sale, employment, tenancy, services/work and more — see the generator for each jurisdiction. The library keeps growing; tell us if you need a missing type.',
   },
 ]
 
@@ -99,6 +114,3 @@ export function getHomeFaqItems(locale: Locale): ReadonlyArray<FaqItem> {
   if (locale === 'en') return HOME_FAQ_EN
   return HOME_FAQ_CS
 }
-
-/** @deprecated Use getHomeFaqItems(locale) instead. Kept for backward compat. */
-export const HOME_FAQ_ITEMS = HOME_FAQ_CS

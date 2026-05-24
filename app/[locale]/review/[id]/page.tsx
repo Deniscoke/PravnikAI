@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ReviewResult } from '@/components/review/ReviewResult'
+import { SITE_NAME } from '@/lib/seo/site'
 import type { ReviewContractResponse } from '@/lib/review/types'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,15 +21,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; locale: string }>
 }
 
 export default async function ReviewDetailPage({ params }: PageProps) {
-  const { id } = await params
+  const { id, locale } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) redirect(`/${locale}/login`)
 
   const { data: review, error } = await supabase
     .from('contract_reviews_history')
@@ -38,7 +39,7 @@ export default async function ReviewDetailPage({ params }: PageProps) {
     .single()
 
   if (error || !review) {
-    redirect('/dashboard')
+    redirect(`/${locale}/dashboard`)
   }
 
   // review_result stores the full ReviewContractResponse as jsonb
@@ -49,7 +50,7 @@ export default async function ReviewDetailPage({ params }: PageProps) {
       <header style={{ maxWidth: 920, margin: '0 auto', padding: 'var(--space-xl) 0 var(--space-lg)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
           <div>
-            <Link href="/" style={{ textDecoration: 'none' }}>
+            <Link href={`/${locale}`} style={{ textDecoration: 'none' }}>
               <h1 style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: '1.8rem',
@@ -59,14 +60,14 @@ export default async function ReviewDetailPage({ params }: PageProps) {
                 backgroundClip: 'text',
                 lineHeight: 1.2,
               }}>
-                PrávníkAI
+                {SITE_NAME}
               </h1>
             </Link>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-subtle)', marginTop: 2 }}>
               {review.title} · Uložená kontrola
             </p>
           </div>
-          <Link href="/dashboard" className="glass-btn glass-btn--ghost" style={{ textDecoration: 'none' }}>
+          <Link href={`/${locale}/dashboard`} className="glass-btn glass-btn--ghost" style={{ textDecoration: 'none' }}>
             Zpět na přehled
           </Link>
         </div>
@@ -75,7 +76,7 @@ export default async function ReviewDetailPage({ params }: PageProps) {
       <div style={{ maxWidth: 920, margin: '0 auto', paddingBottom: 'var(--space-3xl)' }}>
         <ReviewResult
           result={result}
-          onNewReview="/review"
+          onNewReview={`/${locale}/review`}
         />
       </div>
     </main>

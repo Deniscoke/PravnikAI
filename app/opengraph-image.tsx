@@ -3,7 +3,7 @@ import { SITE_NAME } from '@/lib/seo/site'
 
 export const runtime = 'edge'
 
-export const alt = `${SITE_NAME} — AI právní asistent pro české právo`
+export const alt = `${SITE_NAME} — generátor smluv a právní dokumenty online (CZ · DE · UK)`
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -43,7 +43,7 @@ export default function OpenGraphImage() {
             fontWeight: 500,
           }}
         >
-          AI generátor a kontrola právních smluv pro českou praxi
+          AI generátor smluv online — kupní, pracovní, nájem, NDA · CZ DE UK
         </div>
         <div
           style={{

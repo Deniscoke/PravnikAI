@@ -50,11 +50,18 @@ export async function createClient() {
  * NEVER expose this client to the browser.
  */
 export async function createServiceClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) {
+    throw new Error(
+      '[security] SUPABASE_SERVICE_ROLE_KEY is not set. Server admin operations are disabled.',
+    )
+  }
+
   const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceRoleKey,
     {
       cookies: {
         getAll() {

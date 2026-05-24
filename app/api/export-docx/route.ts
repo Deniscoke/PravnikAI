@@ -32,6 +32,7 @@ import { assertBillingAccess, recordExport } from '@/lib/billing/guard'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { getSchema, resolveSchemaId } from '@/lib/contracts/contractSchemas'
 import { getExportStrings, formatExportDate } from '@/lib/export/strings'
+import { SITE_NAME } from '@/lib/seo/site'
 import type { Jurisdiction } from '@/lib/contracts/types'
 
 // Force Node.js runtime — docx library uses Buffer and Node-specific APIs
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const bodyFontSize = jurisdiction === 'UK' ? 23 : 22 // 11.5pt vs 11pt (DOCX uses half-points)
 
   const doc = new Document({
-    creator: 'PrávníkAI',
+    creator: SITE_NAME,
     title: contractName,
     subject: `${jurisdiction} legal contract`,
     styles: {
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 alignment: AlignmentType.RIGHT,
                 children: [
                   new TextRun({
-                    text: `${contractName} — PrávníkAI`,
+                    text: `${contractName} — ${SITE_NAME}`,
                     size: 16,
                     color: '999999',
                     italics: true,

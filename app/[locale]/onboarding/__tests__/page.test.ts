@@ -48,22 +48,24 @@ function setupUnauthenticated() {
 beforeEach(() => vi.clearAllMocks())
 
 describe('OnboardingPage routing', () => {
-  it('redirects already-onboarded user to /dashboard', async () => {
+  const onboardingParams = { params: Promise.resolve({ locale: 'cs' }) }
+
+  it('redirects already-onboarded user to locale dashboard', async () => {
     setupUser(true)
     // The page is an async Server Component — call it directly
-    try { await OnboardingPage() } catch { /* redirect throws in test env */ }
-    expect(mockRedirect).toHaveBeenCalledWith('/dashboard')
+    try { await OnboardingPage(onboardingParams) } catch { /* redirect throws in test env */ }
+    expect(mockRedirect).toHaveBeenCalledWith('/cs/dashboard')
   })
 
   it('does NOT redirect a non-onboarded authenticated user', async () => {
     setupUser(false)
-    try { await OnboardingPage() } catch { /* ignore */ }
-    expect(mockRedirect).not.toHaveBeenCalledWith('/dashboard')
+    try { await OnboardingPage(onboardingParams) } catch { /* ignore */ }
+    expect(mockRedirect).not.toHaveBeenCalledWith('/cs/dashboard')
   })
 
-  it('redirects unauthenticated user to /login', async () => {
+  it('redirects unauthenticated user to locale login', async () => {
     setupUnauthenticated()
-    try { await OnboardingPage() } catch { /* redirect throws in test env */ }
-    expect(mockRedirect).toHaveBeenCalledWith('/login')
+    try { await OnboardingPage(onboardingParams) } catch { /* redirect throws in test env */ }
+    expect(mockRedirect).toHaveBeenCalledWith('/cs/login')
   })
 })

@@ -1,30 +1,36 @@
 /**
- * Onboarding page — PrávníkAI
- *
- * Server Component. Fetches profile from Supabase:
- *   - If user is already onboarded → redirect to /dashboard
- *   - Otherwise → render the onboarding form
- *
- * Middleware (proxy.ts) already guards this route — unauthenticated users
- * are redirected to /login before reaching here.
+ * First-time consent / onboarding gate.
  */
 
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { OnboardingForm } from './OnboardingForm'
+import { getMessages, isValidLocale } from '@/lib/i18n'
+import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
 
-export const metadata = {
-  title: 'Vítejte — PrávníkAI',
-  robots: 'noindex',
+type PageParams = Promise<{ locale: string }>
+
+export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : DEFAULT_LOCALE
+  const t = getMessages(locale)
+  return {
+    title: t.onboarding.welcomeTitle,
+    robots: 'noindex',
+  }
 }
 
-export default async function OnboardingPage() {
-  const supabase = await createClient()
+export default async function OnboardingPage({ params }: { params: PageParams }) {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : DEFAULT_LOCALE
+  const base = `/${locale}`
+  const t = getMessages(locale)
 
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Middleware already handles this, but defense-in-depth
-  if (!user) redirect('/login')
+  if (!user) redirect(`${base}/login`)
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -32,8 +38,7 @@ export default async function OnboardingPage() {
     .eq('id', user.id)
     .single()
 
-  // Already onboarded — skip back to dashboard
-  if (profile?.onboarding_completed) redirect('/dashboard')
+  if (profile?.onboarding_completed) redirect(`${base}/dashboard`)
 
   return (
     <main style={{
@@ -47,7 +52,6 @@ export default async function OnboardingPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 480 }}>
 
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}>
           <h1 style={{
             fontFamily: 'var(--font-display)',
@@ -58,25 +62,24 @@ export default async function OnboardingPage() {
             backgroundClip: 'text',
             lineHeight: 1.2,
           }}>
-            PrávníkAI
+            {t.meta.siteName}
           </h1>
           <p style={{
             fontSize: '0.85rem',
             color: 'var(--color-text-muted)',
             marginTop: 'var(--space-xs)',
           }}>
-            Než začnete, potřebujeme váš souhlas s podmínkami.
+            {t.onboarding.consentSubtitle}
           </p>
         </div>
 
-        {/* Onboarding card */}
         <div className="glass-card" style={{ padding: 'var(--space-2xl)' }}>
           <h2 style={{
             fontSize: '1.15rem',
             fontWeight: 600,
             marginBottom: 'var(--space-xs)',
           }}>
-            Vítejte v PrávníkAI
+            {t.onboarding.welcomeTitle}
           </h2>
           <p style={{
             fontSize: '0.82rem',
@@ -84,12 +87,10 @@ export default async function OnboardingPage() {
             marginBottom: 'var(--space-xl)',
             lineHeight: 1.6,
           }}>
-            PrávníkAI je nástroj pro asistenci při tvorbě a kontrole smluv podle
-            českého práva. Nejde o právní poradenství — výstupy doporučujeme ověřit
-            s kvalifikovaným právníkem.
+            {t.onboarding.welcomeLead}
           </p>
 
-          <OnboardingForm />
+          <OnboardingForm locale={locale} />
         </div>
 
       </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import type { ReviewContractResponse, RiskLevel } from '@/lib/review/types'
+import { SITE_NAME } from '@/lib/seo/site'
 
 interface ReviewResultProps {
   result: ReviewContractResponse
@@ -283,7 +284,7 @@ function formatDateTime(iso: string): string {
 
 function formatReviewAsText(result: ReviewContractResponse): string {
   const lines: string[] = [
-    `KONTROLA SMLOUVY — PrávníkAI`,
+    `KONTROLA SMLOUVY — ${SITE_NAME}`,
     `Celkové riziko: ${result.overallRisk.toUpperCase()}`,
     ``,
     `SHRNUTÍ`,

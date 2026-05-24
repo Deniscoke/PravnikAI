@@ -3,21 +3,21 @@
 /**
  * User menu — shows avatar + dropdown for authenticated users,
  * or a sign-in link for anonymous visitors.
- *
- * Designed to sit in page headers without dominating the layout.
  */
 
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from './AuthProvider'
 import { createClient } from '@/lib/supabase/browser'
-
+import { useLocale, useTranslations } from '@/lib/i18n/client'
 export function UserMenu() {
+  const locale = useLocale()
+  const t = useTranslations()
+  const base = `/${locale}`
   const { user, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Close menu on outside click
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
@@ -32,11 +32,11 @@ export function UserMenu() {
   if (!user) {
     return (
       <Link
-        href="/login"
+        href={`${base}/login`}
         className="glass-btn glass-btn--ghost"
         style={{ fontSize: '0.8rem', padding: '6px 16px' }}
       >
-        Přihlásit se
+        {t.nav.login}
       </Link>
     )
   }
@@ -45,12 +45,13 @@ export function UserMenu() {
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
     user.email?.split('@')[0] ||
-    'Účet'
+    t.accountMenu.accountFallback
   const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
 
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         style={{
           display: 'flex',
@@ -116,7 +117,7 @@ export function UserMenu() {
           }}
         >
           <Link
-            href="/dashboard"
+            href={`${base}/dashboard`}
             onClick={() => setOpen(false)}
             style={{
               display: 'block',
@@ -127,10 +128,10 @@ export function UserMenu() {
               borderRadius: 4,
             }}
           >
-            Historie
+            {t.accountMenu.history}
           </Link>
           <Link
-            href="/dashboard"
+            href={`${base}/dashboard`}
             onClick={() => setOpen(false)}
             style={{
               display: 'block',
@@ -141,10 +142,11 @@ export function UserMenu() {
               borderRadius: 4,
             }}
           >
-            Nastavení
+            {t.accountMenu.settings}
           </Link>
           <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border-subtle)', margin: '4px 0' }} />
           <button
+            type="button"
             onClick={() => { setOpen(false); signOut() }}
             style={{
               display: 'block',
@@ -159,7 +161,7 @@ export function UserMenu() {
               borderRadius: 4,
             }}
           >
-            Odhlásit se
+            {t.accountMenu.signOut}
           </button>
         </div>
       )}
@@ -169,9 +171,9 @@ export function UserMenu() {
 
 /**
  * Google sign-in button — used on the login page.
- * Initiates OAuth PKCE flow with minimal scopes.
  */
 export function GoogleSignInButton({ redirectTo }: { redirectTo?: string }) {
+  const t = useTranslations()
   const [loading, setLoading] = useState(false)
 
   async function handleSignIn() {
@@ -183,10 +185,9 @@ export function GoogleSignInButton({ redirectTo }: { redirectTo?: string }) {
       options: {
         redirectTo: `${window.location.origin}/auth/callback${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`,
         queryParams: {
-          access_type: 'online',       // No offline access / refresh tokens
-          prompt: 'select_account',    // Always show account picker
+          access_type: 'online',
+          prompt: 'select_account',
         },
-        // Minimal scopes — identity only, no Drive/Calendar/Contacts
         scopes: 'openid email profile',
       },
     })
@@ -199,6 +200,7 @@ export function GoogleSignInButton({ redirectTo }: { redirectTo?: string }) {
 
   return (
     <button
+      type="button"
       onClick={handleSignIn}
       disabled={loading}
       className="glass-btn glass-btn--primary"
@@ -213,11 +215,11 @@ export function GoogleSignInButton({ redirectTo }: { redirectTo?: string }) {
       }}
     >
       {loading ? (
-        <span>Přesměrování…</span>
+        <span>{t.auth.redirecting}</span>
       ) : (
         <>
           <GoogleIcon />
-          <span>Pokračovat přes Google</span>
+          <span>{t.auth.continueWithGoogle}</span>
         </>
       )}
     </button>

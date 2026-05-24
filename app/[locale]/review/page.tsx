@@ -1,35 +1,38 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { ReviewResult } from '@/components/review/ReviewResult'
 import type { ReviewContractResponse } from '@/lib/review/types'
+import { localeToJurisdiction, type Locale } from '@/lib/contracts/types'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
+import { format as formatMsg } from '@/lib/i18n'
+import type { Messages } from '@/lib/i18n/messages/cs'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { UserMenu } from '@/components/auth/UserMenu'
 
-// ── Known contract types for the optional hint dropdown ─────────────────────
+// Hint values stay aligned with legacy CZ review prompt examples (backend is CZ-only today).
+type TypeOptionKey = keyof Messages['reviewPage']['typeOptions']
 
-const CONTRACT_TYPE_OPTIONS = [
-  { value: '', label: '— Automaticky rozpoznat —' },
-  { value: 'Kupní smlouva', label: 'Kupní smlouva' },
-  { value: 'Smlouva o dílo', label: 'Smlouva o dílo' },
-  { value: 'Nájemní smlouva', label: 'Nájemní smlouva' },
-  { value: 'Pracovní smlouva', label: 'Pracovní smlouva' },
-  { value: 'Smlouva o mlčenlivosti (NDA)', label: 'Smlouva o mlčenlivosti (NDA)' },
-  { value: 'Mandátní smlouva', label: 'Mandátní smlouva' },
-  { value: 'Licenční smlouva', label: 'Licenční smlouva' },
-  { value: 'Darovací smlouva', label: 'Darovací smlouva' },
-  { value: 'Smlouva o půjčce', label: 'Smlouva o půjčce' },
-  { value: 'Jiný typ', label: 'Jiný typ smlouvy' },
+const CONTRACT_HINT_ORDER: readonly { key: TypeOptionKey; apiValue: string }[] = [
+  { key: 'auto', apiValue: '' },
+  { key: 'purchase', apiValue: 'Kupní smlouva' },
+  { key: 'work', apiValue: 'Smlouva o dílo' },
+  { key: 'tenancy', apiValue: 'Nájemní smlouva' },
+  { key: 'employment', apiValue: 'Pracovní smlouva' },
+  { key: 'nda', apiValue: 'Smlouva o mlčenlivosti (NDA)' },
+  { key: 'mandate', apiValue: 'Mandátní smlouva' },
+  { key: 'license', apiValue: 'Licenční smlouva' },
+  { key: 'gift', apiValue: 'Darovací smlouva' },
+  { key: 'loan', apiValue: 'Smlouva o půjčce' },
+  { key: 'other', apiValue: 'Jiný typ' },
 ]
 
-// ── Loading step labels ─────────────────────────────────────────────────────
-
-const REVIEW_STEPS = [
-  'Analyzuji text smlouvy…',
-  'Identifikuji typ smlouvy a právní kontext…',
-  'Kontroluji rizikové klauzule…',
-  'Hledám chybějící ustanovení…',
-  'Připravuji výsledky analýzy…',
-]
+function localeToNumberFormat(locale: Locale): string {
+  if (locale === 'cs') return 'cs-CZ'
+  if (locale === 'de') return 'de-DE'
+  return 'en-GB'
+}
 
 // ── Page state ──────────────────────────────────────────────────────────────
 
@@ -38,6 +41,25 @@ type PageState = 'input' | 'reviewing' | 'result' | 'error'
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function ReviewPage() {
+  const locale = useLocale()
+  const t = useTranslations()
+  const jurisdiction = localeToJurisdiction(locale)
+  const numberLocale = localeToNumberFormat(locale)
+
+  const reviewSteps = useMemo(
+    () => [t.reviewPage.step1, t.reviewPage.step2, t.reviewPage.step3, t.reviewPage.step4, t.reviewPage.step5],
+    [t],
+  )
+
+  const contractTypeOptions = useMemo(
+    () =>
+      CONTRACT_HINT_ORDER.map(({ key, apiValue }) => ({
+        value: apiValue,
+        label: t.reviewPage.typeOptions[key],
+      })),
+    [t],
+  )
+
   const [pageState, setPageState] = useState<PageState>('input')
   const [contractText, setContractText] = useState('')
   const [contractTypeHint, setContractTypeHint] = useState('')
@@ -67,10 +89,10 @@ export default function ReviewPage() {
     if (pageState !== 'reviewing') return
     setReviewStep(0)
     const interval = setInterval(() => {
-      setReviewStep((s) => (s < REVIEW_STEPS.length - 1 ? s + 1 : s))
+      setReviewStep((s) => (s < reviewSteps.length - 1 ? s + 1 : s))
     }, 3000)
     return () => clearInterval(interval)
-  }, [pageState])
+  }, [pageState, reviewSteps.length])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -110,7 +132,7 @@ export default function ReviewPage() {
 
       if (!res.ok) {
         abortControllerRef.current = null
-        const base = typeof data.error === 'string' ? data.error : 'Chyba při analýze smlouvy.'
+        const base = typeof data.error === 'string' ? data.error : t.reviewPage.fetchErrorFallback
         const hint =
           typeof data.hint === 'string' && data.hint.trim() !== '' ? data.hint.trim() : ''
         setErrorMessage(hint ? `${base}\n\n${hint}` : base)
@@ -127,7 +149,7 @@ export default function ReviewPage() {
       if (pageStateRef.current !== 'reviewing') return
       if (requestId !== activeRequestIdRef.current) return
       abortControllerRef.current = null
-      setErrorMessage('Síťová chyba. Zkuste to prosím znovu.')
+      setErrorMessage(t.reviewPage.networkError)
       setPageState('error')
     } finally {
       setIsSubmitting(false)
@@ -153,31 +175,42 @@ export default function ReviewPage() {
   const charCount = contractText.trim().length
   const isValid = charCount >= 50
 
+  const crumbStateLabel =
+    pageState === 'reviewing'
+      ? t.reviewPage.crumbAnalyzing
+      : pageState === 'result'
+        ? t.reviewPage.crumbResults
+        : pageState === 'error'
+          ? t.reviewPage.crumbError
+          : ''
+
   return (
     <main style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', padding: '0 var(--space-md)' }}>
       {/* ── Top bar ── */}
       <header style={{ maxWidth: 920, margin: '0 auto', padding: 'var(--space-xl) 0 var(--space-lg)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+          <LanguageSwitcher />
+          <UserMenu />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
           <div>
-            <Link href="/" style={{ textDecoration: 'none' }}>
+            <Link href={`/${locale}`} style={{ textDecoration: 'none' }}>
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', background: 'linear-gradient(135deg, var(--accent-aqua), var(--accent-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1.2 }}>
-                PrávníkAI
+                {t.meta.siteName}
               </h1>
             </Link>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-subtle)', marginTop: 2 }}>
-              Kontrola smluv · České právo
+              {t.nav.review} · {t.jurisdiction.legal[jurisdiction]}
             </p>
           </div>
 
-          {pageState !== 'input' && (
+          {pageState !== 'input' && crumbStateLabel && (
             <nav style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.8rem' }}>
-              <button onClick={handleNewReview} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-aqua)', fontSize: '0.8rem', padding: 0 }}>
-                Kontrola smlouvy
+              <button type="button" onClick={handleNewReview} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-aqua)', fontSize: '0.8rem', padding: 0 }}>
+                {t.reviewPage.crumbReview}
               </button>
               <span style={{ color: 'var(--color-text-subtle)' }} aria-hidden="true">›</span>
-              <span style={{ color: 'var(--color-text)' }}>
-                {pageState === 'reviewing' ? 'Analyzuji…' : pageState === 'result' ? 'Výsledky' : 'Chyba'}
-              </span>
+              <span style={{ color: 'var(--color-text)' }}>{crumbStateLabel}</span>
             </nav>
           )}
         </div>
@@ -186,8 +219,7 @@ export default function ReviewPage() {
         <div className="alert alert--info" style={{ marginTop: 'var(--space-md)', display: 'flex', gap: 'var(--space-sm)', alignItems: 'flex-start' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span>
-            AI-asistovaná kontrola smluv výhradně dle <strong>českého práva</strong>.
-            Analýza neslouží jako právní poradenství — vždy konzultujte advokáta.
+            {formatMsg(t.reviewPage.notice, { law: t.jurisdiction.legal.CZ })}
           </span>
         </div>
       </header>
@@ -199,14 +231,14 @@ export default function ReviewPage() {
         {pageState === 'input' && (
           <section>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 'var(--space-lg)', color: 'var(--color-text-muted)' }}>
-              Zkontrolovat existující smlouvu
+              {t.reviewPage.inputSectionTitle}
             </h2>
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="glass-card form-section" style={{ padding: 'var(--space-xl)' }}>
                 <div className="glass-input-wrap form-field--full">
                   <label className="glass-input-label" htmlFor="contract-text">
-                    Text smlouvy
+                    {t.reviewPage.contractLabel}
                     <span className="required-mark" aria-hidden="true"> *</span>
                   </label>
                   <textarea
@@ -214,27 +246,29 @@ export default function ReviewPage() {
                     className="glass-input glass-textarea"
                     value={contractText}
                     onChange={(e) => setContractText(e.target.value)}
-                    placeholder="Vložte celý text smlouvy, kterou chcete zkontrolovat…"
+                    placeholder={t.reviewPage.contractPlaceholder}
                     rows={14}
                     required
                     style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '0.88rem', lineHeight: 1.7 }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-xs)' }}>
                     <span className="glass-input-helper">
-                      Vložte kompletní text smlouvy včetně podpisových bloků. Minimum 50 znaků.
+                      {t.reviewPage.contractHelper}
                     </span>
                     <span style={{
                       fontSize: '0.72rem', fontFamily: 'monospace',
                       color: isValid ? 'var(--accent-aqua)' : 'var(--color-text-subtle)',
                     }}>
-                      {charCount.toLocaleString('cs-CZ')} znaků
+                      {formatMsg(t.reviewPage.charCounter, {
+                        count: charCount.toLocaleString(numberLocale),
+                      })}
                     </span>
                   </div>
                 </div>
 
                 <div className="glass-input-wrap" style={{ marginTop: 'var(--space-md)', maxWidth: 360 }}>
                   <label className="glass-input-label" htmlFor="contract-type-hint">
-                    Typ smlouvy (volitelné)
+                    {t.reviewPage.typeHintLabel}
                   </label>
                   <select
                     id="contract-type-hint"
@@ -242,12 +276,12 @@ export default function ReviewPage() {
                     value={contractTypeHint}
                     onChange={(e) => setContractTypeHint(e.target.value)}
                   >
-                    {CONTRACT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    {contractTypeOptions.map((opt) => (
+                      <option key={`${opt.label}-${opt.value}`} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                   <span className="glass-input-helper">
-                    Pomáhá AI zaměřit analýzu. Pokud nevíte, nechte na automatickém rozpoznání.
+                    {t.reviewPage.typeHintHelper}
                   </span>
                 </div>
               </div>
@@ -261,12 +295,12 @@ export default function ReviewPage() {
                   {isSubmitting ? (
                     <>
                       <SpinnerIcon />
-                      Analyzuji smlouvu…
+                      {t.reviewPage.submitAnalyzing}
                     </>
                   ) : (
                     <>
                       <SearchIcon />
-                      Zkontrolovat smlouvu
+                      {t.reviewPage.submitIdle}
                     </>
                   )}
                 </button>
@@ -275,10 +309,10 @@ export default function ReviewPage() {
 
             {/* Trust markers */}
             <div className="trust-bar" style={{ display: 'flex', gap: 'var(--space-lg)', justifyContent: 'center', flexWrap: 'wrap', marginTop: 'var(--space-2xl)', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--glass-border-subtle)' }}>
-              <TrustMarker icon={<ShieldIcon />} text="Server-side zpracování" />
-              <TrustMarker icon={<LockIcon />} text="Text se neukládá" />
-              <TrustMarker icon={<ScaleIcon />} text="Výhradně české právo" />
-              <TrustMarker icon={<CheckCircleIcon />} text="Strukturovaná analýza" />
+              <TrustMarker icon={<ShieldIcon />} text={t.reviewPage.trustServer} />
+              <TrustMarker icon={<LockIcon />} text={t.reviewPage.trustNoPersist} />
+              <TrustMarker icon={<ScaleIcon />} text={t.reviewPage.trustJurisdictionContext} />
+              <TrustMarker icon={<CheckCircleIcon />} text={t.reviewPage.trustStructured} />
             </div>
           </section>
         )}
@@ -294,16 +328,16 @@ export default function ReviewPage() {
               </div>
 
               <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 'var(--space-sm)' }}>
-                Analyzuji smlouvu
+                {t.reviewPage.analyzingTitle}
               </h2>
               <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-xl)' }}>
-                AI kontroluje smluvní klauzule z pohledu českého práva.
+                {t.reviewPage.analyzingSubtitle}
               </p>
 
               <div style={{ maxWidth: 360, margin: '0 auto', textAlign: 'left' }}>
-                {REVIEW_STEPS.map((step, i) => (
+                {reviewSteps.map((step, i) => (
                   <div
-                    key={i}
+                    key={step}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
                       padding: '8px 0',
@@ -339,14 +373,14 @@ export default function ReviewPage() {
         {pageState === 'error' && (
           <section>
             <div className="alert alert--error" style={{ marginBottom: 'var(--space-lg)', whiteSpace: 'pre-line' }}>
-              <strong>Chyba při analýze:</strong> {errorMessage}
+              <strong>{t.reviewPage.errorDetailPrefix}</strong> {errorMessage}
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
-              <button className="glass-btn glass-btn--primary" onClick={handleRetry}>
-                Zkusit znovu
+              <button type="button" className="glass-btn glass-btn--primary" onClick={handleRetry}>
+                {t.reviewPage.retry}
               </button>
-              <button className="glass-btn glass-btn--ghost" onClick={handleNewReview}>
-                Nová kontrola
+              <button type="button" className="glass-btn glass-btn--ghost" onClick={handleNewReview}>
+                {t.reviewPage.newReview}
               </button>
             </div>
           </section>

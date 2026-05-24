@@ -14,19 +14,28 @@
  */
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { completeOnboarding } from '@/lib/supabase/actions'
+import { format as formatMsg } from '@/lib/i18n'
+import { useLocale, useTranslations } from '@/lib/i18n/client'
 
 interface OnboardingViewProps {
   userName: string
 }
 
 export function OnboardingView({ userName }: OnboardingViewProps) {
+  const locale = useLocale()
+  const t = useTranslations()
+  const router = useRouter()
+  const base = `/${locale}`
+
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const displayName = userName?.trim() || t.onboarding.guestName
   const canProceed = termsAccepted && privacyAccepted
 
   async function handleSubmit(e: React.FormEvent) {
@@ -38,10 +47,10 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
 
     try {
       await completeOnboarding({ marketingConsent })
-      // Server action updates the profile — refresh to load dashboard
-      window.location.href = '/dashboard'
+      router.push(`${base}/dashboard`)
+      router.refresh()
     } catch {
-      setError('Nepodařilo se dokončit registraci. Zkuste to znovu.')
+      setError(t.onboarding.submitErrorBanner)
       setSubmitting(false)
     }
   }
@@ -50,10 +59,10 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
     <div style={{ maxWidth: 640, margin: '0 auto', paddingTop: 'var(--space-2xl)' }}>
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}>
         <h2 style={{ fontSize: '1.3rem', fontWeight: 600, marginBottom: 'var(--space-sm)' }}>
-          Vítejte, {userName || 'uživateli'}
+          {formatMsg(t.onboarding.welcomeNamed, { name: displayName })}
         </h2>
         <p style={{ fontSize: '0.88rem', color: 'var(--color-text-muted)' }}>
-          Před prvním použitím prosím projděte následující informace.
+          {t.onboarding.dashboardIntro}
         </p>
       </div>
 
@@ -62,13 +71,10 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
         <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
           <h3 style={{ fontSize: '0.92rem', fontWeight: 600, marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
             <span style={{ fontSize: '1.1rem' }}>&#9878;</span>
-            AI-asistovaný nástroj
+            {t.onboarding.viewHeading}
           </h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
-            PrávníkAI je AI-asistovaný nástroj pro generování a kontrolu právních dokumentů.
-            <strong> Neposkytuje právní poradenství</strong> ve smyslu zákona č. 85/1996 Sb., o advokacii.
-            Vygenerované dokumenty a analýzy slouží výhradně jako pracovní návrh.
-            Před podpisem nebo právním použitím vždy konzultujte advokáta.
+            {formatMsg(t.onboarding.viewBody, { siteName: t.meta.siteName })}
           </p>
         </div>
 
@@ -76,14 +82,10 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
         <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
           <h3 style={{ fontSize: '0.92rem', fontWeight: 600, marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
             <span style={{ fontSize: '1.1rem' }}>&#128274;</span>
-            Ochrana osobních údajů
+            {t.onboarding.viewPrivacyTitle}
           </h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
-            Ukládáme pouze údaje nezbytné pro fungování služby: vaše jméno a e-mail z Google účtu,
-            historii vygenerovaných smluv a provedených kontrol.
-            Data jsou zpracovávána na serverech v EU.
-            Vaše údaje nikdy neprodáváme třetím stranám.
-            Svůj účet a data můžete kdykoli smazat.
+            {t.onboarding.viewPrivacyBody}
           </p>
         </div>
 
@@ -97,8 +99,7 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
               style={{ marginTop: 2, accentColor: 'var(--accent-aqua)' }}
             />
             <span>
-              Rozumím, že PrávníkAI je AI nástroj a neposkytuje právní poradenství.
-              Souhlasím s podmínkami použití.
+              {formatMsg(t.onboarding.viewAckTerms, { siteName: t.meta.siteName })}
               <span style={{ color: 'var(--accent-rose)' }}> *</span>
             </span>
           </label>
@@ -111,7 +112,7 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
               style={{ marginTop: 2, accentColor: 'var(--accent-aqua)' }}
             />
             <span>
-              Souhlasím se zpracováním osobních údajů dle zásad ochrany soukromí.
+              {t.onboarding.viewAckPrivacy}
               <span style={{ color: 'var(--accent-rose)' }}> *</span>
             </span>
           </label>
@@ -126,8 +127,11 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
               style={{ marginTop: 2, accentColor: 'var(--accent-aqua)' }}
             />
             <span>
-              Souhlasím se zasíláním informací o novinkách a vylepšeních PrávníkAI.
-              <span style={{ fontSize: '0.75rem', opacity: 0.7 }}> (volitelné)</span>
+              {formatMsg(t.onboarding.viewMarketing, { siteName: t.meta.siteName })}
+              <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>
+                {' '}
+                ({t.onboarding.optionalWord})
+              </span>
             </span>
           </label>
         </div>
@@ -144,11 +148,11 @@ export function OnboardingView({ userName }: OnboardingViewProps) {
           disabled={!canProceed || submitting}
           style={{ width: '100%', padding: '12px', fontSize: '0.92rem' }}
         >
-          {submitting ? 'Dokončuji…' : 'Pokračovat do aplikace'}
+          {submitting ? t.onboarding.dashboardSubmitting : t.onboarding.continueToApp}
         </button>
 
         <p style={{ fontSize: '0.7rem', color: 'var(--color-text-subtle)', textAlign: 'center', marginTop: 'var(--space-md)', lineHeight: 1.5 }}>
-          Pole označená * jsou povinná pro používání služby.
+          {t.onboarding.requiredStarsNote}
         </p>
       </form>
     </div>

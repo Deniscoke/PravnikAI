@@ -7,7 +7,7 @@ import type { Messages } from './cs'
 export const en: Messages = {
   meta: {
     locale: 'en',
-    siteName: 'PrávníkAI',
+    siteName: 'Právo365',
     htmlLang: 'en',
     legalLabel: 'English law',
   },
@@ -56,13 +56,15 @@ export const en: Messages = {
   home: {
     kicker: 'AI assistant for lawyers',
     heroSubtitle:
-      'Generate legal contracts in minutes, not hours. An intelligent tool that understands Czech, German and English law — in your client’s language.',
+      'Draft structured contracts for CZ, DE or UK law in minutes — with statutory references where appropriate. Built for founders, freelancers and cross-border work. Not a substitute for tailored legal advice.',
+    heroTrustNote:
+      'Not legal advice. Payments processed securely by Stripe. GDPR-aware data handling.',
     ctaGenerate: 'Generate contract',
     ctaReview: 'Review contract',
     statContractTypes: 'Contract types',
     statTime: 'Average time',
     statJurisdictions: 'Jurisdictions',
-    sectionFeaturesTitle: 'Why PrávníkAI',
+    sectionFeaturesTitle: 'Why Právo365',
     sectionFeaturesSubtitle: 'A tool built by lawyers, for lawyers',
     sectionHowTitle: 'How it works',
     sectionHowSubtitle: 'A contract in 3 simple steps',
@@ -76,7 +78,7 @@ export const en: Messages = {
     ctaCardBody:
       'Prepare legally sound contracts in minutes instead of hours. Three jurisdictions, professional AI drafting, DOCX and PDF export.',
     ctaCardPrimary: 'Try for free',
-    ctaCardSecondary: 'I have questions',
+    ctaCardSecondary: 'Read the FAQ',
     feature: {
       automated: {
         title: 'Automated contracts',
@@ -116,6 +118,7 @@ export const en: Messages = {
         features: 'Features',
         generator: 'Generator',
         review: 'Review',
+        pricing: 'Pricing',
         faq: 'FAQ',
         terms: 'Terms of service',
         privacy: 'Privacy policy',
@@ -199,6 +202,146 @@ export const en: Messages = {
     exportServerError: 'The file could not be generated on the server. Please try again or contact us.',
     exportNetworkOrTimeout:
       'The download did not finish (network or server timeout). Please try again; for very long contracts on free hosting, shorten the text or retry.',
+  },
+
+  accountMenu: {
+    history: 'History',
+    settings: 'Settings',
+    signOut: 'Sign out',
+    accountFallback: 'Account',
+  },
+
+  auth: {
+    continueWithGoogle: 'Continue with Google',
+    redirecting: 'Redirecting…',
+  },
+
+  cookies: {
+    bannerText:
+      'We only use essential cookies to keep you signed in. No advertising or analytics cookies.',
+    learnMore: 'Learn more',
+    accept: 'OK',
+    acceptAria: 'Dismiss cookie information',
+  },
+
+  dashboard: {
+    historySubtitle:
+      'Your generated contracts and reviews you have run.',
+    tabGenerations: 'Generated contracts',
+    tabReviews: 'Contract reviews',
+    emptyGenTitle: 'No generated contracts yet',
+    emptyGenDescription:
+      'Create one with the generator — it will appear here automatically.',
+    emptyGenCta: 'Generate contract',
+    emptyRevTitle: 'No contract reviews yet',
+    emptyRevDescription:
+      'Review a contract — results are saved here.',
+    emptyRevCta: 'Review contract',
+    deleteConfirm: 'Delete this entry permanently?',
+    deleteFailed: 'Could not delete. Please try again.',
+    unknownContractType: 'Unknown type',
+    viewDetail: 'Open',
+    viewTitleTooltip: 'View details',
+    deleteTooltip: 'Delete',
+    viewAriaPattern: 'View {title}',
+    deleteAriaPattern: 'Delete {title}',
+  },
+
+  onboarding: {
+    consentSubtitle: 'Before you start, please accept the policies below.',
+    welcomeTitle: 'Welcome to Právo365',
+    welcomeLead:
+      'Právo365 helps prepare contract drafts and gives a structured, non-binding review for the jurisdiction you choose (CZ, DE, UK). Not legal advice — involve a solicitor before you rely on any output.',
+    cardHeadline: 'Before you continue',
+    termsAgreePrefix: 'I agree to the',
+    termsLinkLabel: 'terms of service',
+    privacyAgreePrefix: 'I agree to the',
+    privacyLinkLabel: 'privacy policy',
+    privacyGdprBridge: 'and acknowledge the',
+    gdprLinkLabel: 'GDPR / cookie information',
+    marketingOptIn:
+      'I would like product news and offers by email',
+    optionalTag: '(optional)',
+    requiredLegend: 'Required fields',
+    submitting: 'Saving…',
+    submitCta: 'Get started with {siteName}',
+    submitError: 'Something went wrong. Please try again.',
+    viewWelcomeLine: 'Welcome',
+    viewHeading: 'AI-assisted tool',
+    viewBody:
+      '{siteName} helps you prepare contract drafts and spot issues in the text. It does not provide regulated legal advice under the Legal Services Act 2007. Outputs are working drafts only.',
+    viewAckTerms:
+      'I understand {siteName} is an AI tool and not legal advice. I agree to the terms of use.',
+    viewAckPrivacy:
+      'I agree to the processing of my personal data under the privacy policy.',
+    viewMarketing:
+      'I agree to receive updates and improvements about {siteName}.',
+    optionalWord: 'optional',
+    submitErrorBanner:
+      'We could not finish registration. Please try again.',
+    guestName: 'there',
+    dashboardIntro: 'Before you start, please read the following.',
+    viewPrivacyTitle: 'Privacy',
+    viewPrivacyBody:
+      'We only store data needed to run the service: your name and email from your Google account, plus history of generated contracts and reviews. Processing is on servers in the EU. We do not sell your data. You can delete your account and data at any time.',
+    welcomeNamed: 'Welcome, {name}',
+    dashboardSubmitting: 'Finishing…',
+    continueToApp: 'Continue to the app',
+    requiredStarsNote: 'Fields marked with * are required to use the service.',
+  },
+
+  reviewPage: {
+    notice:
+      'AI-assisted contract review in the legal context of ({law}). Not legal advice — confirm with a solicitor before you rely on it.',
+    crumbReview: 'Review',
+    crumbAnalyzing: 'Analysing…',
+    crumbResults: 'Results',
+    crumbError: 'Error',
+    inputSectionTitle: 'Review an existing contract',
+    contractLabel: 'Contract text',
+    contractPlaceholder: 'Paste the full contract you want reviewed…',
+    contractHelper:
+      'Include the full text including signature blocks. Minimum 50 characters.',
+    charCounter: '{count} characters',
+    typeHintLabel: 'Contract type (optional)',
+    typeHintHelper:
+      'Helps steer the model. If unsure, leave automatic detection.',
+    submitAnalyzing: 'Analysing contract…',
+    submitIdle: 'Review contract',
+    trustServer: 'Server-side processing',
+    trustNoPersist:
+      'Review text is processed for this request without being kept as a saved file here.',
+    trustJurisdictionContext:
+      'Legal context follows your language / jurisdiction choice',
+    trustStructured: 'Structured risk analysis',
+    analyzingTitle: 'Review in progress',
+    analyzingSubtitle:
+      'The model reviews clauses in the context of your selected jurisdiction.',
+    step1: 'Reading the contract…',
+    step2: 'Identifying document type and context…',
+    step3: 'Scanning for risky clauses…',
+    step4: 'Looking for missing provisions…',
+    step5: 'Preparing the summary…',
+    errorLead: 'Review error',
+    retry: 'Try again',
+    newReview: 'New review',
+    fetchErrorFallback: 'Contract review failed.',
+    networkError:
+      'Network error. Please try again in a moment.',
+    typeOptions: {
+      auto: '— Detect automatically —',
+      purchase: 'Sale of goods / purchase agreement',
+      work: 'Services / works agreement',
+      tenancy: 'Tenancy / lease',
+      employment: 'Employment contract',
+      nda: 'Confidentiality agreement (NDA)',
+      mandate: 'Agency / mandate agreement',
+      license: 'Licence agreement',
+      gift: 'Gift deed',
+      loan: 'Loan agreement',
+      other: 'Other contract type',
+    },
+    errorDetailPrefix: 'Error during review:',
   },
 
   langSwitch: {

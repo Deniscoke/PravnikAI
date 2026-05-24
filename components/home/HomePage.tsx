@@ -20,15 +20,18 @@ export default function HomePage() {
   const faqItems = getHomeFaqItems(locale)
 
   return (
-    <>
+    <div className="home-page">
       <header className="hero">
         <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: 1100, margin: '0 auto', paddingBottom: 'var(--space-lg)', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
           <LanguageSwitcher />
           <UserMenu />
         </div>
         <span className="hero__kicker">{t.home.kicker}</span>
-        <h1 className="hero__title">PrávníkAI</h1>
+        <h1 className="hero__title">{t.meta.siteName}</h1>
         <p className="hero__sub">{t.home.heroSubtitle}</p>
+        <p className="hero__trust" role="note">
+          {t.home.heroTrustNote}
+        </p>
 
         <div className="hero__cta">
           <Link href={`/${locale}/generator`} className="glass-btn glass-btn--primary" style={{ padding: '14px 32px', fontSize: '1rem' }}>
@@ -172,7 +175,7 @@ export default function HomePage() {
       <footer className="site-footer">
         <div className="footer-grid">
           <div>
-            <div className="footer-logo">PrávníkAI</div>
+            <div className="footer-logo">{t.meta.siteName}</div>
             <p className="footer-desc">{t.home.footer.tagline}</p>
             <div style={{ marginTop: 'var(--space-md)' }}>
               <LanguageSwitcher />
@@ -183,6 +186,7 @@ export default function HomePage() {
             <Link href="#funkce">{t.home.footer.links.features}</Link>
             <Link href={`/${locale}/generator`}>{t.home.footer.links.generator}</Link>
             <Link href={`/${locale}/review`}>{t.home.footer.links.review}</Link>
+            <Link href="#cenik">{t.home.footer.links.pricing}</Link>
             <Link href="#faq">{t.home.footer.links.faq}</Link>
           </div>
           <div className="footer-links">
@@ -199,10 +203,21 @@ export default function HomePage() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2026 PrávníkAI · IndiWeb. {t.home.footer.rights}</p>
+          <p>
+            &copy; 2026 {t.meta.siteName} · IndiWeb. {t.home.footer.rights}
+          </p>
         </div>
       </footer>
-    </>
+
+      <nav className="home-mobile-sticky" aria-label="Mobile">
+        <Link href={`/${locale}/generator`} className="glass-btn glass-btn--primary home-mobile-sticky__btn">
+          <DocIcon /> {t.home.ctaGenerate}
+        </Link>
+        <Link href="#cenik" className="glass-btn glass-btn--ghost home-mobile-sticky__btn home-mobile-sticky__btn--secondary">
+          {t.home.footer.links.pricing}
+        </Link>
+      </nav>
+    </div>
   )
 }
 

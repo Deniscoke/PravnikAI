@@ -8,8 +8,12 @@
  */
 
 import React, { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { deleteHistoryItem } from '@/lib/supabase/actions'
 import type { ContractGenerationHistory, ContractReviewHistory } from '@/lib/supabase/types'
+import type { Locale } from '@/lib/contracts/types'
+import { useTranslations } from '@/lib/i18n/client'
+import { format as formatMsg } from '@/lib/i18n'
 
 // ─── Lightweight row types for the list (no heavy content) ───────────────────
 
@@ -22,21 +26,32 @@ type ReviewRow = Pick<ContractReviewHistory,
 >
 
 interface HistoryListProps {
+  locale: Locale
   generations: GenerationRow[]
   reviews: ReviewRow[]
 }
 
 type Tab = 'generations' | 'reviews'
 
-export function HistoryList({ generations: initialGenerations, reviews: initialReviews }: HistoryListProps) {
+function localeToBcp47(locale: Locale): string {
+  if (locale === 'cs') return 'cs-CZ'
+  if (locale === 'de') return 'de-DE'
+  return 'en-GB'
+}
+
+export function HistoryList({ locale, generations: initialGenerations, reviews: initialReviews }: HistoryListProps) {
+  const t = useTranslations()
+  const base = `/${locale}`
+  const dateLocale = localeToBcp47(locale)
+
   const [tab, setTab] = useState<Tab>('generations')
   const [generations, setGenerations] = useState(initialGenerations)
   const [reviews, setReviews] = useState(initialReviews)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   function handleDelete(id: string, type: 'generation' | 'review') {
-    if (!confirm('Opravdu chcete smazat tento záznam?')) return
+    if (!confirm(t.dashboard.deleteConfirm)) return
     setDeletingId(id)
 
     startTransition(async () => {
@@ -48,7 +63,7 @@ export function HistoryList({ generations: initialGenerations, reviews: initialR
           setReviews((prev) => prev.filter((r) => r.id !== id))
         }
       } catch {
-        alert('Smazání se nezdařilo. Zkuste to znovu.')
+        alert(t.dashboard.deleteFailed)
       } finally {
         setDeletingId(null)
       }
@@ -60,10 +75,10 @@ export function HistoryList({ generations: initialGenerations, reviews: initialR
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 'var(--space-xs)', marginBottom: 'var(--space-lg)' }}>
         <TabButton active={tab === 'generations'} onClick={() => setTab('generations')} count={generations.length}>
-          Generované smlouvy
+          {t.dashboard.tabGenerations}
         </TabButton>
         <TabButton active={tab === 'reviews'} onClick={() => setTab('reviews')} count={reviews.length}>
-          Kontroly smluv
+          {t.dashboard.tabReviews}
         </TabButton>
       </div>
 
@@ -72,23 +87,28 @@ export function HistoryList({ generations: initialGenerations, reviews: initialR
         generations.length === 0 ? (
           <EmptyState
             icon="&#128196;"
-            title="Zatím žádné generované smlouvy"
-            description="Vytvořte první smlouvu pomocí generátoru a uloží se sem automaticky."
-            actionHref="/generator"
-            actionLabel="Generovat smlouvu"
+            title={t.dashboard.emptyGenTitle}
+            description={t.dashboard.emptyGenDescription}
+            actionHref={`${base}/generator`}
+            actionLabel={t.dashboard.emptyGenCta}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {generations.map((g) => (
               <HistoryCard
                 key={g.id}
-                id={g.id}
                 title={g.title}
                 subtitle={g.schema_id.replace(/-v\d+$/, '').replace(/-/g, ' ')}
                 badge={g.mode}
                 badgeClass={g.mode === 'complete' ? 'complete' : g.mode === 'draft' ? 'draft' : 'review'}
                 timestamp={g.created_at}
-                viewHref={`/generator/${g.id}`}
+                viewHref={`${base}/generator/${g.id}`}
+                dateLocale={dateLocale}
+                viewLabel={t.dashboard.viewDetail}
+                viewTooltip={t.dashboard.viewTitleTooltip}
+                deleteTooltip={t.dashboard.deleteTooltip}
+                viewAriaPattern={t.dashboard.viewAriaPattern}
+                deleteAriaPattern={t.dashboard.deleteAriaPattern}
                 onDelete={() => handleDelete(g.id, 'generation')}
                 isDeleting={deletingId === g.id}
               />
@@ -102,23 +122,28 @@ export function HistoryList({ generations: initialGenerations, reviews: initialR
         reviews.length === 0 ? (
           <EmptyState
             icon="&#128269;"
-            title="Zatím žádné kontroly smluv"
-            description="Zkontrolujte existující smlouvu a výsledky se uloží sem automaticky."
-            actionHref="/review"
-            actionLabel="Zkontrolovat smlouvu"
+            title={t.dashboard.emptyRevTitle}
+            description={t.dashboard.emptyRevDescription}
+            actionHref={`${base}/review`}
+            actionLabel={t.dashboard.emptyRevCta}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {reviews.map((r) => (
               <HistoryCard
                 key={r.id}
-                id={r.id}
                 title={r.title}
-                subtitle={r.detected_contract_type || 'Neznámý typ'}
+                subtitle={r.detected_contract_type || t.dashboard.unknownContractType}
                 badge={r.overall_risk}
                 badgeClass={r.overall_risk === 'low' ? 'complete' : r.overall_risk === 'medium' ? 'draft' : 'review'}
                 timestamp={r.created_at}
-                viewHref={`/review/${r.id}`}
+                viewHref={`${base}/review/${r.id}`}
+                dateLocale={dateLocale}
+                viewLabel={t.dashboard.viewDetail}
+                viewTooltip={t.dashboard.viewTitleTooltip}
+                deleteTooltip={t.dashboard.deleteTooltip}
+                viewAriaPattern={t.dashboard.viewAriaPattern}
+                deleteAriaPattern={t.dashboard.deleteAriaPattern}
                 onDelete={() => handleDelete(r.id, 'review')}
                 isDeleting={deletingId === r.id}
               />
@@ -145,6 +170,7 @@ function TabButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         padding: '8px 16px',
@@ -172,33 +198,46 @@ function TabButton({
 }
 
 function HistoryCard({
-  id,
   title,
   subtitle,
   badge,
   badgeClass,
   timestamp,
   viewHref,
+  dateLocale,
+  viewLabel,
+  viewTooltip,
+  deleteTooltip,
+  viewAriaPattern,
+  deleteAriaPattern,
   onDelete,
   isDeleting,
 }: {
-  id: string
   title: string
   subtitle: string
   badge: string
   badgeClass: string
   timestamp: string
   viewHref: string
+  dateLocale: string
+  viewLabel: string
+  viewTooltip: string
+  deleteTooltip: string
+  viewAriaPattern: string
+  deleteAriaPattern: string
   onDelete: () => void
   isDeleting: boolean
 }) {
-  const date = new Date(timestamp).toLocaleDateString('cs-CZ', {
+  const date = new Date(timestamp).toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
+
+  const viewAria = formatMsg(viewAriaPattern, { title })
+  const deleteAria = formatMsg(deleteAriaPattern, { title })
 
   return (
     <div
@@ -228,9 +267,10 @@ function HistoryCard({
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-xs)', alignItems: 'center' }}>
-        <a
+        <Link
           href={viewHref}
-          title="Zobrazit detail"
+          title={viewTooltip}
+          prefetch={false}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -247,18 +287,19 @@ function HistoryCard({
             opacity: 0.8,
             transition: 'opacity 150ms',
           }}
-          aria-label={`Zobrazit ${title}`}
+          aria-label={viewAria}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
             <circle cx="12" cy="12" r="3" />
           </svg>
-          Zobrazit
-        </a>
+          {viewLabel}
+        </Link>
         <button
+          type="button"
           onClick={onDelete}
           disabled={isDeleting}
-          title="Smazat"
+          title={deleteTooltip}
           style={{
             background: 'none',
             border: 'none',
@@ -269,7 +310,7 @@ function HistoryCard({
             opacity: 0.6,
             transition: 'opacity 150ms',
           }}
-          aria-label={`Smazat ${title}`}
+          aria-label={deleteAria}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="3 6 5 6 21 6" />
@@ -308,9 +349,9 @@ function EmptyState({
       <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-lg)', maxWidth: 360, margin: '0 auto var(--space-lg)' }}>
         {description}
       </p>
-      <a href={actionHref} className="glass-btn glass-btn--primary" style={{ textDecoration: 'none' }}>
+      <Link href={actionHref} className="glass-btn glass-btn--primary" style={{ textDecoration: 'none' }} prefetch={false}>
         {actionLabel}
-      </a>
+      </Link>
     </div>
   )
 }

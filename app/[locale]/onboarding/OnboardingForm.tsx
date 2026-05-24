@@ -1,31 +1,28 @@
 'use client'
 
 /**
- * OnboardingForm — PrávníkAI
- *
- * Client Component. Collects three consents:
- *   - Terms of Service (required)
- *   - Privacy Policy (required)
- *   - Marketing communications (optional, unchecked by default)
- *
- * Calls the existing completeOnboarding() server action, then redirects
- * to /dashboard on success.
+ * Onboarding form — legal consents before first dashboard access.
  */
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { completeOnboarding } from '@/lib/supabase/actions'
+import { format as formatMsg } from '@/lib/i18n'
+import type { Locale } from '@/lib/contracts/types'
+import { useTranslations } from '@/lib/i18n/client'
 
-export function OnboardingForm() {
+export function OnboardingForm({ locale }: { locale: Locale }) {
   const router = useRouter()
+  const t = useTranslations()
+  const base = `/${locale}`
   const [isPending, startTransition] = useTransition()
-
   const [terms, setTerms] = useState(false)
   const [privacy, setPrivacy] = useState(false)
   const [marketing, setMarketing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const site = t.meta.siteName
   const canSubmit = terms && privacy && !isPending
 
   function handleSubmit(e: React.FormEvent) {
@@ -36,9 +33,9 @@ export function OnboardingForm() {
     startTransition(async () => {
       try {
         await completeOnboarding({ marketingConsent: marketing })
-        router.push('/dashboard')
+        router.push(`${base}/dashboard`)
       } catch {
-        setError('Něco se pokazilo. Zkuste to prosím znovu.')
+        setError(t.onboarding.submitError)
       }
     })
   }
@@ -46,74 +43,69 @@ export function OnboardingForm() {
   return (
     <form onSubmit={handleSubmit} noValidate>
 
-      {/* Terms of Service */}
       <label style={labelStyle}>
         <input
           type="checkbox"
           checked={terms}
-          onChange={e => setTerms(e.target.checked)}
+          onChange={(e) => setTerms(e.target.checked)}
           required
           style={checkboxStyle}
           aria-required="true"
         />
         <span style={{ lineHeight: 1.5 }}>
-          Souhlasím s{' '}
-          <Link href="/terms" target="_blank" style={linkStyle}>
-            Podmínkami používání
+          {t.onboarding.termsAgreePrefix}{' '}
+          <Link href={`${base}/terms`} target="_blank" rel="noreferrer" style={linkStyle}>
+            {t.onboarding.termsLinkLabel}
           </Link>
           <RequiredMark />
         </span>
       </label>
 
-      {/* Privacy Policy */}
       <label style={labelStyle}>
         <input
           type="checkbox"
           checked={privacy}
-          onChange={e => setPrivacy(e.target.checked)}
+          onChange={(e) => setPrivacy(e.target.checked)}
           required
           style={checkboxStyle}
           aria-required="true"
         />
         <span style={{ lineHeight: 1.5 }}>
-          Souhlasím se{' '}
-          <Link href="/privacy" target="_blank" style={linkStyle}>
-            Zpracováním osobních údajů
-          </Link>
-          {' '}a beru na vědomí{' '}
-          <Link href="/gdpr" target="_blank" style={linkStyle}>
-            GDPR informace
+          {t.onboarding.privacyAgreePrefix}{' '}
+          <Link href={`${base}/privacy`} target="_blank" rel="noreferrer" style={linkStyle}>
+            {t.onboarding.privacyLinkLabel}
+          </Link>{' '}
+          {t.onboarding.privacyGdprBridge}{' '}
+          <Link href={`${base}/gdpr`} target="_blank" rel="noreferrer" style={linkStyle}>
+            {t.onboarding.gdprLinkLabel}
           </Link>
           <RequiredMark />
         </span>
       </label>
 
-      {/* Marketing (optional) */}
       <label style={{ ...labelStyle, marginBottom: 'var(--space-xl)' }}>
         <input
           type="checkbox"
           checked={marketing}
-          onChange={e => setMarketing(e.target.checked)}
+          onChange={(e) => setMarketing(e.target.checked)}
           style={checkboxStyle}
         />
         <span style={{ lineHeight: 1.5 }}>
-          Souhlasím se zasíláním novinek a nabídek e-mailem
+          {t.onboarding.marketingOptIn}
           <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', marginLeft: 4 }}>
-            (nepovinné)
+            {t.onboarding.optionalTag}
           </span>
         </span>
       </label>
 
-      {/* Required note */}
       <p style={{
         fontSize: '0.72rem',
         color: 'var(--color-text-subtle)',
         marginBottom: 'var(--space-lg)',
       }}>
-        <RequiredMark /> Povinné pole
+        <RequiredMark /> {t.onboarding.requiredLegend}
       </p>
 
-      {/* Error */}
       {error && (
         <div
           className="alert alert--error"
@@ -124,7 +116,6 @@ export function OnboardingForm() {
         </div>
       )}
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={!canSubmit}
@@ -145,14 +136,14 @@ export function OnboardingForm() {
         }}
         aria-busy={isPending}
       >
-        {isPending ? 'Ukládám...' : 'Začít používat PrávníkAI'}
+        {isPending
+          ? t.onboarding.submitting
+          : formatMsg(t.onboarding.submitCta, { siteName: site })}
       </button>
 
     </form>
   )
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function RequiredMark() {
   return (

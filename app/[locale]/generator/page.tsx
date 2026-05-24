@@ -7,8 +7,11 @@ import type { GenerationHandle } from '@/components/contract/DynamicContractForm
 import { ContractResult } from '@/components/contract/ContractResult'
 import type { GenerateContractResponse, ContractCategory } from '@/lib/contracts/types'
 import { localeToJurisdiction } from '@/lib/contracts/types'
+import Link from 'next/link'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
 import { format as formatMsg } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { UserMenu } from '@/components/auth/UserMenu'
 
 // ── Category icons by canonical id (label is per-locale via i18n) ──────────
 
@@ -155,11 +158,17 @@ export default function GeneratorPage() {
     <main style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', padding: '0 var(--space-md)' }}>
       {/* ── Top bar ── */}
       <header style={{ maxWidth: 920, margin: '0 auto', padding: 'var(--space-xl) 0 var(--space-lg)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+          <LanguageSwitcher />
+          <UserMenu />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', background: 'linear-gradient(135deg, var(--accent-aqua), var(--accent-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1.2 }}>
-              PrávníkAI
-            </h1>
+            <Link href={`/${locale}`} style={{ textDecoration: 'none' }}>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', background: 'linear-gradient(135deg, var(--accent-aqua), var(--accent-violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1.2 }}>
+                {t.meta.siteName}
+              </h1>
+            </Link>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-subtle)', marginTop: 2 }}>
               {t.generator.title} · {t.jurisdiction.legal[jurisdiction]}
             </p>

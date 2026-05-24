@@ -13,7 +13,7 @@ const APP_URL = getSiteUrl()
 export const metadata: Metadata = {
   title: {
     default: `${SITE_NAME} — AI legal contract drafting (CZ · DE · UK)`,
-    template: '%s — PrávníkAI',
+    template: `%s — ${SITE_NAME}`,
   },
   description: SEO_DESCRIPTION_DEFAULT,
   metadataBase: new URL(APP_URL),
@@ -58,6 +58,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             } catch(e) {}
           })();
         `}} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
