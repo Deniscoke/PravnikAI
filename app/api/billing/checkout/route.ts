@@ -24,6 +24,7 @@ import { getStripePriceId, type SubscriptionTier, type BillingInterval } from '@
 import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
 import { isValidLocale } from '@/lib/i18n'
 import { getSiteUrl } from '@/lib/seo/site'
+import { getBillingConfigStatus } from '@/lib/billing/configCheck'
 
 /** Allowlist of valid Stripe price IDs from environment. Rejects arbitrary priceId injection. */
 function getConfiguredPriceIds(): string[] {
@@ -75,11 +76,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
+  // Validate server billing config before calling Stripe
+  const configStatus = getBillingConfigStatus()
+  if (configStatus.checks.secretKey !== 'ok' || configStatus.checks.priceIds === 0) {
+    console.error('[checkout] Billing config invalid:', configStatus.issues)
+    return NextResponse.json(
+      { error: configStatus.issues[0] ?? 'Platební systém není nakonfigurován.', issues: configStatus.issues },
+      { status: 503 },
+    )
+  }
+
   const configuredPrices = getConfiguredPriceIds()
   if (configuredPrices.length === 0) {
     console.error('[checkout] No STRIPE_*_PRICE_ID env vars configured')
+    const { issues } = getBillingConfigStatus()
     return NextResponse.json(
-      { error: 'Platební systém není nakonfigurován. Kontaktujte podporu.' },
+      { error: issues[0] ?? 'Platební systém není nakonfigurován. Kontaktujte podporu.', issues },
       { status: 503 },
     )
   }

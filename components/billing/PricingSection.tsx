@@ -74,7 +74,12 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier, interval: checkoutInterval, locale }),
       })
-      const data = await res.json() as { url?: string; error?: string }
+
+      let data: { url?: string; error?: string; issues?: string[] } = {}
+      const contentType = res.headers.get('content-type') ?? ''
+      if (contentType.includes('application/json')) {
+        data = await res.json()
+      }
 
       if (res.status === 401) {
         router.push(`${base}/login?redirect=${encodeURIComponent(`${base}/dashboard#cenik`)}`)
@@ -86,7 +91,26 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
         return
       }
 
-      setErrorMessage(data.error ?? t.billing.checkoutError)
+      if (data.error) {
+        setErrorMessage(data.error)
+        return
+      }
+
+      // Fallback: fetch server-side billing config hints for logged-in users
+      try {
+        const statusRes = await fetch('/api/billing/status')
+        if (statusRes.ok) {
+          const status = await statusRes.json() as { issues?: string[] }
+          if (status.issues?.length) {
+            setErrorMessage(status.issues.join(' '))
+            return
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+
+      setErrorMessage(`${t.billing.checkoutError} (${res.status})`)
     } catch (err) {
       console.error('[billing] Checkout request failed:', err)
       setErrorMessage(t.billing.checkoutError)
