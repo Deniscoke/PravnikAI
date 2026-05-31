@@ -180,7 +180,7 @@ export interface OutputStructure {
 export type ContractCategory = 'civil' | 'commercial' | 'employment' | 'realestate'
 
 export interface SchemaMetadata {
-  /** Stable, versioned ID — never change once deployed: "kupni-smlouva-v1", "kaufvertrag-v1", "sale-of-goods-v1" */
+  /** Stable, versioned ID — never change once deployed: "kupni-smlouva-v1", "pracovni-smlouva-v1", "nda-smlouva-v1" */
   schemaId: string
   /** Stable cross-jurisdiction family ID — same value across CZ/DE/UK variants of the same contract type ("nda", "sale", "employment", "tenancy", "services"). */
   contractFamily: ContractFamily
