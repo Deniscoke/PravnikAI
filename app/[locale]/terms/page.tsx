@@ -60,13 +60,15 @@ export default async function TermsPage({ params }: Props) {
         <section>
           <h2>2. Popis služby</h2>
           <p>
-            {SITE_NAME} je webová aplikace využívající umělou inteligenci pro generování a kontrolu
-            právních smluv v rámci zvolené jurisdikce (např. Česká republika, Německo, Spojené
-            království). Služba je poskytována v režimu SaaS (Software as a Service).
+            {SITE_NAME} je webová aplikace využívající umělou inteligenci pro přípravu návrhů smluv
+            a orientační kontrolu textu podle českého práva. Služba je poskytována v režimu
+            SaaS (Software as a Service).
           </p>
           <p>
-            <strong>Upozornění:</strong> Služba neposkytuje právní poradenství. Výstupy AI jsou
-            informativního charakteru a nenahrazují konzultaci s advokátem.
+            <strong>Upozornění:</strong> Služba neposkytuje právní poradenství ve smyslu zák.
+            č. 85/1996 Sb., o advokacii. Výstupy AI jsou pracovní návrhy informativního charakteru
+            a nenahrazují konzultaci s advokátem. Před podpisem doporučujeme nechat dokument
+            zkontrolovat advokátem.
           </p>
         </section>
 

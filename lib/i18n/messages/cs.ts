@@ -54,12 +54,12 @@ export const cs: Messages = {
   },
 
   home: {
-    kicker: 'Online generátor smluv pro ČR',
+    kicker: 'Příprava návrhů smluv podle českého práva',
     heroSubtitle:
-      'Smlouva online během několika minut — kupní, pracovní, nájem, NDA i smlouva o dílo. Právní rámec dle NOZ, ZP a ZOK. Pro OSVČ, živnostníky a malé firmy, které nechtějí ztrácet čas šablonami z nejistých zdrojů.',
+      'Návrh smlouvy během několika minut — kupní, pracovní, nájemní, NDA i smlouva o dílo. Podle relevantních českých právních předpisů. Pro OSVČ, živnostníky a malé firmy.',
     heroTrustNote:
       'Důležité: Právo365 negeneruje individuální právní poradenství. Platby bezpečně přes Stripe. Osobní údaje zpracováváme v souladu s GDPR.',
-    ctaGenerate: 'Vytvořit smlouvu',
+    ctaGenerate: 'Vytvořit návrh smlouvy',
     ctaReview: 'Zkontrolovat text',
     statContractTypes: 'Typů smluv',
     statTime: 'Orientační čas',
@@ -74,7 +74,7 @@ export const cs: Messages = {
     sectionFaqSubtitle: 'Vše, co potřebujete vědět',
     sectionPricingTitle: 'Ceník',
     sectionPricingSubtitle: 'Začněte zdarma, upgradujte až budete připraveni',
-    ctaCardTitle: 'Začněte generovat smlouvy ještě dnes',
+    ctaCardTitle: 'Začněte připravovat návrhy smluv',
     ctaCardBody:
       'Začněte na tarifu Zdarma, vylaďte dokument a exportujte. Placený plán rozšíří limity pro intenzivnější práci s dokumenty podle českého práva.',
     ctaCardPrimary: 'Začít zdarma',
@@ -102,7 +102,7 @@ export const cs: Messages = {
       },
       export: {
         title: 'Export do DOCX a PDF',
-        body: 'Exportujte smlouvy do DOCX i PDF s profesionálním formátováním — záhlaví, zápatí, právní citace a disclaimer automaticky v jazyce smlouvy.',
+        body: 'Exportujte návrhy smluv do DOCX i PDF s profesionálním formátováním — záhlaví, zápatí, právní citace a disclaimer automaticky.',
       },
     },
     step: {
@@ -147,7 +147,7 @@ export const cs: Messages = {
     breadcrumbGenerating: 'Generování…',
     breadcrumbResult: 'Výsledek',
     generatingTitle: 'Generuji {type}',
-    generatingSubtitle: 'AI analyzuje právní kontext a připravuje text smlouvy.',
+    generatingSubtitle: 'AI analyzuje právní kontext a připravuje návrh textu smlouvy.',
     generatingDurationHint:
       'U výkonných modelů (např. GPT‑5) může celý proces trvat 1–4 minuty — probíhají dva kroky AI (návrh + kontrola kvality). Nechte stránku otevřenou.',
     steps: {
@@ -190,14 +190,14 @@ export const cs: Messages = {
     legalDisclaimerBody:
       'Tento dokument byl vygenerován umělou inteligencí a slouží výhradně jako pracovní návrh. Před podpisem nebo právním použitím jej nechte zkontrolovat advokátem. Provozovatel nenese odpovědnost za obsah vygenerovaného textu ani za jeho právní účinky.',
     modeBadge: {
-      complete: { label: 'Kompletní smlouva', description: 'Všechna potřebná pole byla vyplněna. Smlouva je vygenerována bez mezer.' },
+      complete: { label: 'Kompletní návrh', description: 'Všechna potřebná pole jsou vyplněna. Návrh je vygenerován bez mezer — doporučujeme kontrolu advokátem.' },
       draft: { label: 'Pracovní návrh', description: 'Povinná pole jsou vyplněna. Volitelné údaje chybí — v textu hledejte [DOPLNIT].' },
       reviewNeeded: { label: 'Vyžaduje kontrolu', description: 'Povinná pole chybí. V textu hledejte ⚠️ ZKONTROLOVAT a doplňte chybějící údaje.' },
     },
     exportFailed: 'Export se nezdařil. Zkuste to znovu.',
     exportAuthRequired: 'Pro stažení dokumentu se musíte přihlásit. Po přihlášení můžete export zopakovat.',
     exportOnboardingRequired: 'Před prvním exportem dokončete krátkou registraci (přijetí podmínek).',
-    exportLimitReached: 'Vyčerpali jste měsíční limit exportů ve verzi Zdarma (5 / měsíc). Pro neomezené stahování přejděte na plán Pro.',
+    exportLimitReached: 'Vyčerpali jste měsíční limit exportů ve verzi Zdarma (5 / měsíc). Přejděte na plán Pro pro vyšší limity.',
     exportRateLimited: 'Příliš mnoho pokusů — zkuste to prosím za chvíli znovu.',
     exportServerError: 'Soubor se nepodařilo vygenerovat na serveru. Zkuste znovu, nebo nás prosím kontaktujte.',
     exportNetworkOrTimeout:
@@ -238,7 +238,7 @@ export const cs: Messages = {
   },
 
   dashboard: {
-    historySubtitle: 'Vaše vygenerované smlouvy a provedené kontroly.',
+    historySubtitle: 'Vaše vygenerované návrhy smluv a provedené kontroly.',
     tabGenerations: 'Generované smlouvy',
     tabReviews: 'Kontroly smluv',
     emptyGenTitle: 'Zatím žádné generované smlouvy',

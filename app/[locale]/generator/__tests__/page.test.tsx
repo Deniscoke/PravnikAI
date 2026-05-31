@@ -344,7 +344,7 @@ describe('3 — Happy path: Kupní smlouva → complete result', () => {
     )
   })
 
-  it('result shows the "Kompletní smlouva" badge for complete mode', async () => {
+  it('result shows the "Kompletní návrh" badge for complete mode', async () => {
     const user = userEvent.setup()
     mockFetchSuccess(COMPLETE_API_RESPONSE)
     render(<GeneratorPage />)
@@ -355,7 +355,7 @@ describe('3 — Happy path: Kupní smlouva → complete result', () => {
 
     await waitFor(() => {
       const resultSection = screen.getByRole('region', { name: /kupní smlouva/i })
-      expect(within(resultSection).getByText(/kompletní smlouva/i, { selector: '.badge' })).toBeInTheDocument()
+      expect(within(resultSection).getByText(/kompletní návrh/i, { selector: '.badge' })).toBeInTheDocument()
     })
   })
 

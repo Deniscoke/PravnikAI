@@ -17,7 +17,7 @@ export const SITE_PUBLISHER = 'IndiWeb'
  */
 export const SEO_KEYWORDS = [
   'Právo365',
-  'AI právník',
+  'návrh smlouvy AI',
   'generátor smluv',
   'smlouva online',
   'právní dokumenty online',
