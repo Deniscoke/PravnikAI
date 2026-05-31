@@ -38,7 +38,8 @@ import {
 } from '@/lib/contracts/integrityValidator'
 import { saveGenerationToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
-import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { logAiUsage } from '@/lib/billing/aiUsageLog'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 
 import type {
@@ -51,78 +52,26 @@ import type {
 } from '@/lib/contracts/types'
 import { jurisdictionToLocale } from '@/lib/contracts/types'
 
-/** Localized polish-pass prompts for Stage 3 (premium model). */
-const POLISH_USER_PROMPT: Record<Jurisdiction, (text: string) => string> = {
-  CZ: (text) =>
-    `Proveď finální jazykovou a právní revizi tohoto návrhu smlouvy. Oprav stylistické nedostatky, zpřesni formulace a zajisti maximální právní preciznost.\n\n${text}`,
-  DE: (text) =>
-    `Führe eine abschließende sprachliche und juristische Überarbeitung dieses Vertragsentwurfs durch. Bessere stilistische Schwächen aus, präzisiere die Formulierungen und stelle maximale rechtliche Präzision sicher.\n\n${text}`,
-  UK: (text) =>
-    `Perform a final linguistic and legal review of this contract draft. Fix stylistic weaknesses, sharpen the wording and ensure the maximum legal precision.\n\n${text}`,
-}
+// ─── Czech-only UI messages for API responses ───────────────────────────────
 
-const RATE_LIMITED_MSG: Record<Jurisdiction, string> = {
-  CZ: 'Příliš mnoho požadavků. Zkuste to za chvíli.',
-  DE: 'Zu viele Anfragen. Bitte versuchen Sie es in Kürze erneut.',
-  UK: 'Too many requests. Please try again shortly.',
-}
+const POLISH_USER_PROMPT = (text: string) =>
+  `Proveď finální jazykovou a právní revizi tohoto návrhu smlouvy. Oprav stylistické nedostatky, zpřesni formulace a zajisti maximální právní preciznost.\n\n${text}`
 
-const VALIDATION_MSG: Record<Jurisdiction, string> = {
-  CZ: 'Neplatný JSON v těle požadavku.',
-  DE: 'Ungültiges JSON im Anfragetext.',
-  UK: 'Invalid JSON in request body.',
-}
+const RATE_LIMITED_MSG = 'Příliš mnoho požadavků. Zkuste to za chvíli.'
+const VALIDATION_MSG = 'Neplatný JSON v těle požadavku.'
+const MISSING_PARAMS_MSG = 'Chybí schemaId nebo formData.'
+const SCHEMA_NOT_FOUND_MSG = (id: string) => `Typ smlouvy nebyl nalezen: "${id}"`
+const TOO_MANY_ERRORS_MSG = 'Formulář obsahuje příliš mnoho chyb. Opravte povinná pole před generováním.'
+const LLM_ERROR_MSG = 'Chyba při komunikaci s AI. Zkuste to znovu.'
 
-const MISSING_PARAMS_MSG: Record<Jurisdiction, string> = {
-  CZ: 'Chybí schemaId nebo formData.',
-  DE: 'schemaId oder formData fehlen.',
-  UK: 'Missing schemaId or formData.',
-}
+const DRAFT_WARN_MSG = (n: number) =>
+  `Smlouva byla vygenerována jako návrh. ${n} volitelných polí chybí — hledejte [DOPLNIT] v textu.`
 
-const SCHEMA_NOT_FOUND_MSG: Record<Jurisdiction, (id: string) => string> = {
-  CZ: (id) => `Typ smlouvy nebyl nalezen: "${id}"`,
-  DE: (id) => `Vertragsart nicht gefunden: "${id}"`,
-  UK: (id) => `Contract type not found: "${id}"`,
-}
+const REVIEW_WARN_MSG = (missingList: string) =>
+  `Smlouva vyžaduje kontrolu. ${missingList ? `Povinná pole chybí: ${missingList}. ` : ''}Hledejte ⚠️ ZKONTROLOVAT v textu.`
 
-const TOO_MANY_ERRORS_MSG: Record<Jurisdiction, string> = {
-  CZ: 'Formulář obsahuje příliš mnoho chyb. Opravte povinná pole před generováním.',
-  DE: 'Das Formular enthält zu viele Fehler. Bitte korrigieren Sie die Pflichtfelder vor der Erstellung.',
-  UK: 'The form contains too many errors. Please correct the required fields before drafting.',
-}
-
-const LLM_ERROR_MSG: Record<Jurisdiction, string> = {
-  CZ: 'Chyba při komunikaci s AI. Zkuste to znovu.',
-  DE: 'Fehler bei der Kommunikation mit der KI. Bitte versuchen Sie es erneut.',
-  UK: 'Error communicating with the AI. Please try again.',
-}
-
-const DRAFT_WARN_MSG: Record<Jurisdiction, (n: number) => string> = {
-  CZ: (n) =>
-    `Smlouva byla vygenerována jako návrh. ${n} volitelných polí chybí — hledejte [DOPLNIT] v textu.`,
-  DE: (n) =>
-    `Der Vertrag wurde als Entwurf erstellt. ${n} optionale Felder fehlen — suchen Sie nach [BITTE ERGÄNZEN] im Text.`,
-  UK: (n) =>
-    `Contract drafted as a working draft. ${n} optional fields are missing — search for [TO COMPLETE] in the text.`,
-}
-
-const REVIEW_WARN_MSG: Record<Jurisdiction, (missingList: string) => string> = {
-  CZ: (m) =>
-    `Smlouva vyžaduje kontrolu. ${m ? `Povinná pole chybí: ${m}. ` : ''}Hledejte ⚠️ ZKONTROLOVAT v textu.`,
-  DE: (m) =>
-    `Der Vertrag bedarf der Prüfung. ${m ? `Fehlende Pflichtfelder: ${m}. ` : ''}Suchen Sie nach ⚠️ PRÜFEN im Text.`,
-  UK: (m) =>
-    `Contract needs review. ${m ? `Missing required fields: ${m}. ` : ''}Search for ⚠️ REVIEW in the text.`,
-}
-
-const QUALITY_DOWNGRADE_MSG: Record<Jurisdiction, (from: string, to: string, summary: string) => string> = {
-  CZ: (from, to, summary) =>
-    `Kontrola kvality změnila režim z „${from}" na „${to}": ${summary}`,
-  DE: (from, to, summary) =>
-    `Die Qualitätsprüfung hat den Modus von „${from}" auf „${to}" herabgestuft: ${summary}`,
-  UK: (from, to, summary) =>
-    `Quality gate downgraded the mode from "${from}" to "${to}": ${summary}`,
-}
+const QUALITY_DOWNGRADE_MSG = (from: string, to: string, summary: string) =>
+  `Kontrola kvality změnila režim z „${from}" na „${to}": ${summary}`
 
 /** Hobby / short-timeout hosting: skips Stage‑2 AI review; optional lighter draft reasoning. */
 function isHobbyPipeline(): boolean {
@@ -135,24 +84,15 @@ function isQualityGateLlmSkipped(): boolean {
   return v === '1' || v === 'true' || v === 'yes'
 }
 
-const QUALITY_GATE_SKIPPED_MSG: Record<Jurisdiction, string> = {
-  CZ:
-    'V tomto nasazení je vypnut druhý krok AI (kontrola kvality) kvůli krátkému časovému limitu serverové funkce — na výkonnějším tarifu hostingu ho znovu zapněte.',
-  DE:
-    'In dieser Bereitstellung ist die zweite KI‑Qualitätsstufe aus (kurzes Hosting‑Zeitlimit) — aktivieren Sie sie wieder bei längeren Funktionstimeouts.',
-  UK:
-    'The second AI quality pass is disabled here (short serverless timeout) — re‑enable once your hosting allows longer functions.',
-}
+const QUALITY_GATE_SKIPPED_MSG =
+  'V tomto nasazení je vypnut druhý krok AI (kontrola kvality) kvůli krátkému časovému limitu serverové funkce — na výkonnějším tarifu hostingu ho znovu zapněte.'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 0a. Rate limit ────────────────────────────────────────────────────────
   const ip = getClientIp(req.headers)
-  const { allowed: rlAllowed, resetAt } = await checkRateLimit(ip, { max: 10, windowMs: 60_000 })
-  if (!rlAllowed) {
-    return NextResponse.json(
-      { error: RATE_LIMITED_MSG.CZ, code: 'RATE_LIMITED' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)), 'X-RateLimit-Remaining': '0' } },
-    )
+  const rl = await checkRateLimit(`gen:${ip}`, { max: 10, windowMs: 60_000 })
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, RATE_LIMITED_MSG)
   }
 
   // ── 0b. Billing guard ─────────────────────────────────────────────────────
@@ -164,11 +104,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     body = await req.json()
   } catch {
-    return errorResponse(VALIDATION_MSG.CZ, 'VALIDATION_FAILED', 400)
+    return errorResponse(VALIDATION_MSG, 'VALIDATION_FAILED', 400)
   }
 
   if (!body.schemaId || !body.formData) {
-    return errorResponse(MISSING_PARAMS_MSG.CZ, 'VALIDATION_FAILED', 400)
+    return errorResponse(MISSING_PARAMS_MSG, 'VALIDATION_FAILED', 400)
   }
 
   // ── 2. Resolve schema ──────────────────────────────────────────────────────
@@ -179,7 +119,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     schema = getSchema(resolvedSchemaId)
   } catch {
     return errorResponse(
-      SCHEMA_NOT_FOUND_MSG.CZ(body.schemaId),
+      SCHEMA_NOT_FOUND_MSG(body.schemaId),
       'SCHEMA_NOT_FOUND',
       404,
     )
@@ -196,7 +136,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (errorCount > 5) {
     return NextResponse.json<GenerateContractError>(
       {
-        error: TOO_MANY_ERRORS_MSG[jurisdiction],
+        error: TOO_MANY_ERRORS_MSG,
         code: 'VALIDATION_FAILED',
         issues: validation.ui.issues,
       },
@@ -233,7 +173,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const locale = jurisdictionToLocale(jurisdiction)
     const hint = formatOpenAiUserHint(err, locale)
     console.error('[generate-contract] Stage 1 LLM error:', err)
-    return errorResponse(LLM_ERROR_MSG[jurisdiction], 'LLM_ERROR', 502, hint)
+    return errorResponse(LLM_ERROR_MSG, 'LLM_ERROR', 502, hint)
   }
 
   // ── 6. Stage 2: Structured legal quality gate (optional — skipped on Hobby / env) ───
@@ -279,7 +219,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
       const stage3 = await generateText({
         systemPrompt: getSelfCheckPrompt(jurisdiction),
-        userPrompt: POLISH_USER_PROMPT[jurisdiction](contractText),
+        userPrompt: POLISH_USER_PROMPT(contractText),
         stage: 'premium',
       })
       contractText = stage3.text
@@ -308,7 +248,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (skipQualityGate) {
     warnings.push({
       code: 'QUALITY_GATE_SKIPPED',
-      message: QUALITY_GATE_SKIPPED_MSG[jurisdiction],
+      message: QUALITY_GATE_SKIPPED_MSG,
     })
   }
 
@@ -329,7 +269,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (effectiveMode !== mode) {
       warnings.push({
         code: 'QUALITY_DOWNGRADE',
-        message: QUALITY_DOWNGRADE_MSG[jurisdiction](mode, effectiveMode, qualityGate.summary),
+        message: QUALITY_DOWNGRADE_MSG(mode, effectiveMode, qualityGate.summary),
       })
     }
   }
@@ -341,14 +281,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (effectiveMode === 'draft') {
     warnings.push({
       code: 'DRAFT_MODE',
-      message: DRAFT_WARN_MSG[jurisdiction](missingOptional.length),
+      message: DRAFT_WARN_MSG(missingOptional.length),
     })
   }
 
   if (effectiveMode === 'review-needed') {
     warnings.push({
       code: 'REVIEW_NEEDED',
-      message: REVIEW_WARN_MSG[jurisdiction](missingRequired.join(', ')),
+      message: REVIEW_WARN_MSG(missingRequired.join(', ')),
     })
   }
 
@@ -381,6 +321,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     legal_basis: schema.metadata.legalBasis,
     status: 'completed',
   }).catch(() => {})
+
+  if (guard.user && totalTokens > 0) {
+    logAiUsage({
+      userId: guard.user.id,
+      action: 'generate',
+      model: 'multi-stage',
+      tokensUsed: totalTokens,
+    })
+  }
 
   return NextResponse.json<GenerateContractResponse>(response, { status: 200 })
 }

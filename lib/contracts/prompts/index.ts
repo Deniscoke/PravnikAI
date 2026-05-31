@@ -1,19 +1,19 @@
 /**
- * Per-jurisdiction prompt and string registry.
+ * Prompt and string registry — Czech law (CZ).
  *
- * Each jurisdiction (CZ / DE / UK) provides:
+ * The CZ bundle provides:
  *   - SYSTEM_PROMPT     : Senior-counsel persona + statutory framework
  *   - SELF_CHECK_PROMPT : Stage 3 polish prompt
  *   - QUALITY_GATE_LANG : Localized strings for the Stage 2 JSON-mode quality gate
  *   - PLACEHOLDERS      : The exact placeholder tokens used in output
- *                          (these are matched by the deterministic integrity validator)
  *   - MODE_HEADERS      : Banner text inserted at the top of draft / review-needed contracts
  *   - PROMPT_LANG       : Section labels and instructions used by promptBuilder.ts
+ *
+ * DE/UK bundles were deactivated in Phase 2B. Files remain on disk but are
+ * not imported. getPromptBundle() always returns the CZ bundle.
  */
 
 import { cz } from './cz'
-import { de } from './de'
-import { uk } from './uk'
 import type { Jurisdiction } from '@/lib/contracts/types'
 
 export interface PlaceholderTokens {
@@ -142,15 +142,9 @@ export interface PromptBundle {
   genericEssentialClauses: string[]
 }
 
-const BUNDLES: Record<Jurisdiction, PromptBundle> = {
-  CZ: cz,
-  DE: de,
-  UK: uk,
+/** Returns the CZ prompt bundle. Parameter kept for backward compatibility. */
+export function getPromptBundle(_jurisdiction?: Jurisdiction): PromptBundle {
+  return cz
 }
 
-/** Returns the prompt bundle for a jurisdiction. */
-export function getPromptBundle(jurisdiction: Jurisdiction): PromptBundle {
-  return BUNDLES[jurisdiction]
-}
-
-export { cz, de, uk }
+export { cz }

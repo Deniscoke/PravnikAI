@@ -1,5 +1,5 @@
 /**
- * Turn OpenAI SDK / network failures into a short, user-safe explanation.
+ * Turn OpenAI SDK / network failures into a short, user-safe Czech explanation.
  * Never forwards API keys; truncates long provider messages.
  */
 
@@ -30,28 +30,21 @@ function nestedMessage(err: APIError): string {
 }
 
 /**
- * Returns a secondary line for the UI (under the generic “AI communication” headline).
+ * Returns a Czech secondary line for the UI (under the generic "AI communication" headline).
+ * Locale parameter kept for backward compatibility but output is always Czech.
  */
-export function formatOpenAiUserHint(err: unknown, locale: Locale): string {
+export function formatOpenAiUserHint(err: unknown, _locale?: Locale): string {
   if (err instanceof APIError) {
     const raw = clip(nestedMessage(err))
     const code = typeof err.code === 'string' ? err.code : ''
     const status = typeof err.status === 'number' ? err.status : undefined
-
-    if (locale === 'de') return hintDe(status, code, raw, err.constructor.name)
-    if (locale === 'en') return hintEn(status, code, raw, err.constructor.name)
     return hintCs(status, code, raw, err.constructor.name)
   }
 
   if (err instanceof Error) {
-    const raw = clip(err.message)
-    if (locale === 'de') return `Technische Meldung: ${raw}`
-    if (locale === 'en') return `Technical detail: ${raw}`
-    return `Technická zpráva: ${raw}`
+    return `Technická zpráva: ${clip(err.message)}`
   }
 
-  if (locale === 'de') return 'Unbekannter Fehler — bitte Vercel-Logs prüfen.'
-  if (locale === 'en') return 'Unknown error — check Vercel function logs.'
   return 'Neznámá chyba — podívejte se do logů funkcí na Vercelu.'
 }
 
@@ -84,59 +77,5 @@ function hintCs(
       return raw ? `Neplatný parametr požadavku (400): ${raw}` : 'Neplatný požadavek vůči OpenAI (400).'
     default:
       return raw ? `Podrobnost od OpenAI: ${raw}` : 'Podrobnosti jsou ve Vercel logu u POST /api/generate-contract.'
-  }
-}
-
-function hintDe(status: number | undefined, code: string, raw: string, ctor: string): string {
-  if (ctor === 'APIConnectionTimeoutError')
-    return 'Zeitüberschreitung bei OpenAI. Bitte später erneut versuchen.'
-  if (ctor === 'APIConnectionError')
-    return 'Keine Verbindung zu OpenAI (Netzwerk). Bitte später erneut versuchen.'
-  switch (status) {
-    case 401:
-      return 'OpenAI meldet 401 — ungültiger oder fehlender API-Schlüssel. Prüfen Sie OPENAI_API_KEY in Vercel (Production).'
-    case 403:
-      return 'Zugriff verweigert (403) — Projekt-/Organisationsrechte oder Modell ohne Freigabe.'
-    case 404:
-      return 'Modell nicht gefunden oder keine Berechtigung (404). ENV z. B. auf gpt-4o setzen.'
-    case 429:
-      if (/insufficient[_\s]?quota|billing|quota/i.test(raw) || code === 'insufficient_quota')
-        return 'OpenAI-Kontingent oder Abrechnungslimit erreicht.'
-      return 'Zu viele Anfragen bei OpenAI (429). Bitte später erneut versuchen.'
-    case 500:
-    case 502:
-    case 503:
-      return `OpenAI-Serverfehler (${status}). Bitte später erneut versuchen.`
-    case 400:
-      return raw ? `Ungültige Anfrage (400): ${raw}` : 'Ungültige Anfrage an OpenAI (400).'
-    default:
-      return raw ? `OpenAI meldet: ${raw}` : 'Details in den Vercel-Funktionslogs (POST /api/generate-contract).'
-  }
-}
-
-function hintEn(status: number | undefined, code: string, raw: string, ctor: string): string {
-  if (ctor === 'APIConnectionTimeoutError')
-    return 'Request to OpenAI timed out. Please try again shortly.'
-  if (ctor === 'APIConnectionError')
-    return 'Could not reach OpenAI (network). Please try again.'
-  switch (status) {
-    case 401:
-      return 'OpenAI returned 401 — invalid or missing API key. Check OPENAI_API_KEY for Production on Vercel.'
-    case 403:
-      return 'Access denied (403) — project/org permissions or model not enabled for this key.'
-    case 404:
-      return 'Model not found or not allowed for your key (404). Try setting OPENAI_* env vars to e.g. gpt-4o.'
-    case 429:
-      if (/insufficient[_\s]?quota|billing|quota/i.test(raw) || code === 'insufficient_quota')
-        return 'OpenAI quota or billing limit reached.'
-      return 'OpenAI rate limit (429). Try again later.'
-    case 500:
-    case 502:
-    case 503:
-      return `OpenAI server error (${status}). Retry later.`
-    case 400:
-      return raw ? `Bad request (400): ${raw}` : 'Bad request to OpenAI (400).'
-    default:
-      return raw ? `From OpenAI: ${raw}` : 'See Vercel function logs for POST /api/generate-contract.'
   }
 }

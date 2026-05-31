@@ -1,37 +1,30 @@
 /**
- * System prompt router — picks the right per-jurisdiction system + self-check prompt.
+ * System prompt facade — Czech law (CZ).
  *
- * Each jurisdiction has its own bundle in lib/contracts/prompts/{cz,de,uk}.ts.
- * The actual prompt content (legal framework, terminology, statutes) lives there;
- * this file is a thin facade so the rest of the codebase only sees:
+ * The CZ prompt bundle lives in lib/contracts/prompts/cz.ts.
+ * This file is a thin facade so the rest of the codebase only sees:
  *
  *   buildSystemPrompt(aiInstructions, jurisdiction)
  *   getSelfCheckPrompt(jurisdiction)
+ *
+ * Jurisdiction parameter kept for backward compatibility but always uses CZ.
  */
 
 import type { Jurisdiction } from './types'
 import { getPromptBundle } from './prompts'
 
 /**
- * Builds the complete system prompt for a specific contract type & jurisdiction.
- * Appends the schema's aiInstructions verbatim under a "Specific provisions" header
- * (translated per jurisdiction).
+ * Builds the complete system prompt for a contract type.
+ * Appends the schema's aiInstructions under a Czech "Specific provisions" header.
  */
-export function buildSystemPrompt(aiInstructions: string, jurisdiction: Jurisdiction): string {
-  const bundle = getPromptBundle(jurisdiction)
-  const heading =
-    jurisdiction === 'DE'
-      ? '## Spezifische Bestimmungen für diese Vertragsart'
-      : jurisdiction === 'UK'
-        ? '## Specific provisions for this contract type'
-        : '## Specifická ustanovení pro tento typ smlouvy'
-
-  return `${bundle.systemPrompt}\n\n${heading}\n\n${aiInstructions}`
+export function buildSystemPrompt(aiInstructions: string, _jurisdiction?: Jurisdiction): string {
+  const bundle = getPromptBundle()
+  return `${bundle.systemPrompt}\n\n## Specifická ustanovení pro tento typ smlouvy\n\n${aiInstructions}`
 }
 
-/** Returns the Stage 3 self-check (premium polish) prompt for a jurisdiction. */
-export function getSelfCheckPrompt(jurisdiction: Jurisdiction): string {
-  return getPromptBundle(jurisdiction).selfCheckPrompt
+/** Returns the Stage 3 self-check (premium polish) prompt. */
+export function getSelfCheckPrompt(_jurisdiction?: Jurisdiction): string {
+  return getPromptBundle().selfCheckPrompt
 }
 
 // ─── Backward compatibility ──────────────────────────────────────────────────
