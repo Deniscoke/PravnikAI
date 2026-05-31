@@ -46,40 +46,62 @@ const NDA_RESPONSE: GenerateContractResponse = {
   generatedAt: '2026-06-01T13:00:00.000Z',
 }
 
-// ─── Deferred fetch helper ───────────────────────────────────────────────────
+// ─── Fetch mock helpers ─────────────────────────────────────────────────────
 
-/**
- * Creates a fetch mock that doesn't resolve until you explicitly call
- * resolve() or reject(). This lets us simulate user actions while
- * the request is "in-flight".
- */
-function createDeferredFetch() {
-  let resolve!: (value: Response) => void
-  let reject!: (reason: unknown) => void
-  const promise = new Promise<Response>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  const spy = vi.spyOn(globalThis, 'fetch').mockReturnValueOnce(promise)
-  return {
-    resolve: (body: object, ok = true) => {
-      resolve({
-        ok,
-        status: ok ? 200 : 502,
-        json: async () => body,
-      } as Response)
-    },
-    reject: (error: Error) => reject(error),
-    spy,
-  }
+interface DeferredSlot {
+  resolve: (body: object, ok?: boolean) => void
+  reject: (error: Error) => void
 }
 
-function mockFetchSuccess(body: GenerateContractResponse) {
-  vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-    ok: true,
-    status: 200,
-    json: async () => body,
-  } as Response)
+/**
+ * Queue-based fetch mock. Creates ONE spy for the entire test.
+ * Each enqueue() adds a controllable deferred promise to the queue.
+ * The spy's mockImplementation pulls from the queue in FIFO order,
+ * so multiple sequential fetches work without spy-replacement conflicts.
+ */
+function createFetchQueue() {
+  const queue: Array<{ promise: Promise<Response>; ctrl: DeferredSlot }> = []
+
+  const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
+    const slot = queue.shift()
+    if (!slot) return Promise.reject(new Error('[test] fetch called but queue is empty'))
+    return slot.promise
+  })
+
+  function enqueue(): DeferredSlot {
+    let resolve!: (value: Response) => void
+    let reject!: (reason: unknown) => void
+    const promise = new Promise<Response>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    const ctrl: DeferredSlot = {
+      resolve: (body: object, ok = true) => {
+        resolve({
+          ok,
+          status: ok ? 200 : 502,
+          json: async () => body,
+          text: async () => JSON.stringify(body),
+        } as Response)
+      },
+      reject: (error: Error) => reject(error),
+    }
+    queue.push({ promise, ctrl })
+    return ctrl
+  }
+
+  return { spy, enqueue }
+}
+
+/**
+ * Legacy helper — creates a single-use deferred fetch mock.
+ * Safe for tests that only make ONE fetch call.
+ * For multi-fetch tests, use createFetchQueue() instead.
+ */
+function createDeferredFetch() {
+  const q = createFetchQueue()
+  const ctrl = q.enqueue()
+  return { resolve: ctrl.resolve, reject: ctrl.reject, spy: q.spy }
 }
 
 // ─── Form filling helper ─────────────────────────────────────────────────────
@@ -294,38 +316,32 @@ describe('Abort on unmount', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('Retry after error', () => {
-  // TODO: flaky — createDeferredFetch spy conflict on sequential fetch mocks
-  // after error → retry flow. Was broken on HEAD (8/8 failed). Fix in dedicated PR.
-  it.skip('retrying after error sends a new request and accepts the new response', async () => {
+  it('retrying after error sends a new request and accepts the new response', async () => {
     const user = userEvent.setup()
     render(<GeneratorPage />)
 
     await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
     await fillKupniSmlouvaRequired(user)
 
-    // First attempt: API error
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: false,
-      status: 502,
-      json: async () => ({ error: 'LLM timeout' }),
-    } as Response)
+    // Single queue handles BOTH fetch calls (error + retry success)
+    const q = createFetchQueue()
+    const attempt1 = q.enqueue() // will be the error response
+    const attempt2 = q.enqueue() // will be the success response
 
+    // First attempt: submit → error
     await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
+    attempt1.resolve({ error: 'LLM timeout' }, false)
     await waitFor(() => expect(screen.getByText(/chyba při generování/i)).toBeInTheDocument())
 
     // Click "Zkusit znovu"
     await user.click(screen.getByRole('button', { name: /zkusit znovu/i }))
-
-    // Form should be back — verify the submit button is visible
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument(),
     )
 
-    // Second attempt: success — set up mock BEFORE clicking so the spy is in place
-    // when DynamicContractForm fires the fetch inside onSubmit
-    const deferred = createDeferredFetch()
+    // Second attempt: submit → success
     await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
-    deferred.resolve(COMPLETE_RESPONSE)
+    attempt2.resolve(COMPLETE_RESPONSE)
 
     await waitFor(
       () => expect(screen.getByText(/test text for async safety/i)).toBeInTheDocument(),
@@ -339,59 +355,46 @@ describe('Retry after error', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('RequestId enforcement — overlapping generations', () => {
-  // TODO: flaky — fetch mock lifecycle conflict when two createDeferredFetch
-  // calls overlap (spyOn replacement + abort race). Was broken on HEAD before
-  // CZ-only gating (8/8 async-safety tests failed). Fix in a dedicated PR.
-  it.skip('rejects request-1 response that arrives during request-2 generating state', async () => {
+  it('rejects request-1 response that arrives during request-2 generating state', async () => {
     const user = userEvent.setup()
     render(<GeneratorPage />)
+
+    // Single queue handles BOTH fetch calls across navigate-away + re-submit
+    const q = createFetchQueue()
+    const request1 = q.enqueue()
+    const request2 = q.enqueue()
 
     // Start first generation
     await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
     await fillKupniSmlouvaRequired(user)
 
-    const deferred1 = createDeferredFetch()
     await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
     await waitFor(() => expect(screen.getByText('Generování…')).toBeInTheDocument())
 
-    // Go back to catalog (this aborts request 1)
+    // User navigates back to catalog (aborts request 1)
     await user.click(screen.getByRole('button', { name: /typ smlouvy/i }))
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument(),
     )
 
-    // Resolve deferred1 now — it was aborted so the result should be ignored,
-    // but resolving ensures the mockReturnValueOnce slot is consumed for deferred2
-    deferred1.resolve(COMPLETE_RESPONSE)
+    // Stale request-1 response arrives — should be ignored
+    request1.resolve(COMPLETE_RESPONSE)
     await new Promise((r) => setTimeout(r, 50))
-
-    // Catalog still showing — stale response ignored
     expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument()
 
     // Select same schema again, fill form, submit (request 2)
     await user.click(screen.getByRole('button', { name: /kupní smlouva/i }))
     await fillKupniSmlouvaRequired(user)
-
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /vygenerovat smlouvu/i })).toBeInTheDocument(),
     )
 
-    // Set up request 2 as a deferred promise on a fresh spy
-    let resolve2!: (value: Response) => void
-    const promise2 = new Promise<Response>((res) => { resolve2 = res })
-    vi.restoreAllMocks() // clear leftover spy from deferred1
-    vi.spyOn(globalThis, 'fetch').mockReturnValueOnce(promise2)
-
     await user.click(screen.getByRole('button', { name: /vygenerovat smlouvu/i }))
     await waitFor(() => expect(screen.getByText('Generování…')).toBeInTheDocument())
 
-    // Request 2 response arrives — should be accepted
+    // Request 2 response — should be accepted
     const RESPONSE_2 = { ...COMPLETE_RESPONSE, contractText: 'REQUEST 2 RESULT — correct' }
-    resolve2({
-      ok: true,
-      status: 200,
-      json: async () => RESPONSE_2,
-    } as Response)
+    request2.resolve(RESPONSE_2)
 
     await waitFor(
       () => expect(screen.getByText(/REQUEST 2 RESULT — correct/i)).toBeInTheDocument(),
