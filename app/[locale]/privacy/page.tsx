@@ -21,8 +21,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       canonical,
       languages: {
         cs: `${APP_URL}/cs/privacy`,
-        de: `${APP_URL}/de/privacy`,
-        en: `${APP_URL}/en/privacy`,
         'x-default': `${APP_URL}/cs/privacy`,
       },
     },
