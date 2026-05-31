@@ -1,6 +1,6 @@
 /**
- * Central SEO constants for Právo365 — Czech-first legal SaaS
- * (multi-jurisdiction generator: CZ / DE / UK).
+ * Central SEO constants for Právo365 — Czech legal SaaS
+ * for contract draft preparation and review under Czech law.
  */
 
 export function getSiteUrl(): string {
@@ -36,13 +36,13 @@ export const SEO_KEYWORDS = [
 ] as const
 
 export const SEO_DESCRIPTION_DEFAULT =
-  'Právo365 — online generátor smluv a právní AI pro ČR: kupní smlouva, pracovní smlouva, nájem, NDA. Rychlý návrh dle NOZ, ZP a ZOK. Nejde o právní poradenství. Export DOCX a PDF, bezpečné platby přes Stripe.'
+  'Právo365 — návrhy smluv podle českého práva: kupní smlouva, pracovní smlouva, nájem, NDA. Rychlá příprava strukturovaného návrhu. Nenahrazuje právní poradenství. Export DOCX a PDF, bezpečné platby přes Stripe.'
 
 export const SEO_DESCRIPTION_GENERATOR =
-  'Vyberte typ smlouvy, vyplňte údaje a získejte návrh dokumentu podle české legislativy. Kupní, pracovní, nájemní, NDA, smlouva o dílo — smlouva online během minut.'
+  'Vyberte typ smlouvy, vyplňte údaje a získejte návrh dokumentu podle českého práva. Kupní, pracovní, nájemní, NDA, smlouva o dílo — pracovní verze během minut.'
 
 export const SEO_DESCRIPTION_REVIEW =
-  'Nahrajte text smlouvy — AI zvýrazní rizika a chybějící pasáže podle zvoleného práva (CZ / DE / UK). Nástroj neslouží jako náhrada advokáta.'
+  'Vložte text smlouvy — AI zvýrazní rizika a chybějící pasáže podle českého práva. Orientační kontrola, nenahrazuje advokáta.'
 
 export const SEO_DESCRIPTION_LOGIN =
-  'Přihlášení k Právo365 — bezpečný účet pro generátor smluv a kontrolu dokumentů. Platby přes Stripe, zpracování dat v souladu s GDPR.'
+  'Přihlášení k Právo365 — bezpečný účet pro návrhy smluv a kontrolu dokumentů podle českého práva. Platby přes Stripe, zpracování dat v souladu s GDPR.'

@@ -12,7 +12,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useTransition } from 'react'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
-import { ALL_LOCALES, localeToJurisdiction, type Locale } from '@/lib/contracts/types'
+import { ALL_LOCALES, ACTIVE_LOCALES, localeToJurisdiction, type Locale } from '@/lib/contracts/types'
 
 const LOCALE_COOKIE = 'pravnikai-locale'
 const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
@@ -25,6 +25,12 @@ interface Props {
 }
 
 export function LanguageSwitcher({ variant = 'inline', style }: Props) {
+  if (ACTIVE_LOCALES.length <= 1) return null
+
+  return <LanguageSwitcherInner variant={variant} style={style} />
+}
+
+function LanguageSwitcherInner({ variant = 'inline', style }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const locale = useLocale()

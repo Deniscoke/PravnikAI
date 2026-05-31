@@ -14,12 +14,12 @@ const HOME_FAQ_CS: ReadonlyArray<FaqItem> = [
   {
     question: 'Nahrazuje Právo365 advokáta nebo právní poradenství?',
     answer:
-      'Ne. Právo365 je nástroj na rychlou přípravu návrhů smluv a orientační kontrolu textu podle zvolené jurisdikce. Nenahrazuje individuální právní poradenství, posouzení vašeho konkrétního sporu ani zastupování před soudem. Před závaznými kroky a podpisem dokumentu doporučujeme konzultaci s advokátem.',
+      'Ne. Právo365 je nástroj na rychlou přípravu návrhů smluv a orientační kontrolu textu podle českého práva. Nenahrazuje individuální právní poradenství, posouzení vašeho konkrétního sporu ani zastupování před soudem. Před závaznými kroky a podpisem dokumentu doporučujeme konzultaci s advokátem.',
   },
   {
     question: 'Jsou vygenerované smlouvy „hotové k podpisu“?',
     answer:
-      'Právo365 vychází z aktuální legislativy zvolené jurisdikce — pro ČR z rámce NOZ, ZP, ZOK; pro Německo z BGB, HGB, GewO; pro UK z relevantních zákonů a common law. Dokument je profesionálně strukturovaný návrh — u složitých transakcí, vysokých částek nebo regulovaných odvětví jej nechte před podpisem zkontrolovat advokátem.',
+      'Ne. Právo365 vytváří pracovní verzi dokumentu s odkazy na relevantní české právní předpisy. Dokument slouží jako strukturovaný návrh — u složitých transakcí, vysokých částek nebo regulovaných odvětví jej vždy nechte před podpisem zkontrolovat advokátem.',
   },
   {
     question: 'Jsou moje údaje v bezpečí? Jak je to s GDPR?',
@@ -34,12 +34,12 @@ const HOME_FAQ_CS: ReadonlyArray<FaqItem> = [
   {
     question: 'Pro koho je Právo365?',
     answer:
-      'Pro živnostníky, OSVČ, malé firmy a kohokoli, kdo potřebuje smlouvu online rychleji než z nekonečných šablon — a zároveň má rozumný právní rámec (CZ, případně DE a UK). Vyhovuje i advokátům jako startovní návrh, pokud si obsah sami dohlížejí.',
+      'Pro živnostníky, OSVČ, malé firmy a kohokoli, kdo potřebuje návrh smlouvy podle českého práva rychleji než z nekonečných šablon. Vyhovuje i advokátům jako startovní návrh, pokud si obsah sami dohlížejí.',
   },
   {
-    question: 'Které typy smluv a jurisdikce podporujete?',
+    question: 'Které typy smluv podporujete?',
     answer:
-      'Podporujeme jurisdikce CZ, DE a UK — včetně kupní smlouvy, pracovní smlouvy, nájemní smlouvy, NDA / mlčenlivosti a smlouvy o dílo (a obdobných typů dle knihovny šablon). Knihovnu rozšiřujeme; chybí vám konkrétní typ — napište nám přes kontakt v patičce.',
+      'Podporujeme kupní smlouvu, pracovní smlouvu, nájemní smlouvu, NDA / smlouvu o mlčenlivosti a smlouvu o dílo — podle českého práva. Knihovnu rozšiřujeme; chybí vám konkrétní typ — napište nám přes kontakt v patičce.',
   },
 ]
 
@@ -109,8 +109,6 @@ const HOME_FAQ_EN: ReadonlyArray<FaqItem> = [
   },
 ]
 
-export function getHomeFaqItems(locale: Locale): ReadonlyArray<FaqItem> {
-  if (locale === 'de') return HOME_FAQ_DE
-  if (locale === 'en') return HOME_FAQ_EN
+export function getHomeFaqItems(_locale: Locale): ReadonlyArray<FaqItem> {
   return HOME_FAQ_CS
 }

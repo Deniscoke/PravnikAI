@@ -5,32 +5,20 @@ import {
 } from '@/lib/seo/site'
 import { getHomeFaqItems } from '@/lib/seo/faq'
 import { getMessages } from '@/lib/i18n'
-import {
-  jurisdictionCurrency,
-  localeToJurisdiction,
-  type Locale,
-} from '@/lib/contracts/types'
+import { type Locale } from '@/lib/contracts/types'
 
 function jsonLdString(data: unknown): string {
   return JSON.stringify(data).replace(/</g, '\\u003c')
 }
 
-const INLANG_MAP: Record<Locale, string> = {
-  cs: 'cs-CZ',
-  de: 'de-DE',
-  en: 'en-GB',
-}
-
 /**
- * Localized structured data for the homepage:
+ * CZ-only structured data for the homepage:
  * WebSite, Organization, SoftwareApplication, FAQPage (Google rich results).
  */
 export function HomeJsonLd({ locale }: { locale: Locale }) {
   const base = getSiteUrl()
   const localeUrl = `${base}/${locale}`
   const t = getMessages(locale)
-  const jurisdiction = localeToJurisdiction(locale)
-  const currency = jurisdictionCurrency(jurisdiction)
   const faqItems = getHomeFaqItems(locale)
 
   const website = {
@@ -38,7 +26,7 @@ export function HomeJsonLd({ locale }: { locale: Locale }) {
     '@type': 'WebSite',
     name: SITE_NAME,
     url: localeUrl,
-    inLanguage: INLANG_MAP[locale],
+    inLanguage: 'cs-CZ',
     description: t.home.heroSubtitle,
     publisher: { '@id': `${base}#organization` },
   }
@@ -62,12 +50,12 @@ export function HomeJsonLd({ locale }: { locale: Locale }) {
     offers: {
       '@type': 'Offer',
       price: '0',
-      priceCurrency: currency,
+      priceCurrency: 'EUR',
       description: t.home.sectionPricingSubtitle,
     },
     description: t.home.heroSubtitle,
     url: localeUrl,
-    inLanguage: INLANG_MAP[locale],
+    inLanguage: 'cs-CZ',
     author: { '@id': `${base}#organization` },
     publisher: { '@id': `${base}#organization` },
     featureList: [
@@ -81,7 +69,7 @@ export function HomeJsonLd({ locale }: { locale: Locale }) {
   const faqPage = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    inLanguage: INLANG_MAP[locale],
+    inLanguage: 'cs-CZ',
     mainEntity: faqItems.map((item) => ({
       '@type': 'Question',
       name: item.question,

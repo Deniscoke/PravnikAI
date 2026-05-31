@@ -261,10 +261,10 @@ describe('Review Page', () => {
     render(<ReviewPage />)
 
     expect(screen.getByText(/Server-side zpracování/i)).toBeInTheDocument()
-    expect(screen.getByText(/Text se neukládá/i)).toBeInTheDocument()
-    expect(screen.getByText(/Výhradně české právo/i)).toBeInTheDocument()
+    expect(screen.getByText(/neskladáme smluvní text/i)).toBeInTheDocument()
+    expect(screen.getByText(/české právo/i)).toBeInTheDocument()
     expect(screen.getByText(/Strukturovaná analýza/i)).toBeInTheDocument()
-    expect(screen.getByText(/Analýza neslouží jako právní poradenství/i)).toBeInTheDocument()
+    expect(screen.getByText(/Neposkytuje právní poradenství/i)).toBeInTheDocument()
   })
 
   // ── 9. Reviewing state shows progress steps ────────────────────────────────

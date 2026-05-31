@@ -52,7 +52,7 @@ export default function HomePage() {
             <div className="stats__desc">{t.home.statTime}</div>
           </div>
           <div className="glass-card stats__item">
-            <div className="stats__num">{t.jurisdiction.short[jurisdiction]}</div>
+            <div className="stats__num">CZ</div>
             <div className="stats__desc">{t.home.statJurisdictions}</div>
           </div>
         </div>

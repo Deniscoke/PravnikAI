@@ -18,6 +18,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import {
   ALL_LOCALES,
+  ACTIVE_LOCALES,
   DEFAULT_LOCALE,
   type Locale,
 } from '@/lib/contracts/types'
@@ -64,24 +65,30 @@ export async function proxy(request: NextRequest) {
     const localeFromPath = extractLocaleFromPath(pathname)
 
     if (!localeFromPath) {
-      // Path has no locale prefix → choose one and redirect
-      const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value
-      const headerLocale = request.headers.get('accept-language')
-      const locale: Locale = cookieLocale && isValidLocale(cookieLocale)
-        ? cookieLocale
-        : negotiateLocaleFromHeader(headerLocale)
-
+      // Path has no locale prefix → always redirect to default (cs)
       const url = request.nextUrl.clone()
-      url.pathname = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`
+      url.pathname = pathname === '/' ? `/${DEFAULT_LOCALE}` : `/${DEFAULT_LOCALE}${pathname}`
       const redirectResponse = NextResponse.redirect(url)
-      // Persist preference so the next visit lands directly
-      redirectResponse.cookies.set(LOCALE_COOKIE, locale, secureCookieOptions({
+      redirectResponse.cookies.set(LOCALE_COOKIE, DEFAULT_LOCALE, secureCookieOptions({
         maxAge: LOCALE_COOKIE_MAX_AGE,
       }))
       return redirectResponse
     }
 
-    // Path already has a locale prefix → continue, set x-locale header below
+    // Redirect inactive locales (/de/*, /en/*) → /cs/* preserving the logical path
+    if (!(ACTIVE_LOCALES as readonly string[]).includes(localeFromPath)) {
+      const prefix = `/${localeFromPath}`
+      const tail = pathname === prefix ? '' : pathname.slice(prefix.length)
+      const url = request.nextUrl.clone()
+      url.pathname = `/${DEFAULT_LOCALE}${tail}` || `/${DEFAULT_LOCALE}`
+      const redirectResponse = NextResponse.redirect(url, 308)
+      redirectResponse.cookies.set(LOCALE_COOKIE, DEFAULT_LOCALE, secureCookieOptions({
+        maxAge: LOCALE_COOKIE_MAX_AGE,
+      }))
+      return redirectResponse
+    }
+
+    // Path has an active locale prefix → continue
   }
 
   // ── 2. Supabase session refresh + auth guards ────────────────────────────
@@ -179,4 +186,4 @@ export const config = {
 }
 
 // Re-export the locale constants for tests
-export { ALL_LOCALES, LOCALE_COOKIE }
+export { ALL_LOCALES, ACTIVE_LOCALES, LOCALE_COOKIE }

@@ -19,7 +19,7 @@ export const cs: Messages = {
     faq: 'Časté otázky',
     login: 'Přihlásit se',
     dashboard: 'Můj účet',
-    languageMenuLabel: 'Změnit jazyk a jurisdikci',
+    languageMenuLabel: 'Jazyk',
   },
 
   locale: {
@@ -63,26 +63,26 @@ export const cs: Messages = {
     ctaReview: 'Zkontrolovat text',
     statContractTypes: 'Typů smluv',
     statTime: 'Orientační čas',
-    statJurisdictions: 'Právní řády',
+    statJurisdictions: 'České právo',
     sectionFeaturesTitle: 'Proč Právo365 místo „nějakého vzoru z internetu“',
     sectionFeaturesSubtitle: 'Méně stresu, jasná struktura dokumentu, právní citace kde dává smysl — vy si nechte finální verzi zkontrolovat advokátem.',
     sectionHowTitle: 'Jak to funguje',
     sectionHowSubtitle: 'Od výběru typu dokumentu po stažení DOCX nebo PDF',
     sectionTypesTitle: 'Podporované typy smluv',
-    sectionTypesSubtitle: 'CZ · DE · UK — neustále rozšiřujeme knihovnu',
+    sectionTypesSubtitle: 'Podle relevantních českých právních předpisů',
     sectionFaqTitle: 'Časté otázky',
     sectionFaqSubtitle: 'Vše, co potřebujete vědět',
     sectionPricingTitle: 'Ceník',
     sectionPricingSubtitle: 'Začněte zdarma, upgradujte až budete připraveni',
     ctaCardTitle: 'Začněte generovat smlouvy ještě dnes',
     ctaCardBody:
-      'Začněte na tarifu Zdarma, vylaďte dokument a exportujte. Placený plán rozšíří limity a podporuje intenzivnější práci s dokumenty napříč CZ · DE · UK.',
+      'Začněte na tarifu Zdarma, vylaďte dokument a exportujte. Placený plán rozšíří limity pro intenzivnější práci s dokumenty podle českého práva.',
     ctaCardPrimary: 'Začít zdarma',
     ctaCardSecondary: 'Zjistit více ve FAQ',
     feature: {
       automated: {
         title: 'Chytrý návrh smlouvy',
-        body: 'Vyberete typ (např. kupní smlouva online, pracovní smlouva, NDA), doplníte údaje stran a Právo365 sestaví strukturovaný text s odkazem na příslušné ustanovení — podle zvolené jurisdikce.',
+        body: 'Vyberete typ (např. kupní smlouva, pracovní smlouva, NDA), doplníte údaje stran a Právo365 sestaví strukturovaný návrh s odkazem na příslušné české právní předpisy.',
       },
       time: {
         title: 'Hodiny u právníka vs. minuty u vás',
@@ -90,7 +90,7 @@ export const cs: Messages = {
       },
       legal: {
         title: 'Opřeno o legislativu',
-        body: 'Pro ČR pracujeme s rámcem NOZ, ZP a ZOK; pro DE a UK s tamními předpisy. Výstup je pracovní návrh s citacemi — nikoli individuální právní závěr.',
+        body: 'Výstup je pracovní návrh s citacemi relevantních českých právních předpisů — nikoli individuální právní závěr. Před podpisem doporučujeme kontrolu advokátem.',
       },
       security: {
         title: 'Bezpečnost dat',
@@ -98,7 +98,7 @@ export const cs: Messages = {
       },
       review: {
         title: 'Kontrola smlouvy',
-        body: 'Vložíte text a Právo365 vyznačí rizikové pasáže, mezery a témata k dojednání — podle zvoleného práva. Slouží k orientaci, ne k závaznému právnímu posouzení.',
+        body: 'Vložíte text a Právo365 vyznačí rizikové pasáže, mezery a témata k dojednání — podle českého práva. Slouží k orientaci, ne k závaznému právnímu posouzení.',
       },
       export: {
         title: 'Export do DOCX a PDF',
@@ -106,7 +106,7 @@ export const cs: Messages = {
       },
     },
     step: {
-      one: { title: 'Vyberte typ dokumentu', body: 'Kupní smlouva online, pracovní smlouva, nájem, NDA a další — podle jurisdikce CZ, DE nebo UK.' },
+      one: { title: 'Vyberte typ dokumentu', body: 'Kupní smlouva, pracovní smlouva, nájem, NDA a další — podle českého práva.' },
       two: { title: 'Vyplňte konkrétní údaje', body: 'Strany, předmět, splatnost, výjimky. Formulář se přizpůsobí typu smlouvy a skryje nepotřebná pole.' },
       three: { title: 'Export a revize', body: 'Stáhnete DOCX nebo PDF, upravíte v editoru a před podpisem necháte projít advokátem — tak minimalizujete riziko.' },
     },
@@ -124,25 +124,25 @@ export const cs: Messages = {
         privacy: 'Ochrana osobních údajů',
         gdpr: 'GDPR / cookies',
       },
-      tagline: 'Právo365 — online právní dokumenty a generátor smluv pro české podnikatele. Profesionální výstup, bezpečné platby, transparentní zpracování dat.',
+      tagline: 'Právo365 — návrhy smluv podle českého práva pro podnikatele, OSVČ a malé firmy. Pracovní verze dokumentu, bezpečné platby, vhodné ke kontrole advokátem.',
       rights: 'Všechna práva vyhrazena.',
       support: 'Podpora',
     },
     trust: {
       serverside: 'Server-side zpracování',
       apikey: 'API klíč nikdy na klientu',
-      jurisdiction: 'Jurisdikce dle vaší volby',
+      jurisdiction: 'České právo',
       validation: '3-vrstvová validace',
     },
   },
 
   generator: {
     title: 'Generátor smluv',
-    subtitle: 'AI návrh dle zvolené jurisdikce',
+    subtitle: 'AI návrh smlouvy podle českého práva',
     selectHeading: 'Vyberte typ smlouvy',
     legalBasisInline: 'Právní základ',
     jurisdictionNotice:
-      'Systém generuje smlouvy dle {jurisdiction}. Vygenerované dokumenty slouží jako návrh — vždy nechte finální verzi zkontrolovat advokátem.',
+      'Systém vytváří návrhy smluv podle českého práva. Vygenerované dokumenty slouží jako pracovní verze — vždy nechte finální verzi zkontrolovat advokátem.',
     breadcrumbType: 'Typ smlouvy',
     breadcrumbGenerating: 'Generování…',
     breadcrumbResult: 'Výsledek',
@@ -263,7 +263,7 @@ export const cs: Messages = {
     consentSubtitle: 'Než začnete, potřebujeme váš souhlas s podmínkami.',
     welcomeTitle: 'Vítejte v Právo365',
     welcomeLead:
-      'Právo365 je nástroj pro přípravu návrhů smluv a orientační kontrolu textu podle zvolené jurisdikce (ČR, DE, UK). Nejde o právní poradenství — výstupy před podpisem ověřte u advokáta.',
+      'Právo365 je nástroj pro přípravu návrhů smluv a orientační kontrolu textu podle českého práva. Nejde o právní poradenství — výstupy před podpisem ověřte u advokáta.',
     cardHeadline: 'Shrnutí před startem',
     termsAgreePrefix: 'Souhlasím s',
     termsLinkLabel: 'podmínkami používání',
@@ -300,7 +300,7 @@ export const cs: Messages = {
 
   reviewPage: {
     notice:
-      'AI-asistovaná kontrola smluv podle práva země ({law}). Neposkytuje právní poradenství — výsledek před použitím konzultujte s advokátem.',
+      'Orientační kontrola smluv podle českého práva. Neposkytuje právní poradenství — výsledek před použitím konzultujte s advokátem.',
     crumbReview: 'Kontrola smlouvy',
     crumbAnalyzing: 'Analyzuji…',
     crumbResults: 'Výsledky',
@@ -319,10 +319,10 @@ export const cs: Messages = {
     submitIdle: 'Zkontrolovat smlouvu',
     trustServer: 'Server-side zpracování',
     trustNoPersist: 'Pro tuto funkci neskladáme smluvní text jako soubor.',
-    trustJurisdictionContext: 'Kontekst práva podle nastaveného jazyka',
+    trustJurisdictionContext: 'Podle českého práva',
     trustStructured: 'Strukturovaná analýza rizik',
     analyzingTitle: 'Analyzuji smlouvu',
-    analyzingSubtitle: 'AI prochází klauzule v kontextu zvolené jurisdikce.',
+    analyzingSubtitle: 'AI prochází klauzule v kontextu českého práva.',
     step1: 'Analyzuji text smlouvy…',
     step2: 'Zjistuji typ dokumentu a kontext…',
     step3: 'Kontroluji rizikové klauzule…',

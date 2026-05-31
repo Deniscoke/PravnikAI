@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { I18nProvider } from '@/lib/i18n/client'
-import { getMessages, isValidLocale, ALL_LOCALES } from '@/lib/i18n'
-import { localeToJurisdiction, type Locale } from '@/lib/contracts/types'
+import { getMessages, isValidLocale } from '@/lib/i18n'
+import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
 import { getSiteUrl, SITE_NAME, SEO_DESCRIPTION_DEFAULT } from '@/lib/seo/site'
 
 const APP_URL = getSiteUrl()
 
-/** Static params so Next.js pre-renders /cs, /de, /en at build time. */
+/** Static params — only active locales are pre-rendered. */
 export function generateStaticParams() {
-  return ALL_LOCALES.map((locale) => ({ locale }))
+  return ACTIVE_LOCALES.map((locale) => ({ locale }))
 }
 
 interface LocaleLayoutProps {
@@ -23,16 +23,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isValidLocale(rawLocale)) return {}
 
   const t = getMessages(rawLocale)
-  const jurisdiction = localeToJurisdiction(rawLocale)
 
-  const title = `${SITE_NAME} — ${t.home.kicker} (${t.jurisdiction.short[jurisdiction]})`
+  const title = `${SITE_NAME} — ${t.home.kicker}`
 
   const localeUrl = `${APP_URL}/${rawLocale}`
-  const ogLocaleMap: Record<Locale, string> = {
-    cs: 'cs_CZ',
-    de: 'de_DE',
-    en: 'en_GB',
-  }
 
   return {
     title: { default: title, template: `%s — ${SITE_NAME}` },
@@ -41,19 +35,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       canonical: localeUrl,
       languages: {
         cs: `${APP_URL}/cs`,
-        de: `${APP_URL}/de`,
-        en: `${APP_URL}/en`,
         'x-default': `${APP_URL}/cs`,
       },
     },
     openGraph: {
       type: 'website',
-      locale: ogLocaleMap[rawLocale],
+      locale: 'cs_CZ',
       url: localeUrl,
       siteName: SITE_NAME,
       title,
       description: t.home.heroSubtitle,
-      alternateLocale: Object.values(ogLocaleMap).filter((l) => l !== ogLocaleMap[rawLocale]),
     },
     twitter: {
       card: 'summary_large_image',

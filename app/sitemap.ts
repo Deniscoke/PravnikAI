@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { getSiteUrl } from '@/lib/seo/site'
-import { ALL_LOCALES, type Locale } from '@/lib/contracts/types'
+import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
 
 const APP_URL = getSiteUrl()
 
@@ -21,28 +21,27 @@ const ROUTES: RoutePriority[] = [
 ]
 
 /**
- * Multi-locale sitemap with hreflang alternates.
- * Each canonical URL is /{locale}{path} and lists alternates for cs/de/en + x-default.
+ * CZ-only sitemap with hreflang alternates.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   const entries: MetadataRoute.Sitemap = []
 
-  for (const locale of ALL_LOCALES) {
+  for (const locale of ACTIVE_LOCALES) {
     for (const route of ROUTES) {
       const url = `${APP_URL}/${locale}${route.path}`
-      const languages: Record<string, string> = {}
-      for (const alt of ALL_LOCALES) {
-        languages[alt] = `${APP_URL}/${alt}${route.path}`
-      }
-      languages['x-default'] = `${APP_URL}/cs${route.path}`
 
       entries.push({
         url,
         lastModified: now,
         changeFrequency: route.changeFrequency,
         priority: route.priority,
-        alternates: { languages },
+        alternates: {
+          languages: {
+            cs: `${APP_URL}/cs${route.path}`,
+            'x-default': `${APP_URL}/cs${route.path}`,
+          },
+        },
       })
     }
   }

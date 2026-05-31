@@ -46,6 +46,12 @@ export function jurisdictionCurrency(jurisdiction: Jurisdiction): Currency {
 export const ALL_LOCALES: readonly Locale[] = ['cs', 'de', 'en'] as const
 export const DEFAULT_LOCALE: Locale = 'cs'
 
+/**
+ * Locales currently offered to users. Gate for routing, sitemap, and UI.
+ * DE/UK schemas remain in the registry but are unreachable while only 'cs' is active.
+ */
+export const ACTIVE_LOCALES: readonly Locale[] = ['cs'] as const
+
 // ─── Field Types ─────────────────────────────────────────────────────────────
 
 export type FieldType =

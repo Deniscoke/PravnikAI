@@ -50,32 +50,7 @@ export function coerceLocale(v: unknown): Locale {
  * Picks the highest-quality match supported by the app.
  * Falls back to DEFAULT_LOCALE.
  */
-export function negotiateLocaleFromHeader(header: string | null | undefined): Locale {
-  if (!header) return DEFAULT_LOCALE
-
-  const candidates = header
-    .split(',')
-    .map((part) => {
-      const [tag, ...params] = part.trim().split(';')
-      const q = params
-        .map((p) => p.trim())
-        .find((p) => p.startsWith('q='))
-        ?.slice(2)
-      return {
-        tag: tag.trim().toLowerCase(),
-        quality: q ? Number(q) : 1,
-      }
-    })
-    .filter((c) => c.tag.length > 0)
-    .sort((a, b) => b.quality - a.quality)
-
-  for (const c of candidates) {
-    const primary = c.tag.split('-')[0]
-    if (primary === 'cs' || primary === 'sk') return 'cs' // SK speakers prefer CS UI
-    if (primary === 'de' || primary === 'at' || primary === 'ch') return 'de'
-    if (primary === 'en') return 'en'
-  }
-
+export function negotiateLocaleFromHeader(_header: string | null | undefined): Locale {
   return DEFAULT_LOCALE
 }
 
@@ -91,5 +66,5 @@ export function format(template: string, values: Record<string, string | number>
 }
 
 export type { Messages } from './messages/cs'
-export { DEFAULT_LOCALE, ALL_LOCALES } from '@/lib/contracts/types'
+export { DEFAULT_LOCALE, ALL_LOCALES, ACTIVE_LOCALES } from '@/lib/contracts/types'
 export type { Locale } from '@/lib/contracts/types'

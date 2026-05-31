@@ -61,11 +61,11 @@ beforeEach(() => {
 })
 
 describe('proxy — locale negotiation', () => {
-  it('redirects "/" to "/{negotiated-locale}" using accept-language header', async () => {
+  it('redirects "/" to "/cs" regardless of accept-language (CZ-only)', async () => {
     mockUnauthenticated()
     const res = await proxy(makeRequest('/', { acceptLanguage: 'de-DE,de;q=0.9,en;q=0.5' }))
     expect(res.status).toBe(307)
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/de')
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/cs')
   })
 
   it('redirects "/" to "/cs" by default when no signal is present', async () => {
@@ -75,13 +75,13 @@ describe('proxy — locale negotiation', () => {
     expect(new URL(res.headers.get('location')!).pathname).toBe('/cs')
   })
 
-  it('honours the locale cookie over accept-language', async () => {
+  it('redirects locale-less paths to /cs regardless of cookie (CZ-only)', async () => {
     mockUnauthenticated()
     const res = await proxy(
       makeRequest('/generator', { acceptLanguage: 'de-DE', localeCookie: 'en' }),
     )
     expect(res.status).toBe(307)
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/en/generator')
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/cs/generator')
   })
 
   it('preserves the path when redirecting to a locale prefix', async () => {
@@ -107,10 +107,11 @@ describe('proxy — auth gating with locale prefixes', () => {
     expect(location.searchParams.get('redirect')).toBe('/cs/dashboard')
   })
 
-  it('keeps the locale when redirecting unauthenticated /de/dashboard', async () => {
+  it('redirects inactive /de/dashboard to /cs/dashboard (then auth gate)', async () => {
     mockUnauthenticated()
     const res = await proxy(makeRequest('/de/dashboard'))
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/de/login')
+    expect(res.status).toBe(308)
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/cs/dashboard')
   })
 
   it('allows /{locale}/dashboard when authenticated', async () => {
@@ -119,11 +120,11 @@ describe('proxy — auth gating with locale prefixes', () => {
     expect(res.status).toBe(200)
   })
 
-  it('redirects /{locale}/login to /{locale}/dashboard when authenticated', async () => {
+  it('redirects inactive /de/login to /cs/login via 308', async () => {
     mockAuthenticated()
     const res = await proxy(makeRequest('/de/login'))
-    expect(res.status).toBe(307)
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/de/dashboard')
+    expect(res.status).toBe(308)
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/cs/login')
   })
 
   it('allows /{locale}/login when unauthenticated', async () => {
@@ -132,11 +133,19 @@ describe('proxy — auth gating with locale prefixes', () => {
     expect(res.status).toBe(200)
   })
 
-  it('allows public routes for unauthenticated users', async () => {
+  it('allows public /cs routes for unauthenticated users', async () => {
     mockUnauthenticated()
-    for (const path of ['/cs', '/cs/generator', '/cs/review', '/en/generator', '/de']) {
+    for (const path of ['/cs', '/cs/generator', '/cs/review']) {
       const res = await proxy(makeRequest(path))
       expect(res.status).toBe(200)
+    }
+  })
+
+  it('redirects inactive /en and /de public routes to /cs', async () => {
+    mockUnauthenticated()
+    for (const path of ['/en/generator', '/de']) {
+      const res = await proxy(makeRequest(path))
+      expect(res.status).toBe(308)
     }
   })
 
@@ -149,8 +158,8 @@ describe('proxy — auth gating with locale prefixes', () => {
 
   it('sets x-locale header on pass-through responses', async () => {
     mockUnauthenticated()
-    const res = await proxy(makeRequest('/de/generator'))
+    const res = await proxy(makeRequest('/cs/generator'))
     expect(res.status).toBe(200)
-    expect(res.headers.get('x-locale')).toBe('de')
+    expect(res.headers.get('x-locale')).toBe('cs')
   })
 })
