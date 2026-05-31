@@ -33,6 +33,9 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   team: { generations: -1, reviews: -1, exports: -1 },
 } as const
 
+/** Team workspace (invites, shared history) is not shipped yet — disable checkout until MVP. */
+export const TEAM_CHECKOUT_ENABLED = false
+
 // ─── Plan display metadata (Czech UI) ────────────────────────────────────────
 
 export interface PlanPricing {
@@ -91,18 +94,15 @@ export const PLAN_INFO: Record<SubscriptionTier, PlanInfo> = {
   team: {
     tier: 'team',
     name: 'Tým',
-    description: 'Pro advokátní kanceláře',
+    description: 'Pro advokátní kanceláře — týmové funkce připravujeme',
     features: [
-      'Neomezené generování smluv',
-      'Neomezené AI kontroly',
-      'Neomezené DOCX exporty',
-      'Všechny typy smluv',
+      'Vše jako Pro s vyššími týmovými limity',
       'Prioritní podpora',
-      'Správa týmu',
+      'Správa týmu — brzy (invite, sdílená historie)',
     ],
     pricing: { monthly: 49, yearlyPerMonth: null, yearlyTotal: null, currency: 'EUR' },
     recommended: false,
-    badge: null,
+    badge: 'Již brzy',
   },
 }
 

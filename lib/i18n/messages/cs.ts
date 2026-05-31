@@ -179,7 +179,7 @@ export const cs: Messages = {
     exportShort: 'Export…',
     edit: 'Upravit',
     editAndRegenerate: 'Upravit a vygenerovat znovu',
-    newContract: 'Nová smlouva',
+    newContract: 'Nový návrh',
     contractTextHeading: 'Text smlouvy',
     chars: 'znaků',
     generatedAt: 'Vygenerováno',
@@ -239,12 +239,12 @@ export const cs: Messages = {
 
   dashboard: {
     historySubtitle: 'Vaše vygenerované návrhy smluv a provedené kontroly.',
-    tabGenerations: 'Generované smlouvy',
+    tabGenerations: 'Návrhy smluv',
     tabReviews: 'Kontroly smluv',
     emptyGenTitle: 'Zatím žádné generované smlouvy',
     emptyGenDescription:
       'Vytvořte první smlouvu pomocí generátoru a uloží se sem automaticky.',
-    emptyGenCta: 'Generovat smlouvu',
+    emptyGenCta: 'Vytvořit návrh smlouvy',
     emptyRevTitle: 'Zatím žádné kontroly smluv',
     emptyRevDescription:
       'Zkontrolujte existující smlouvu a výsledky se uloží sem automaticky.',

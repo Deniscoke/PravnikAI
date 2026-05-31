@@ -23,7 +23,7 @@
  * 11.  Conditional field — defectsDescription appears only for faulty item
  * 12.  NDA contract type — selecting NDA renders NDA-specific form
  * 13.  Unknown schema — DynamicContractForm throws on bad schemaId
- * 14.  Reset / "Nová smlouva" — returns to selection screen
+ * 14.  Reset / "Nový návrh" — returns to selection screen
  *
  * Run:
  *   npx vitest run app/generator/__tests__/page.test.tsx
@@ -389,7 +389,7 @@ describe('3 — Happy path: Kupní smlouva → complete result', () => {
     })
   })
 
-  it('result shows action buttons: Kopírovat, Upravit, Nová smlouva', async () => {
+  it('result shows action buttons: Kopírovat, Upravit, Nový návrh', async () => {
     const user = userEvent.setup()
     mockFetchSuccess(COMPLETE_API_RESPONSE)
     render(<GeneratorPage />)
@@ -403,7 +403,7 @@ describe('3 — Happy path: Kupní smlouva → complete result', () => {
       // ContractResult has "Kopírovat" (top) + "Kopírovat do schránky" (bottom)
       expect(within(resultSection).getAllByRole('button', { name: /kopírovat/i }).length).toBeGreaterThan(0)
       expect(within(resultSection).getByRole('button', { name: /upravit$/i })).toBeInTheDocument()
-      expect(within(resultSection).getAllByRole('button', { name: /nová smlouva/i }).length).toBeGreaterThan(0)
+      expect(within(resultSection).getAllByRole('button', { name: /nový návrh/i }).length).toBeGreaterThan(0)
     })
   })
 
@@ -782,7 +782,7 @@ describe('7 — API failure → error state', () => {
 
     await waitFor(() => expect(screen.getByText(/chyba při generování/i)).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: /vygenerovat smlouvu/i })).not.toBeInTheDocument()
-    expect(screen.queryByText(/kompletní smlouva|pracovní návrh/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/kompletní návrh|pracovní návrh/i)).not.toBeInTheDocument()
   })
 
   it('shows timeout/hosting hint when fetch throws a network error', async () => {
@@ -863,11 +863,11 @@ describe('9 — Back navigation: result → form', () => {
     )
   })
 
-  it('"Nová smlouva" returns to contract type selection', async () => {
+  it('"Nový návrh" returns to contract type selection', async () => {
     const user = userEvent.setup()
     await reachResult(user)
 
-    await user.click(screen.getAllByRole('button', { name: /nová smlouva/i })[0])
+    await user.click(screen.getAllByRole('button', { name: /nový návrh/i })[0])
 
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: /vyberte typ smlouvy/i })).toBeInTheDocument(),
