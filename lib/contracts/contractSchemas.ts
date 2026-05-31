@@ -1,16 +1,16 @@
 /**
- * Contract Schema Registry — multi-jurisdiction (CZ / DE / UK)
+ * Contract Schema Registry — Czech law (CZ)
  *
  * The ONLY file the API route, form renderer, and validator need to import.
  * To add a new contract type:
- *   1. Create lib/contracts/schemas/{cz|de|uk}/myNewSchema.ts
+ *   1. Create lib/contracts/schemas/cz/myNewSchema.ts
  *   2. Import it here and add one entry to SCHEMA_REGISTRY
  *   Zero changes needed anywhere else.
  *
- * Schema IDs are jurisdiction-specific (e.g. "kupni-smlouva-v1" for CZ,
- * "kaufvertrag-v1" for DE, "sale-of-goods-v1" for UK). The registry can be
- * filtered by jurisdiction so the UI only shows schemas relevant to the
- * user's chosen locale.
+ * DE/UK schemas were deactivated in Phase 2A (CZ-only product focus).
+ * Schema files remain on disk but are not imported or registered.
+ * Historical records referencing DE/UK schema IDs use getSchemaOrNull()
+ * for graceful fallback instead of throwing.
  */
 
 import type { ContractSchema, Jurisdiction } from './types'
@@ -22,46 +22,18 @@ import { najemniSmlouva } from './schemas/cz/najemniSmlouva'
 import { smlouvaODilo } from './schemas/cz/smlouvaODilo'
 import { ndaSmlouva } from './schemas/cz/ndaSmlouva'
 
-// ── DE schemas ──────────────────────────────────────────────────────────────
-import { ndaDe } from './schemas/de/nda'
-import { kaufvertrag } from './schemas/de/kaufvertrag'
-import { arbeitsvertrag } from './schemas/de/arbeitsvertrag'
-import { mietvertrag } from './schemas/de/mietvertrag'
-import { werkvertrag } from './schemas/de/werkvertrag'
-
-// ── UK schemas ──────────────────────────────────────────────────────────────
-import { ndaUk } from './schemas/uk/nda'
-import { saleOfGoods } from './schemas/uk/saleOfGoods'
-import { employmentContract } from './schemas/uk/employmentContract'
-import { tenancyAst } from './schemas/uk/tenancyAst'
-import { servicesAgreement } from './schemas/uk/servicesAgreement'
-
 // ─── Registry ────────────────────────────────────────────────────────────────
 
 /**
- * Map of schemaId → ContractSchema. Cross-jurisdictional — each schema is
- * tagged with `metadata.jurisdiction`. Use getSchemasForJurisdiction() to
- * filter for the active locale.
+ * Map of schemaId → ContractSchema. Currently CZ-only.
+ * Use getSchemasForJurisdiction('CZ') or getSchemasByCategory('CZ') for UI.
  */
 export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
-  // CZ
   [kupniSmlouva.metadata.schemaId]: kupniSmlouva,
   [pracovniSmlouva.metadata.schemaId]: pracovniSmlouva,
   [najemniSmlouva.metadata.schemaId]: najemniSmlouva,
   [smlouvaODilo.metadata.schemaId]: smlouvaODilo,
   [ndaSmlouva.metadata.schemaId]: ndaSmlouva,
-  // DE
-  [ndaDe.metadata.schemaId]: ndaDe,
-  [kaufvertrag.metadata.schemaId]: kaufvertrag,
-  [arbeitsvertrag.metadata.schemaId]: arbeitsvertrag,
-  [mietvertrag.metadata.schemaId]: mietvertrag,
-  [werkvertrag.metadata.schemaId]: werkvertrag,
-  // UK
-  [ndaUk.metadata.schemaId]: ndaUk,
-  [saleOfGoods.metadata.schemaId]: saleOfGoods,
-  [employmentContract.metadata.schemaId]: employmentContract,
-  [tenancyAst.metadata.schemaId]: tenancyAst,
-  [servicesAgreement.metadata.schemaId]: servicesAgreement,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -73,6 +45,14 @@ export function getSchema(schemaId: string): ContractSchema {
     throw new Error(`Schema not found: "${schemaId}". Known schemas: ${Object.keys(SCHEMA_REGISTRY).join(', ')}`)
   }
   return schema
+}
+
+/**
+ * Tolerant lookup — returns null instead of throwing for unknown IDs.
+ * Use for historical records that may reference deactivated DE/UK schemas.
+ */
+export function getSchemaOrNull(schemaId: string): ContractSchema | null {
+  return SCHEMA_REGISTRY[schemaId] ?? null
 }
 
 /** Returns all schemas for a single jurisdiction. */

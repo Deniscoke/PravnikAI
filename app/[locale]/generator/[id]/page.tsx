@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ContractResult } from '@/components/contract/ContractResult'
-import { getSchema } from '@/lib/contracts/contractSchemas'
+import { getSchemaOrNull } from '@/lib/contracts/contractSchemas'
 import { SITE_NAME } from '@/lib/seo/site'
 import type { GenerateContractResponse } from '@/lib/contracts/types'
 
@@ -54,8 +54,8 @@ export default async function GenerationDetailPage({ params }: PageProps) {
     generatedAt: generation.created_at,
   }
 
-  const schema = getSchema(generation.schema_id)
-  const contractName = schema?.metadata.name ?? generation.title
+  const schema = getSchemaOrNull(generation.schema_id)
+  const contractName = schema?.metadata.name ?? generation.title ?? 'Starší dokument'
 
   return (
     <main style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', padding: '0 var(--space-md)' }}>

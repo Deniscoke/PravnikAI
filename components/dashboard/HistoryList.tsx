@@ -13,6 +13,7 @@ import { deleteHistoryItem } from '@/lib/supabase/actions'
 import type { ContractGenerationHistory, ContractReviewHistory } from '@/lib/supabase/types'
 import type { Locale } from '@/lib/contracts/types'
 import { useTranslations } from '@/lib/i18n/client'
+import { getSchemaOrNull } from '@/lib/contracts/contractSchemas'
 import { format as formatMsg } from '@/lib/i18n'
 
 // ─── Lightweight row types for the list (no heavy content) ───────────────────
@@ -98,7 +99,7 @@ export function HistoryList({ locale, generations: initialGenerations, reviews: 
               <HistoryCard
                 key={g.id}
                 title={g.title}
-                subtitle={g.schema_id.replace(/-v\d+$/, '').replace(/-/g, ' ')}
+                subtitle={getSchemaOrNull(g.schema_id)?.metadata.name ?? g.schema_id.replace(/-v\d+$/, '').replace(/-/g, ' ')}
                 badge={g.mode}
                 badgeClass={g.mode === 'complete' ? 'complete' : g.mode === 'draft' ? 'draft' : 'review'}
                 timestamp={g.created_at}
