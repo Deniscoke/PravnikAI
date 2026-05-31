@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical = `${APP_URL}/${locale}/terms`
   return {
     title: 'Obchodní podmínky',
-    description: `Obchodní podmínky služby ${SITE_NAME}: popis služby AI generátoru smluv, práva a povinnosti uživatele a provozovatele IndiWeb.`,
+    description: `Obchodní podmínky služby ${SITE_NAME}: podmínky služby pro přípravu návrhů smluv podle českého práva, práva a povinnosti uživatele a provozovatele IndiWeb.`,
     alternates: {
       canonical,
       languages: {
@@ -43,7 +43,7 @@ export default async function TermsPage({ params }: Props) {
           &larr; Zpět na hlavní stránku
         </Link>
         <h1>Obchodní podmínky</h1>
-        <p className="legal-updated">Poslední aktualizace: 24. března 2026</p>
+        <p className="legal-updated">Poslední aktualizace: 31. května 2026</p>
 
         <section>
           <h2>1. Úvodní ustanovení</h2>
@@ -100,8 +100,11 @@ export default async function TermsPage({ params }: Props) {
         <section>
           <h2>6. Ukončení služby</h2>
           <p>
-            Uživatel může svůj účet kdykoli smazat v nastavení účtu. Smazáním účtu dojde k nevratnému
-            odstranění všech osobních údajů v souladu s GDPR.
+            Uživatel může svůj účet kdykoli smazat v nastavení účtu nebo kontaktováním podpory.
+            Při smazání účtu dojde k odstranění osobních údajů a historie dokumentů, pokud jejich
+            další uchování není nezbytné pro splnění zákonných povinností, ochranu právních nároků,
+            bezpečnost služby nebo účetnictví. Technické bezpečnostní záznamy mohou být uchovány
+            v anonymizované nebo pseudonymizované podobě.
           </p>
         </section>
 

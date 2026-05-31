@@ -43,7 +43,7 @@ export default async function GdprPage({ params }: Props) {
           &larr; Zpět na hlavní stránku
         </Link>
         <h1>GDPR &mdash; Zpracování osobních údajů</h1>
-        <p className="legal-updated">Poslední aktualizace: 24. března 2026</p>
+        <p className="legal-updated">Poslední aktualizace: 31. května 2026</p>
 
         <section>
           <h2>Prohlášení o souladu s GDPR</h2>
@@ -97,8 +97,9 @@ export default async function GdprPage({ params }: Props) {
             <li>Autentizačních údajů</li>
           </ul>
           <p>
-            Anonymizované auditní záznamy (bez osobních údajů) mohou být uchovány pro účely bezpečnosti a souladu se
-            zákonem.
+            Technické bezpečnostní záznamy mohou být po výmazu účtu uchovány v anonymizované nebo
+            pseudonymizované podobě, pokud je to nezbytné pro ochranu služby, splnění zákonných
+            povinností nebo ochranu právních nároků.
           </p>
         </section>
 
@@ -117,6 +118,8 @@ export default async function GdprPage({ params }: Props) {
           </p>
           <ul>
             <li>Autentizaci a udržení přihlášení (Supabase session cookies)</li>
+            <li>Zapamatování jazykové preference nebo přesměrování na českou verzi služby
+              (technický cookie <code>pravnikai-locale</code>)</li>
             <li>Zapamatování zvoleného tématu vzhledu (localStorage, ne cookie)</li>
           </ul>
           <p>
