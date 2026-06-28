@@ -481,7 +481,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
         >
           info.indiweb@gmail.com
         </a>
-        {' '}· +421 728 523 267
+        {' '}· +420 728 523 267
       </p>
     </section>
   )

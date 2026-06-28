@@ -79,11 +79,12 @@ export const PLAN_INFO: Record<SubscriptionTier, PlanInfo> = {
   pro: {
     tier: 'pro',
     name: 'Pro',
-    description: 'Pro advokáty a právníky',
+    description: 'Pro OSVČ a malé firmy, které smlouvy řeší pravidelně',
     features: [
-      'Neomezené generování smluv',
-      'Neomezené AI kontroly',
-      'Neomezené DOCX exporty',
+      'Vysoký měsíční objem v rámci férového denního limitu',
+      'Generování návrhů smluv bez pevných měsíčních kvót',
+      'AI kontroly bez pevných měsíčních kvót',
+      'Exporty DOCX a PDF',
       'Všechny typy smluv',
       'Prioritní podpora',
     ],
