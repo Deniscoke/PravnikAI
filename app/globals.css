@@ -1039,6 +1039,30 @@ body {
 }
 .legal-card a:hover { text-decoration: underline; }
 
+/* Legal data tables (Privacy purposes / retention) */
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: var(--space-sm);
+}
+.legal-table th,
+.legal-table td {
+  border: 1px solid var(--glass-border-subtle);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.legal-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+.legal-table code {
+  font-size: 0.78em;
+  color: var(--color-text-subtle);
+}
+
 /* ── Cookie consent banner ──────────────────────────────────────────────── */
 .cookie-banner {
   position: fixed;
