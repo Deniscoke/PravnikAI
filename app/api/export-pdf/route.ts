@@ -21,7 +21,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import PDFDocument from 'pdfkit'
 import { assertBillingAccess, recordExport } from '@/lib/billing/guard'
-import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { getSchema, resolveSchemaId } from '@/lib/contracts/contractSchemas'
 import { getExportStrings, formatExportDate, type ExportStrings } from '@/lib/export/strings'
 import { SITE_NAME } from '@/lib/seo/site'
@@ -44,12 +44,9 @@ interface ExportRequest {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 0a. Rate limit ────────────────────────────────────────────────────────
   const ip = getClientIp(req.headers)
-  const { allowed: rlAllowed, resetAt } = await checkRateLimit(ip, { max: 20, windowMs: 60_000 })
-  if (!rlAllowed) {
-    return NextResponse.json(
-      { error: 'Too many requests. Try again shortly.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)) } },
-    )
+  const rl = await checkRateLimit(`export-pdf:${ip}`, { max: 20, windowMs: 60_000 })
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, 'Too many requests. Try again shortly.')
   }
 
   // ── 0b. Billing guard ─────────────────────────────────────────────────────

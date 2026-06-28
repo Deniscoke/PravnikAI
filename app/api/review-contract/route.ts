@@ -21,7 +21,8 @@ import { buildReviewPrompt } from '@/lib/review/reviewPromptBuilder'
 import { generateText } from '@/lib/llm/openaiClient'
 import { saveReviewToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
-import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { logAiUsage } from '@/lib/billing/aiUsageLog'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 import type { ReviewContractRequest, ReviewContractResponse } from '@/lib/review/types'
 
@@ -31,12 +32,9 @@ const MAX_CONTRACT_LENGTH = 100_000
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 0a. Rate limit ────────────────────────────────────────────────────────
   const ip = getClientIp(req.headers)
-  const { allowed: rlAllowed, remaining, resetAt } = await checkRateLimit(ip, { max: 10, windowMs: 60_000 })
-  if (!rlAllowed) {
-    return NextResponse.json(
-      { error: 'Příliš mnoho požadavků. Zkuste to za chvíli.', code: 'RATE_LIMITED' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((resetAt - Date.now()) / 1000)), 'X-RateLimit-Remaining': '0' } },
-    )
+  const rl = await checkRateLimit(`rev:${ip}`, { max: 10, windowMs: 60_000 })
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, 'Příliš mnoho požadavků. Zkuste to za chvíli.')
   }
 
   // ── 0b. Billing guard ─────────────────────────────────────────────────────
@@ -80,6 +78,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // ── 3. Call LLM ────────────────────────────────────────────────────────────
   let rawText: string
+  let tokensUsed = 0
+  let modelUsed = 'default'
   try {
     const result = await generateText({
       systemPrompt,
@@ -89,6 +89,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       jsonMode: true,
     })
     rawText = result.text
+    tokensUsed = result.tokensUsed
+    modelUsed = result.model
   } catch (err) {
     const hint = formatOpenAiUserHint(err, 'cs')
     console.error('[review-contract] LLM error:', err)
@@ -181,6 +183,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     input_text_preview: trimmed.slice(0, 200),
     status: 'completed',
   }).catch(() => {}) // Silently ignore — action logs errors internally
+
+  if (guard.user && tokensUsed > 0) {
+    logAiUsage({
+      userId: guard.user.id,
+      action: 'review',
+      model: modelUsed,
+      tokensUsed,
+    })
+  }
 
   return NextResponse.json(response, { status: 200 })
 }

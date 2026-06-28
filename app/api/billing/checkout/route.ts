@@ -20,7 +20,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/billing/stripe'
 import { getOrCreateStripeCustomerForUser } from '@/lib/billing/helpers'
-import { getStripePriceId, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
+import { getStripePriceId, TEAM_CHECKOUT_ENABLED, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { DEFAULT_LOCALE, type Locale } from '@/lib/contracts/types'
 import { isValidLocale } from '@/lib/i18n'
 import { getSiteUrl } from '@/lib/seo/site'
@@ -41,6 +42,12 @@ const VALID_PAID_TIERS = new Set<string>(['pro', 'team'])
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const ip = getClientIp(req.headers)
+  const rl = await checkRateLimit(`checkout:${ip}`, { max: 5, windowMs: 60_000 })
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, 'Příliš mnoho pokusů o platbu. Zkuste to za chvíli.')
+  }
+
   // ── 1. Authenticate ────────────────────────────────────────────────────────
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -73,6 +80,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       { error: 'Neplatný tarif. Povolené hodnoty: pro, team.' },
       { status: 400 },
+    )
+  }
+
+  if (body.tier === 'team' && !TEAM_CHECKOUT_ENABLED) {
+    return NextResponse.json(
+      { error: 'Tarif Tým zatím není k dispozici — týmové funkce připravujeme. Zvolte Pro.', code: 'TEAM_NOT_AVAILABLE' },
+      { status: 403 },
     )
   }
 

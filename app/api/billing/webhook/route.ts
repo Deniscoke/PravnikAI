@@ -25,7 +25,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { stripe } from '@/lib/billing/stripe'
 import { createServiceClient } from '@/lib/supabase/server'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { mapStripePriceToPlan } from '@/lib/billing/plans'
+import { claimStripeWebhookEvent, releaseStripeWebhookEventClaim } from '@/lib/billing/webhookIdempotency'
 import type { SubscriptionStatus } from '@/lib/supabase/types'
 
 export const runtime = 'nodejs'
@@ -33,6 +35,15 @@ export const runtime = 'nodejs'
 // ─── Main handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const hasRedis = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  if (hasRedis) {
+    const ip = getClientIp(req.headers)
+    const rl = await checkRateLimit(`webhook:${ip}`, { max: 120, windowMs: 60_000 })
+    if (!rl.allowed) {
+      return rateLimitResponse(rl, 'Too many webhook requests.')
+    }
+  }
+
   // ── 1. Read raw body BEFORE any parsing ────────────────────────────────────
   const rawBody = await req.text()
   const signature = req.headers.get('stripe-signature')
@@ -66,9 +77,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // ── 3. Route event to handler ──────────────────────────────────────────────
+  // ── 3. Idempotency — skip duplicate Stripe deliveries ─────────────────────
   const serviceClient = await createServiceClient()
+  const claim = await claimStripeWebhookEvent(serviceClient, event.id, event.type)
+  if (claim === 'duplicate') {
+    console.info(`[webhook] Duplicate event ${event.id} (${event.type}) — skipped`)
+    return NextResponse.json({ received: true, duplicate: true })
+  }
 
+  // ── 4. Route event to handler ──────────────────────────────────────────────
   try {
     switch (event.type) {
       case 'checkout.session.completed':
@@ -97,8 +114,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   } catch (err) {
     // Log but still return 200 to prevent Stripe retries on transient errors.
-    // If the DB write failed, the next webhook delivery will retry the operation.
     console.error(`[webhook] Error handling ${event.type}:`, err)
+    // BR-2: release the idempotency claim so a future Stripe redelivery of the
+    // SAME event.id can reprocess. Only when WE claimed it as 'new' (never on
+    // 'duplicate'/'unavailable'). The 'always 200' strategy is preserved.
+    if (claim === 'new') {
+      await releaseStripeWebhookEventClaim(serviceClient, event.id)
+    }
   }
 
   // Always return 200 quickly
@@ -279,6 +301,8 @@ async function upsertSubscription(
 
   const tier = mapStripePriceToPlan(priceId)
   const status = subscription.status as SubscriptionStatus
+  const paidStatuses: SubscriptionStatus[] = ['active', 'trialing', 'past_due']
+  const effectiveTier = paidStatuses.includes(status) ? tier : 'free'
 
   // UPSERT subscription row
   const { error: subError } = await serviceClient
@@ -301,10 +325,10 @@ async function upsertSubscription(
     return // Don't sync tier if subscription write failed
   }
 
-  // Sync tier cache in user_preferences
+  // Sync tier cache in user_preferences (downgrade when subscription is not paid-active)
   const { error: prefError } = await serviceClient
     .from('user_preferences')
-    .update({ subscription_tier: tier })
+    .update({ subscription_tier: effectiveTier })
     .eq('user_id', userId)
 
   if (prefError) {
@@ -312,7 +336,7 @@ async function upsertSubscription(
   }
 
   console.info(
-    `[webhook] Subscription ${subscription.id} → user ${userId} | tier=${tier} status=${status}`,
+    `[webhook] Subscription ${subscription.id} → user ${userId} | tier=${effectiveTier} status=${status}`,
   )
 }
 

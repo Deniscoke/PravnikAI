@@ -2,6 +2,8 @@
  * Safe Stripe billing config checks — never exposes secret values.
  */
 
+import { isProductionDeployment } from '@/lib/rateLimit'
+
 export interface BillingConfigStatus {
   ok: boolean
   issues: string[]
@@ -11,6 +13,7 @@ export interface BillingConfigStatus {
     webhookSecret: boolean
     serviceRole: boolean
     appUrl: string | null
+    rateLimitRedis: boolean
   }
 }
 
@@ -65,6 +68,16 @@ export function getBillingConfigStatus(): BillingConfigStatus {
     issues.push('NEXT_PUBLIC_APP_URL ukazuje na localhost — na Vercel Production nastavte https://pravo365.cz')
   }
 
+  const rateLimitRedis = Boolean(
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
+  )
+  if (isProductionDeployment() && !rateLimitRedis && process.env.RATE_LIMIT_ALLOW_WITHOUT_REDIS !== '1') {
+    issues.push(
+      'Chybí UPSTASH_REDIS_REST_URL/TOKEN — rate limiting v produkci je fail-closed (503). ' +
+      'Nastavte Upstash Redis nebo dočasně RATE_LIMIT_ALLOW_WITHOUT_REDIS=1 (nouzový bypass).',
+    )
+  }
+
   return {
     ok: issues.length === 0,
     issues,
@@ -74,6 +87,7 @@ export function getBillingConfigStatus(): BillingConfigStatus {
       webhookSecret,
       serviceRole,
       appUrl,
+      rateLimitRedis,
     },
   }
 }

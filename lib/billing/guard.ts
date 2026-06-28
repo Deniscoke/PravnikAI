@@ -31,6 +31,7 @@ import {
   PLAN_INFO,
   mapStripePriceToPlan,
 } from './plans'
+import { checkDailyAiCap } from './dailyLimits'
 import type { Subscription, SubscriptionStatus } from '@/lib/supabase/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -177,6 +178,22 @@ export async function getBillingAccessForUser(
   const limitKey = actionToLimitKey(action)
   const limit = limits[limitKey]
   const used = usage[limitKey]
+
+  // Daily hard cap for paid AI actions (cost protection)
+  if (limit === -1 && (action === 'generate' || action === 'review')) {
+    const daily = await checkDailyAiCap(supabase, userId, tier, action)
+    if (!daily.allowed) {
+      return {
+        allowed: false,
+        plan: tier,
+        status,
+        reason: `Denní limit AI (${daily.used}/${daily.limit}) byl dosažen. Zkuste to zítra nebo kontaktujte podporu.`,
+        code: 'DAILY_AI_CAP_REACHED',
+        limits,
+        usage,
+      }
+    }
+  }
 
   // Unlimited: always allowed
   if (limit === -1) {

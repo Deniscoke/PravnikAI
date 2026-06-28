@@ -22,10 +22,17 @@ import { stripe } from '@/lib/billing/stripe'
 import { DEFAULT_LOCALE } from '@/lib/contracts/types'
 import { isValidLocale } from '@/lib/i18n'
 import { getSiteUrl } from '@/lib/seo/site'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const ip = getClientIp(req.headers)
+  const rl = await checkRateLimit(`portal:${ip}`, { max: 10, windowMs: 60_000 })
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, 'Příliš mnoho požadavků. Zkuste to za chvíli.')
+  }
+
   // ── 1. Authenticate ────────────────────────────────────────────────────────
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
