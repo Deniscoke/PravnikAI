@@ -48,8 +48,7 @@ export default async function GdprPage({ params }: Props) {
         <p>
           Tato stránka popisuje praktický postup pro uplatnění vašich práv podle nařízení GDPR
           (EU) 2016/679. Jaké údaje a proč zpracováváme, najdete v dokumentu{' '}
-          <Link href={`/${locale}/privacy`}>Ochrana osobních údajů</Link>. Body vyžadující právní
-          potvrzení jsou označeny <code>[K DOPLNĚNÍ ADVOKÁTEM: …]</code>.
+          <Link href={`/${locale}/privacy`}>Ochrana osobních údajů</Link>.
         </p>
 
         <section>
@@ -87,9 +86,6 @@ export default async function GdprPage({ params }: Props) {
             zákonných povinností, účetnictví, bezpečnost služby nebo obranu právních nároků.
             Technické bezpečnostní záznamy mohou zůstat v anonymizované nebo pseudonymizované podobě.
           </p>
-          <p>
-            <code>[K DOPLNĚNÍ ADVOKÁTEM: ověřit rozsah a lhůty údajů ponechaných po výmazu z titulu zákonných povinností a obrany právních nároků]</code>
-          </p>
         </section>
 
         <section>
@@ -125,9 +121,6 @@ export default async function GdprPage({ params }: Props) {
             třetích osob. Uživatel odpovídá za to, že je oprávněn tyto údaje zpracovávat. Pokud to
             není nezbytné, doporučujeme údaje před vložením anonymizovat nebo minimalizovat;
             nevkládejte zvláštní kategorie osobních údajů podle GDPR bez právního titulu.
-          </p>
-          <p>
-            <code>[K DOPLNĚNÍ ADVOKÁTEM: potvrdit roli správce/zpracovatele u obsahu vložených smluv a navazující povinnosti]</code>
           </p>
         </section>
 
