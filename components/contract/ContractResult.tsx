@@ -250,8 +250,8 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
           style={{
             padding: 'var(--space-xl)',
             fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: '0.88rem',
-            lineHeight: 1.8,
+            fontSize: '1.05rem',
+            lineHeight: 1.7,
             color: 'var(--color-text)',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',

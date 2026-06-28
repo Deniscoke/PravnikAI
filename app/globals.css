@@ -37,8 +37,8 @@
   --color-bg:           #0b0e1a;
   --color-surface:      rgba(255, 255, 255, 0.04);
   --color-text:         #ffffff;
-  --color-text-muted:   rgba(255, 255, 255, 0.55);
-  --color-text-subtle:  rgba(255, 255, 255, 0.35);
+  --color-text-muted:   rgba(255, 255, 255, 0.62);
+  --color-text-subtle:  rgba(255, 255, 255, 0.45);
 
   /* Spacing */
   --space-2xs:          4px;
@@ -86,8 +86,8 @@
   --color-bg:           #e8f0fa;
   --color-surface:      rgba(255, 255, 255, 0.55);
   --color-text:         #0f172a;
-  --color-text-muted:   rgba(15, 23, 42, 0.58);
-  --color-text-subtle:  rgba(15, 23, 42, 0.38);
+  --color-text-muted:   rgba(15, 23, 42, 0.66);
+  --color-text-subtle:  rgba(15, 23, 42, 0.5);
   /* Accent colours — darkened for WCAG AA on light backgrounds */
   --accent-aqua:        #0891b2;
   --accent-violet:      #6d28d9;
