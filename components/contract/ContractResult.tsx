@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import type { GenerateContractResponse, GenerationMode } from '@/lib/contracts/types'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
 import { format as formatMsg } from '@/lib/i18n'
+import { findUnresolvedMarkers } from '@/lib/contracts/unresolvedMarkers'
 
 interface ContractResultProps {
   result: GenerateContractResponse
@@ -18,6 +19,25 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
   const [copied, setCopied] = useState(false)
   const [exportingDocx, setExportingDocx] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  // Pre-export gate: holds the requested format while the unresolved-items warning is shown.
+  const [pendingExportFormat, setPendingExportFormat] = useState<'docx' | 'pdf' | null>(null)
+
+  const unresolved = findUnresolvedMarkers(result.contractText)
+
+  /** Export entry point — opens the warning gate if the draft has unresolved items. */
+  function requestExport(format: 'docx' | 'pdf') {
+    if (unresolved.count > 0) {
+      setPendingExportFormat(format)
+      return
+    }
+    exportDocument(format)
+  }
+
+  function confirmPendingExport() {
+    const format = pendingExportFormat
+    setPendingExportFormat(null)
+    if (format) exportDocument(format)
+  }
 
   async function copyToClipboard() {
     try {
@@ -145,10 +165,10 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
           <button className="glass-btn" onClick={copyToClipboard} aria-live="polite">
             {copied ? <><CheckIcon /> {t.result.copied}</> : <><CopyIcon /> {t.result.copy}</>}
           </button>
-          <button className="glass-btn" onClick={() => exportDocument('docx')} disabled={exportingDocx}>
+          <button className="glass-btn" onClick={() => requestExport('docx')} disabled={exportingDocx}>
             {exportingDocx ? <><SpinnerIcon /> {t.result.exportShort}</> : <><DocxIcon /> {t.result.docx}</>}
           </button>
-          <button className="glass-btn" onClick={() => exportDocument('pdf')} disabled={exportingPdf}>
+          <button className="glass-btn" onClick={() => requestExport('pdf')} disabled={exportingPdf}>
             {exportingPdf ? <><SpinnerIcon /> {t.result.exportShort}</> : <><PdfIcon /> {t.result.pdf}</>}
           </button>
           <ActionButton action={onBack} className="glass-btn glass-btn--ghost">
@@ -248,10 +268,10 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
         <button className="glass-btn glass-btn--primary" onClick={copyToClipboard}>
           {copied ? <><CheckIcon /> {t.result.copied}</> : <><CopyIcon /> {t.result.copyToClipboard}</>}
         </button>
-        <button className="glass-btn" onClick={() => exportDocument('docx')} disabled={exportingDocx}>
+        <button className="glass-btn" onClick={() => requestExport('docx')} disabled={exportingDocx}>
           {exportingDocx ? <><SpinnerIcon /> {t.result.exporting}</> : <><DocxIcon /> {t.result.downloadDocx}</>}
         </button>
-        <button className="glass-btn" onClick={() => exportDocument('pdf')} disabled={exportingPdf}>
+        <button className="glass-btn" onClick={() => requestExport('pdf')} disabled={exportingPdf}>
           {exportingPdf ? <><SpinnerIcon /> {t.result.exporting}</> : <><PdfIcon /> {t.result.downloadPdf}</>}
         </button>
         <ActionButton action={onBack} className="glass-btn">
@@ -282,6 +302,47 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
           </span>
         </div>
       </div>
+
+      {/* ── Pre-export gate (B-09) — shown only when the draft has unresolved items ── */}
+      {pendingExportFormat && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="export-gate-title"
+          onClick={() => setPendingExportFormat(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.5)', padding: 'var(--space-md)',
+          }}
+        >
+          <div
+            className="glass-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 460, padding: 'var(--space-xl)' }}
+          >
+            <h3 id="export-gate-title" style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: 'var(--space-sm)' }}>
+              Návrh obsahuje nevyplněná místa
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: 'var(--space-sm)' }}>
+              Před exportem jsme našli položky, které pravděpodobně vyžadují doplnění nebo kontrolu.
+              Dokument můžete exportovat, ale před použitím jej doporučujeme projít a případně
+              konzultovat s advokátem.
+            </p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-subtle)', marginBottom: 'var(--space-lg)' }}>
+              Počet nalezených položek: {unresolved.count}
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-sm)', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button className="glass-btn glass-btn--ghost" onClick={() => setPendingExportFormat(null)}>
+                Vrátit se k návrhu
+              </button>
+              <button className="glass-btn glass-btn--primary" onClick={confirmPendingExport}>
+                Exportovat i tak
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
