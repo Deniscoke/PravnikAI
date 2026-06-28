@@ -1,23 +1,24 @@
 /**
  * POST /api/export-pdf
  *
- * Renders the generated contract text into a professionally typeset PDF file.
- * Multi-jurisdiction (CZ / DE / UK) — header, footer and disclaimers adapt
- * to the schema's jurisdiction.
+ * Renders the generated contract text into a professionally typeset PDF file
+ * for Czech-law contract drafts.
  *
  * Typography:
  *   - A4 paper, 25mm margins
- *   - Body: built-in Times-Roman, 11pt, justified, ~1.4 line height
- *   - Headings: Times-Bold, 13pt for articles, 12pt for sub-headings
- *   - First-line indent on body paragraphs
+ *   - Embedded Tinos font (Times-compatible) so Czech diacritics render correctly
+ *   - Body 11pt justified, headings bold 13/12pt, first-line indent
  *   - Mode banner at the top (DRAFT / REVIEW)
  *   - Header with contract title; footer with page numbers and metadata
  *
- * Built-in fonts (Helvetica / Times / Courier) are used for portability — they
- * support enough Latin-1 + Latin-Extended-A to cover Czech, German and English
- * accented characters without bundling external font files.
+ * pdfkit's built-in standard-14 fonts are deliberately NOT used: they require
+ * `.afm` metric files that Next.js does not bundle into the serverless function
+ * (causing ENOENT for Helvetica.afm at runtime), and their WinAnsi encoding
+ * cannot represent Czech glyphs (č, ř, ě, ů, ž, …). We embed a Unicode TTF
+ * instead, bundled via next.config `outputFileTracingIncludes`.
  */
 
+import path from 'node:path'
 import { NextRequest, NextResponse } from 'next/server'
 import PDFDocument from 'pdfkit'
 import { assertBillingAccess, recordExport } from '@/lib/billing/guard'
@@ -31,6 +32,16 @@ import type { Jurisdiction } from '@/lib/contracts/types'
 export const runtime = 'nodejs'
 
 export const maxDuration = 120
+
+// Embedded Unicode fonts (bundled via next.config outputFileTracingIncludes).
+// Passing a TTF path as the default font also prevents pdfkit from loading its
+// built-in Helvetica.afm at construction time (which is not bundled → ENOENT).
+const FONT_DIR = path.join(process.cwd(), 'assets', 'fonts')
+const FONT = {
+  regular: path.join(FONT_DIR, 'Tinos-Regular.ttf'),
+  bold: path.join(FONT_DIR, 'Tinos-Bold.ttf'),
+  italic: path.join(FONT_DIR, 'Tinos-Italic.ttf'),
+}
 
 interface ExportRequest {
   contractText: string
@@ -147,7 +158,15 @@ function renderPdf(input: RenderInput): Promise<Buffer> {
         Creator: SITE_NAME,
       },
       bufferPages: true,
+      // TTF path as default font → no built-in Helvetica.afm load
+      font: FONT.regular,
     })
+
+    // Register the embedded Unicode faces used throughout the document
+    doc.registerFont('body', FONT.regular)
+    doc.registerFont('bold', FONT.bold)
+    doc.registerFont('italic', FONT.italic)
+    doc.font('body')
 
     const chunks: Buffer[] = []
     doc.on('data', (chunk: Buffer) => chunks.push(chunk))
@@ -174,7 +193,7 @@ function renderPdf(input: RenderInput): Promise<Buffer> {
       .stroke()
     doc.moveDown(0.4)
     doc
-      .font('Times-Italic')
+      .font('italic')
       .fontSize(8.5)
       .fillColor('#888888')
       .text(input.strings.disclaimer, {
@@ -184,7 +203,7 @@ function renderPdf(input: RenderInput): Promise<Buffer> {
     // ── AI label (B-05) — visible notice ──
     doc.moveDown(0.5)
     doc
-      .font('Times-Roman')
+      .font('body')
       .fontSize(8.5)
       .fillColor('#888888')
       .text('Vygenerováno pomocí AI · pracovní návrh podle českého práva · nenahrazuje právní poradenství', {
@@ -203,8 +222,8 @@ function drawBanner(doc: PDFKit.PDFDocument, label: string, tail: string, accent
   const startX = doc.page.margins.left
   const width = doc.page.width - doc.page.margins.left - doc.page.margins.right
 
-  doc.font('Times-Bold').fontSize(11).fillColor(accent).text(label, startX, doc.y, { continued: true })
-  doc.font('Times-Italic').fontSize(10).fillColor('#666666').text(`  —  ${tail}`)
+  doc.font('bold').fontSize(11).fillColor(accent).text(label, startX, doc.y, { continued: true })
+  doc.font('italic').fontSize(10).fillColor('#666666').text(`  —  ${tail}`)
   doc.fillColor('#000000')
   doc.moveDown(0.5)
   doc
@@ -236,7 +255,7 @@ function drawBody(doc: PDFKit.PDFDocument, text: string, _jurisdiction: Jurisdic
     ) {
       doc.moveDown(0.7)
       doc
-        .font('Times-Bold')
+        .font('bold')
         .fontSize(13)
         .fillColor('#111111')
         .text(trimmed, { align: 'left', paragraphGap: 4, lineGap: 2 })
@@ -252,7 +271,7 @@ function drawBody(doc: PDFKit.PDFDocument, text: string, _jurisdiction: Jurisdic
     ) {
       doc.moveDown(0.5)
       doc
-        .font('Times-Bold')
+        .font('bold')
         .fontSize(12)
         .fillColor('#111111')
         .text(trimmed, { align: 'left', paragraphGap: 3 })
@@ -262,7 +281,7 @@ function drawBody(doc: PDFKit.PDFDocument, text: string, _jurisdiction: Jurisdic
     // Signature lines
     if (/^[_\-]{10,}$/.test(trimmed)) {
       doc.moveDown(1.0)
-      doc.font('Times-Roman').fontSize(11).fillColor('#333333').text('________________________________________')
+      doc.font('body').fontSize(11).fillColor('#333333').text('________________________________________')
       continue
     }
 
@@ -286,7 +305,7 @@ function drawParagraphWithBold(
   text: string,
   opts: { align: 'left' | 'justify'; indent: number },
 ): void {
-  doc.font('Times-Roman').fontSize(11).fillColor('#000000')
+  doc.font('body').fontSize(11).fillColor('#000000')
   const parts = text.split(/\*\*(.*?)\*\*/g)
   // The text starts at the cursor position; first chunk gets the indent
   let firstChunk = true
@@ -296,7 +315,7 @@ function drawParagraphWithBold(
     const segment = parts[i]
     if (!segment) continue
     const isBold = i % 2 === 1
-    doc.font(isBold ? 'Times-Bold' : 'Times-Roman').fontSize(11)
+    doc.font(isBold ? 'bold' : 'body').fontSize(11)
 
     const isLast = i === lastIndex
     doc.text(segment, {
@@ -329,7 +348,7 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
 
     // ── Header — contract name, top right ─────────────────────────────────
     doc
-      .font('Times-Italic')
+      .font('italic')
       .fontSize(8)
       .fillColor('#888888')
       .text(
@@ -342,7 +361,7 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
     // ── Footer ─────────────────────────────────────────────────────────────
     const footerY = pageHeight - 50
     doc
-      .font('Times-Roman')
+      .font('body')
       .fontSize(8)
       .fillColor('#888888')
       .text(
@@ -355,7 +374,7 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
 
     if (legalBasisLine) {
       doc
-        .font('Times-Italic')
+        .font('italic')
         .fontSize(7.5)
         .fillColor('#AAAAAA')
         .text(legalBasisLine, doc.page.margins.left, footerY + 12, {

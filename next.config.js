@@ -8,6 +8,14 @@ const nextConfig = {
     root: path.resolve(__dirname),
   },
 
+  // Bundle the embedded PDF fonts into the export-pdf serverless function so
+  // pdfkit can read them at runtime, and keep pdfkit external so its own file
+  // reads resolve from node_modules rather than a rewritten bundle path.
+  outputFileTracingIncludes: {
+    '/api/export-pdf': ['./assets/fonts/**/*'],
+  },
+  serverExternalPackages: ['pdfkit'],
+
   async headers() {
     return [
       {
