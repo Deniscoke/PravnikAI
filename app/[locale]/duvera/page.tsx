@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import type { Locale } from '@/lib/contracts/types'
+import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()
 
@@ -38,6 +39,12 @@ export default async function TrustCenterPage({ params }: Props) {
 
   return (
     <main className="legal-page">
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Domů', path: `/${locale}` },
+          { name: 'Důvěra a bezpečnost', path: `/${locale}/duvera` },
+        ]}
+      />
       <div className="legal-card">
         <Link href={`/${locale}`} className="legal-back">
           &larr; Zpět na hlavní stránku

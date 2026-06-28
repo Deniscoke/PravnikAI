@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getSiteUrl, SITE_NAME, SEO_KEYWORDS } from '@/lib/seo/site'
 import { getMessages, isValidLocale } from '@/lib/i18n'
+import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()
 
@@ -33,6 +34,26 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
 }
 
-export default function ReviewLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function ReviewLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
+  if (!isValidLocale(locale)) return children
+  const t = getMessages(locale)
+  return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Domů', path: `/${locale}` },
+          { name: t.nav.review, path: `/${locale}/review` },
+        ]}
+      />
+      {children}
+    </>
+  )
 }
+

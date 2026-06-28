@@ -3,6 +3,7 @@ import {
   SITE_NAME,
   SITE_PUBLISHER,
 } from '@/lib/seo/site'
+import { PLAN_INFO } from '@/lib/billing/plans'
 import { getHomeFaqItems } from '@/lib/seo/faq'
 import { getMessages } from '@/lib/i18n'
 import { type Locale } from '@/lib/contracts/types'
@@ -48,10 +49,11 @@ export function HomeJsonLd({ locale }: { locale: Locale }) {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {
-      '@type': 'Offer',
-      price: '0',
+      '@type': 'AggregateOffer',
       priceCurrency: 'EUR',
-      description: t.home.sectionPricingSubtitle,
+      lowPrice: '0',
+      highPrice: String(PLAN_INFO.pro.pricing.monthly),
+      offerCount: 2,
     },
     description: t.home.heroSubtitle,
     url: localeUrl,
