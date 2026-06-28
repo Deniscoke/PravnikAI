@@ -195,6 +195,7 @@ export default function HomePage() {
             <Link href={`/${locale}/privacy`}>{t.home.footer.links.privacy}</Link>
             <Link href={`/${locale}/gdpr`}>{t.home.footer.links.gdpr}</Link>
             <Link href={`/${locale}/ai`}>Jak používáme AI</Link>
+            <Link href={`/${locale}/duvera`}>Důvěra a bezpečnost</Link>
           </div>
           <div className="footer-links">
             <h4 className="footer-links__title">{t.home.footer.contactHeading}</h4>
