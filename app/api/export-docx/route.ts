@@ -114,7 +114,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const doc = new Document({
     creator: SITE_NAME,
     title: contractName,
-    subject: `${jurisdiction} legal contract`,
+    subject: 'AI-generated working draft (CZ)',
+    description: 'Generated with AI by Právo365. Working draft under Czech law. Not legal advice.',
+    keywords: 'AI-generated, working draft, Czech law, Právo365',
     styles: {
       default: {
         document: {
@@ -200,6 +202,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 size: 16,
                 color: '999999',
                 italics: true,
+              }),
+            ],
+          }),
+          // ── AI label (B-05) — visible machine-independent notice ──
+          new Paragraph({
+            spacing: { before: 120 },
+            children: [
+              new TextRun({
+                text: 'Vygenerováno pomocí AI · pracovní návrh podle českého práva · nenahrazuje právní poradenství',
+                size: 14,
+                color: '888888',
               }),
             ],
           }),

@@ -144,7 +144,8 @@ function renderPdf(input: RenderInput): Promise<Buffer> {
       info: {
         Title: input.contractName,
         Author: SITE_NAME,
-        Subject: `${input.jurisdiction} legal contract`,
+        Subject: 'AI-generated working draft (CZ)',
+        Keywords: 'AI-generated, working draft, Czech law, Právo365',
         Producer: `${SITE_NAME} (pdfkit)`,
         Creator: SITE_NAME,
       },
@@ -182,6 +183,15 @@ function renderPdf(input: RenderInput): Promise<Buffer> {
       .text(input.strings.disclaimer, {
         align: 'justify',
         lineGap: 1,
+      })
+    // ── AI label (B-05) — visible notice ──
+    doc.moveDown(0.5)
+    doc
+      .font('Times-Roman')
+      .fontSize(8.5)
+      .fillColor('#888888')
+      .text('Vygenerováno pomocí AI · pracovní návrh podle českého práva · nenahrazuje právní poradenství', {
+        align: 'center',
       })
     doc.fillColor('#000000')
 
