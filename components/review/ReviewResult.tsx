@@ -39,7 +39,7 @@ export function ReviewResult({ result, onNewReview }: ReviewResultProps) {
       }}>
         <ShieldIcon />
         <span>
-          AI-asistovaná kontrola · Neslouží jako právní poradenství · Konzultujte advokáta
+          AI orientační kontrola · nejde o právní posudek · výsledek doporučujeme ověřit s advokátem
         </span>
         <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontSize: '0.68rem', opacity: 0.7 }}>
           review-v1

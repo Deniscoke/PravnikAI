@@ -234,6 +234,17 @@ export default function ReviewPage() {
               {t.reviewPage.inputSectionTitle}
             </h2>
 
+            {/* GDPR upload warning — shown before the user pastes any contract text */}
+            <div className="alert alert--warning" style={{ marginBottom: 'var(--space-lg)', display: 'flex', gap: 'var(--space-sm)', alignItems: 'flex-start' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>
+                Před vložením textu zvažte, zda smlouva neobsahuje osobní údaje třetích osob, citlivé
+                údaje nebo obchodní tajemství. Pokud je to možné, údaje anonymizujte. Nevkládejte
+                zvláštní kategorie osobních údajů, pokud k jejich zpracování nemáte právní titul. Text
+                bude zpracován za účelem orientační AI kontroly smlouvy.
+              </span>
+            </div>
+
             <form onSubmit={handleSubmit} noValidate>
               <div className="glass-card form-section" style={{ padding: 'var(--space-xl)' }}>
                 <div className="glass-input-wrap form-field--full">

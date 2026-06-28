@@ -167,7 +167,7 @@ export const cs: Messages = {
   },
 
   result: {
-    trustBanner: 'AI návrh · Vyžaduje kontrolu advokátem · Negeneruje právní poradenství',
+    trustBanner: 'Vytvořeno pomocí AI · pracovní návrh podle českého práva · nenahrazuje právní poradenství',
     copy: 'Kopírovat',
     copied: 'Zkopírováno',
     copyToClipboard: 'Kopírovat do schránky',

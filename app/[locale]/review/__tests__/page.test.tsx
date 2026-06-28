@@ -116,7 +116,7 @@ describe('Review Page', () => {
       // Negotiation flag
       expect(screen.getByText(/Smluvní pokuta jednostranná/)).toBeInTheDocument()
       // Trust banner
-      expect(screen.getByText(/Neslouží jako právní poradenství/)).toBeInTheDocument()
+      expect(screen.getByText(/nejde o právní posudek/)).toBeInTheDocument()
       // Detected type
       expect(screen.getByText('Kupní smlouva')).toBeInTheDocument()
     })
