@@ -36,15 +36,25 @@ function getInstance(max: number, windowMs: number): Ratelimit | null {
   const cacheKey = `${max}:${windowMs}`
   if (instances.has(cacheKey)) return instances.get(cacheKey)!
 
-  const limiter = new Ratelimit({
-    redis: new Redis({ url, token }),
-    limiter: Ratelimit.slidingWindow(max, `${windowMs} ms`),
-    analytics: false,
-    prefix: 'pravo365:rl',
-  })
-
-  instances.set(cacheKey, limiter)
-  return limiter
+  try {
+    const limiter = new Ratelimit({
+      redis: new Redis({ url, token }),
+      limiter: Ratelimit.slidingWindow(max, `${windowMs} ms`),
+      analytics: false,
+      prefix: 'pravo365:rl',
+    })
+    instances.set(cacheKey, limiter)
+    return limiter
+  } catch (err) {
+    // Malformed URL/token (e.g. stray quotes in the env value) makes the Upstash
+    // client throw at construction. Degrade to null so checkRateLimit's
+    // fail-closed path returns a clean 503 instead of an uncaught 500.
+    console.error(
+      '[rateLimit] Invalid Upstash config — check UPSTASH_REDIS_REST_URL/TOKEN format:',
+      err instanceof Error ? err.message : err,
+    )
+    return null
+  }
 }
 
 export async function checkRateLimit(

@@ -69,3 +69,18 @@ describe('checkRateLimit without Redis configured', () => {
     expect(r.failClosed).toBeFalsy()
   })
 })
+
+describe('checkRateLimit with a malformed Upstash config', () => {
+  it('fails CLOSED (does not throw) when the URL is invalid in production', async () => {
+    // Reproduces the incident: env value with stray surrounding quotes.
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('VERCEL', '1')
+    vi.stubEnv('RATE_LIMIT_ALLOW_WITHOUT_REDIS', '')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', '"https://x.upstash.io"')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token')
+    // Unique max/windowMs → fresh cache key, forces client construction.
+    const r = await checkRateLimit('mk', { max: 7, windowMs: 30_000 })
+    expect(r.allowed).toBe(false)
+    expect(r.failClosed).toBe(true)
+  })
+})
