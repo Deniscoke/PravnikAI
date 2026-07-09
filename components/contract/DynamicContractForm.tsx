@@ -13,7 +13,7 @@
 import React, { useState, useCallback } from 'react'
 import { useTranslations } from '@/lib/i18n/client'
 import { getSchema } from '@/lib/contracts/contractSchemas'
-import { validateUI } from '@/lib/contracts/validators'
+import { runFullValidation } from '@/lib/contracts/validators'
 import type {
   ContractSchema,
   ContractField,
@@ -132,16 +132,18 @@ export function DynamicContractForm({ schemaId, onSuccess, onError, onGenerating
 
     const normalized = buildNormalizedData(schema, partyData, sectionData)
 
-    // Client-side Layer 1 validation
-    const uiResult = validateUI(schema, normalized)
-    if (!uiResult.valid) {
-      const errorMap: Record<string, string> = {}
-      for (const issue of uiResult.issues) {
-        if (issue.severity === 'error') {
-          errorMap[issue.fieldId] = issue.message
-        }
+    // Client-side validation before spending an AI call: required fields,
+    // input-quality guards (junk/test/placeholder values, malformed IČO/e-mail)
+    // and cross-field legal constraints (e.g. minimum wage, deposit cap).
+    const { ui, businessLegal } = runFullValidation(schema, normalized)
+    const errorMap: Record<string, string> = {}
+    for (const issue of [...ui.issues, ...businessLegal.issues]) {
+      if (issue.severity === 'error' && !errorMap[issue.fieldId]) {
+        errorMap[issue.fieldId] = issue.message
       }
-      const errorCount = Object.keys(errorMap).length
+    }
+    const errorCount = Object.keys(errorMap).length
+    if (errorCount > 0) {
       setFieldErrors(errorMap)
       setErrorSummary(`Formulář obsahuje ${errorCount} ${errorCount === 1 ? 'chybu' : errorCount < 5 ? 'chyby' : 'chyb'} — opravte označená pole a zkuste to znovu.`)
       // Scroll to top of form so user sees the summary banner
