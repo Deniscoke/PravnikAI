@@ -10,6 +10,12 @@
  */
 
 import type { ContractSchema } from '../../types'
+import {
+  MINIMUM_MONTHLY_WAGE_CZK,
+  PROBATION_MAX_MONTHS,
+  PROBATION_MAX_MONTHS_MANAGER,
+  formatCzk,
+} from '@/lib/legal/czechLegalFacts'
 
 export const pracovniSmlouva: ContractSchema = {
   metadata: {
@@ -53,10 +59,10 @@ export const pracovniSmlouva: ContractSchema = {
       '5. Den nástupu do práce — povinná náležitost dle § 34 odst. 1 písm. c) ZP\n' +
       '6. Mzda / plat — výše, složky, termín a způsob výplaty; nesmí být pod minimální mzdou (§ 111 ZP)\n' +
       '7. Pracovní doba — stanovená týdenní pracovní doba, rozvrh (§ 79–80 ZP)\n' +
-      '8. Zkušební doba — max. 3 měsíce (6 u vedoucích), nesmí být delší než polovina doby trvání PP (§ 35 ZP)\n' +
+      '8. Zkušební doba — max. 4 měsíce (8 u vedoucích), nesmí být delší než polovina doby trvání PP (§ 35 ZP)\n' +
       '9. Doba trvání — určitá (s uvedením data/události) nebo neurčitá\n' +
       '10. Dovolená — minimálně 4 týdny (§ 213 ZP)\n' +
-      '11. Výpovědní doba — minimálně 2 měsíce (§ 51 ZP), začíná prvním dnem následujícího měsíce\n' +
+      '11. Výpovědní doba — minimálně 2 měsíce (§ 51 ZP); po novele č. 120/2025 Sb. běží od doručení výpovědi\n' +
       '12. Závěrečná ustanovení — rozhodné právo, počet vyhotovení\n' +
       '13. Podpisové bloky — zaměstnavatel i zaměstnanec\n\n' +
       'PRÁVNÍ POZNÁMKY:\n' +
@@ -189,13 +195,14 @@ export const pracovniSmlouva: ContractSchema = {
           type: 'select',
           required: false,
           sensitivity: 'public',
-          legalNote: '§ 35 ZP — max. 3 měsíce (6 měsíců pro vedoucí zaměstnance)',
+          legalNote: `§ 35 ZP — max. ${PROBATION_MAX_MONTHS.value} měsíce (${PROBATION_MAX_MONTHS_MANAGER.value} měsíců pro vedoucí zaměstnance)`,
           options: [
             { value: 'bez-zkusebni', label: 'Bez zkušební doby' },
-            { value: '1-mesic', label: '1 měsíc' },
-            { value: '2-mesice', label: '2 měsíce' },
-            { value: '3-mesice', label: '3 měsíce' },
-            { value: '6-mesicu', label: '6 měsíců (pouze vedoucí zaměstnanec)' },
+            { value: '1', label: '1 měsíc' },
+            { value: '2', label: '2 měsíce' },
+            { value: '3', label: '3 měsíce' },
+            { value: '4', label: '4 měsíce' },
+            { value: '8', label: '8 měsíců (pouze vedoucí zaměstnanec)' },
           ],
         },
       ],
@@ -210,8 +217,8 @@ export const pracovniSmlouva: ContractSchema = {
           type: 'number',
           required: true,
           sensitivity: 'personal',
-          legalNote: '§ 113 ZP — mzda; min. mzda 2024: 18 900 Kč/měsíc',
-          validation: { min: 18900 },
+          legalNote: `§ 113 ZP — mzda; minimální mzda od ${MINIMUM_MONTHLY_WAGE_CZK.effectiveFrom}: ${formatCzk(MINIMUM_MONTHLY_WAGE_CZK.value)}/měsíc`,
+          validation: { min: MINIMUM_MONTHLY_WAGE_CZK.value },
         },
         {
           id: 'salaryType',

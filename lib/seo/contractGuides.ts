@@ -530,7 +530,7 @@ const PRACOVNI_SMLOUVA: ContractGuide = {
     {
       title: 'Zkušební doba (volitelně)',
       body:
-        'Sjednává se písemně, nejpozději v den nástupu. Nejvýše tři měsíce, u vedoucích zaměstnanců šest měsíců, a nesmí přesáhnout polovinu sjednané doby trvání pracovního poměru.',
+        'Sjednává se písemně, nejpozději v den nástupu. Po novele č. 120/2025 Sb. činí nejvýše čtyři měsíce, u vedoucích zaměstnanců osm měsíců, a nesmí přesáhnout polovinu sjednané doby trvání pracovního poměru.',
       law: '§ 35 ZP',
     },
     {
@@ -588,7 +588,7 @@ const PRACOVNI_SMLOUVA: ContractGuide = {
     {
       question: 'Jak dlouhá může být zkušební doba?',
       answer:
-        'Nejvýše tři měsíce po sobě jdoucí ode dne vzniku pracovního poměru, u vedoucích zaměstnanců nejvýše šest měsíců. Zároveň nesmí přesáhnout polovinu sjednané doby trvání pracovního poměru (§ 35 ZP).',
+        'Po novele zákoníku práce č. 120/2025 Sb. nejvýše čtyři měsíce po sobě jdoucí ode dne vzniku pracovního poměru, u vedoucích zaměstnanců nejvýše osm měsíců. Zároveň nesmí přesáhnout polovinu sjednané doby trvání pracovního poměru (§ 35 ZP). Sjednanou zkušební dobu lze písemnou dohodou prodloužit, ale jen v průběhu jejího trvání a v mezích těchto limitů.',
     },
     {
       question: 'Musí být mzda uvedena přímo ve smlouvě?',

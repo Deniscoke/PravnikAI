@@ -6,6 +6,13 @@
  * Layer 3 — Generation:       Determines mode: complete | draft | review-needed
  */
 
+import {
+  MINIMUM_MONTHLY_WAGE_CZK,
+  PROBATION_MAX_MONTHS,
+  PROBATION_MAX_MONTHS_MANAGER,
+  RENT_DEPOSIT_MAX_MULTIPLE,
+  formatCzk,
+} from '@/lib/legal/czechLegalFacts'
 import type {
   ContractSchema,
   NormalizedFormData,
@@ -476,13 +483,22 @@ function validatePracovniSmlouva(data: NormalizedFormData): ValidationIssue[] {
   const nastup = data.sections['nastup'] ?? {}
   const mzda = data.sections['mzda'] ?? {}
 
-  // § 35 ZP — zkušební doba nesmí přesáhnout 3 měsíce (6 pro vedoucí)
-  if (nastup['probationPeriod'] === '6-mesicu') {
+  // § 35 ZP — delší zkušební doba je vyhrazena vedoucím zaměstnancům
+  const probation = nastup['probationPeriod'] ?? ''
+  const probationMonths = Number.parseInt(probation, 10)
+  if (
+    Number.isFinite(probationMonths) &&
+    probationMonths > PROBATION_MAX_MONTHS.value
+  ) {
     issues.push({
       fieldId: 'nastup.probationPeriod',
-      message: '6měsíční zkušební dobu lze sjednat pouze pro vedoucí zaměstnance (§ 35 odst. 1 ZP). Ověřte, zda zaměstnanec splňuje podmínky.',
+      message:
+        `Zkušební dobu delší než ${PROBATION_MAX_MONTHS.value} měsíce lze sjednat pouze ` +
+        `s vedoucím zaměstnancem, a to nejvýše na ${PROBATION_MAX_MONTHS_MANAGER.value} měsíců ` +
+        `(${PROBATION_MAX_MONTHS.law}). Nesmí přesáhnout polovinu sjednané doby trvání ` +
+        `pracovního poměru — ověřte, zda zaměstnanec podmínky splňuje.`,
       severity: 'warning',
-      legalBasis: '§ 35 odst. 1 zák. č. 262/2006 Sb.',
+      legalBasis: PROBATION_MAX_MONTHS.law,
     })
   }
 
@@ -501,14 +517,18 @@ function validatePracovniSmlouva(data: NormalizedFormData): ValidationIssue[] {
     }
   }
 
-  // § 111 ZP — minimální mzda
+  // § 111 ZP — minimální mzda (hodnota z lib/legal/czechLegalFacts)
   const salary = Number(mzda['salaryAmount'])
-  if (!isNaN(salary) && salary > 0 && salary < 18900) {
+  if (!isNaN(salary) && salary > 0 && salary < MINIMUM_MONTHLY_WAGE_CZK.value) {
     issues.push({
       fieldId: 'mzda.salaryAmount',
-      message: 'Sjednaná mzda je nižší než zákonná minimální mzda 18 900 Kč/měsíc (§ 111 ZP, platnost od 1. 1. 2024).',
+      message:
+        `Sjednaná mzda je nižší než zákonná minimální mzda ` +
+        `${formatCzk(MINIMUM_MONTHLY_WAGE_CZK.value)}/měsíc ` +
+        `(${MINIMUM_MONTHLY_WAGE_CZK.law}, platnost od ${MINIMUM_MONTHLY_WAGE_CZK.effectiveFrom}). ` +
+        `Pro některé skupiny prací může být zaručená mzda ještě vyšší.`,
       severity: 'error',
-      legalBasis: '§ 111 zák. č. 262/2006 Sb. + nařízení vlády č. 339/2023 Sb.',
+      legalBasis: MINIMUM_MONTHLY_WAGE_CZK.law,
     })
   }
 
@@ -534,11 +554,12 @@ function validateNajemniSmlouva(data: NormalizedFormData): ValidationIssue[] {
   // § 2254 NOZ — jistota max. 3× měsíční nájemné
   const rent = Number(najemne['monthlyRent'])
   const deposit = Number(jistota['depositAmount'])
+  const maxDeposit = rent * RENT_DEPOSIT_MAX_MULTIPLE.value
   if (!isNaN(rent) && !isNaN(deposit) && deposit > 0 && rent > 0) {
-    if (deposit > rent * 3) {
+    if (deposit > maxDeposit) {
       issues.push({
         fieldId: 'jistota.depositAmount',
-        message: `Jistota ${deposit} Kč přesahuje trojnásobek měsíčního nájemného (${rent * 3} Kč). Maximální jistota dle § 2254 NOZ je ${rent * 3} Kč.`,
+        message: `Jistota ${formatCzk(deposit)} přesahuje ${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního nájemného (${formatCzk(maxDeposit)}). Maximální jistota dle ${RENT_DEPOSIT_MAX_MULTIPLE.law} je ${formatCzk(maxDeposit)}.`,
         severity: 'error',
         legalBasis: '§ 2254 zák. č. 89/2012 Sb. (NOZ)',
       })
