@@ -32,6 +32,7 @@ import {
   mapStripePriceToPlan,
 } from './plans'
 import { checkDailyAiCap } from './dailyLimits'
+import { checkGlobalDailyAiCap, isAiAction } from './globalAiCap'
 import type { Subscription, SubscriptionStatus } from '@/lib/supabase/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -178,6 +179,26 @@ export async function getBillingAccessForUser(
   const limitKey = actionToLimitKey(action)
   const limit = limits[limitKey]
   const used = usage[limitKey]
+
+  // Platform-wide daily ceiling on AI spend. Applies to every tier including
+  // free — per-account limits bound one user, not a hundred of them on the same
+  // day. This is what keeps the beta from running up an unbounded API bill.
+  if (isAiAction(action)) {
+    const globalCap = await checkGlobalDailyAiCap(action)
+    if (!globalCap.allowed) {
+      return {
+        allowed: false,
+        plan: tier,
+        status,
+        reason:
+          'Denní kapacita bezplatné beta verze je vyčerpána. Zkuste to prosím zítra — ' +
+          'omezujeme počet AI operací, aby služba zůstala dostupná všem.',
+        code: 'GLOBAL_AI_CAP_REACHED',
+        limits,
+        usage,
+      }
+    }
+  }
 
   // Daily hard cap for paid AI actions (cost protection)
   if (limit === -1 && (action === 'generate' || action === 'review')) {
