@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PLAN_INFO, TEAM_CHECKOUT_ENABLED, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
+import { SubscriptionRefreshButton } from './SubscriptionRefreshButton'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
 
@@ -479,6 +480,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
         marginTop: 'var(--space-xl)',
         lineHeight: 1.6,
       }}>
+        <SubscriptionRefreshButton />
         Bezpečná platba přes Stripe · Zrušení kdykoli bez poplatku
         <br />
         Podpora:{' '}

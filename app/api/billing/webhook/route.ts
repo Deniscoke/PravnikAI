@@ -28,6 +28,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { mapStripePriceToPlan } from '@/lib/billing/plans'
 import { claimStripeWebhookEvent, releaseStripeWebhookEventClaim } from '@/lib/billing/webhookIdempotency'
+import { applySubscriptionToDb } from '@/lib/billing/subscriptionSync'
 import type { SubscriptionStatus } from '@/lib/supabase/types'
 
 export const runtime = 'nodejs'
@@ -291,53 +292,8 @@ async function upsertSubscription(
   userId: string,
   serviceClient: Awaited<ReturnType<typeof createServiceClient>>,
 ) {
-  // In API 2026+, period dates are on the item, not the subscription
-  const firstItem = subscription.items.data[0]
-  const priceId = firstItem?.price?.id
-  if (!priceId) {
-    console.error('[webhook] Subscription has no price ID:', subscription.id)
-    return
-  }
-
-  const tier = mapStripePriceToPlan(priceId)
-  const status = subscription.status as SubscriptionStatus
-  const paidStatuses: SubscriptionStatus[] = ['active', 'trialing', 'past_due']
-  const effectiveTier = paidStatuses.includes(status) ? tier : 'free'
-
-  // UPSERT subscription row
-  const { error: subError } = await serviceClient
-    .from('subscriptions')
-    .upsert(
-      {
-        user_id: userId,
-        stripe_subscription_id: subscription.id,
-        stripe_price_id: priceId,
-        status,
-        current_period_start: new Date(firstItem.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(firstItem.current_period_end * 1000).toISOString(),
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      },
-      { onConflict: 'stripe_subscription_id' },
-    )
-
-  if (subError) {
-    console.error('[webhook] Failed to upsert subscription:', subError.message)
-    return // Don't sync tier if subscription write failed
-  }
-
-  // Sync tier cache in user_preferences (downgrade when subscription is not paid-active)
-  const { error: prefError } = await serviceClient
-    .from('user_preferences')
-    .update({ subscription_tier: effectiveTier })
-    .eq('user_id', userId)
-
-  if (prefError) {
-    console.error('[webhook] Failed to sync subscription_tier:', prefError.message)
-  }
-
-  console.info(
-    `[webhook] Subscription ${subscription.id} → user ${userId} | tier=${effectiveTier} status=${status}`,
-  )
+  // Shared with the on-demand sync route so webhook and repair path cannot drift
+  await applySubscriptionToDb(serviceClient, subscription, userId)
 }
 
 /**
