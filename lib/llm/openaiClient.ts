@@ -54,6 +54,17 @@ function getQualityGateModel(): string {
 }
 
 /**
+ * Model used to transcribe photographed or scanned contracts.
+ *
+ * Deliberately independent of OPENAI_MODEL_DEFAULT: transcription is a cheap,
+ * high-volume job that gains nothing from a reasoning SKU, and a default that
+ * silently followed a frontier model would multiply the cost of every upload.
+ */
+function getVisionModel(): string {
+  return process.env.OPENAI_MODEL_VISION?.trim() || 'gpt-4o'
+}
+
+/**
  * Temperature 0.1 — legal text must be deterministic and consistent,
  * not creative. Low temp avoids hallucinated clause variations.
  */
@@ -184,9 +195,65 @@ export async function generateText(options: LLMGenerateOptions): Promise<LLMGene
   }
 }
 
+// ─── Vision ─────────────────────────────────────────────────────────────────
+
+export interface TranscribeImagesOptions {
+  /** Data URLs (data:image/jpeg;base64,…), one per page, in reading order. */
+  imageDataUrls: string[]
+  systemPrompt: string
+  userPrompt: string
+  maxTokens?: number
+}
+
+/**
+ * Reads text out of page images.
+ *
+ * `detail: 'high'` is not optional here. On 'low' the API downsamples to a
+ * thumbnail, which is fine for "what is in this picture" and useless for
+ * reading contract body text — the whole point of the feature.
+ */
+export async function transcribeImages(
+  options: TranscribeImagesOptions,
+): Promise<LLMGenerateResult> {
+  const model = getVisionModel()
+
+  const completion = await getOpenAI().chat.completions.create({
+    model,
+    ...(supportsCustomTemperature(model) ? { temperature: 0 } : {}),
+    ...(needsMaxCompletionTokens(model)
+      ? { max_completion_tokens: options.maxTokens ?? MAX_TOKENS }
+      : { max_tokens: options.maxTokens ?? MAX_TOKENS }),
+    messages: [
+      { role: 'system', content: options.systemPrompt },
+      {
+        role: 'user',
+        content: [
+          { type: 'text' as const, text: options.userPrompt },
+          ...options.imageDataUrls.map((url) => ({
+            type: 'image_url' as const,
+            image_url: { url, detail: 'high' as const },
+          })),
+        ],
+      },
+    ],
+  })
+
+  const choice = completion.choices[0]
+  if (!choice?.message?.content) {
+    throw new Error('OpenAI returned an empty transcription')
+  }
+
+  return {
+    text: choice.message.content,
+    tokensUsed: completion.usage?.total_tokens ?? 0,
+    model,
+  }
+}
+
 /** Read-only helpers for tests / diagnostics. */
 export const __modelConfig = {
   getDefaultModel,
   getPremiumModel,
   getQualityGateModel,
+  getVisionModel,
 }

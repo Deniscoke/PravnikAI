@@ -8,33 +8,47 @@ interface ContractFileUploadProps {
   disabled?: boolean
 }
 
+interface ExtractResponse {
+  text?: string
+  truncated?: boolean
+  characters?: number
+  error?: string
+  source?: 'document' | 'photo'
+  pages?: number
+  unreadableRatio?: number
+}
+
+/** Above this share of unreadable words, the text is too holed to review quietly. */
+const UNREADABLE_WARN_THRESHOLD = 0.02
+
 /**
- * Loads a contract from a PDF or DOCX instead of pasting it.
+ * Loads a contract from a PDF, a DOCX, or photographs of its pages.
  *
  * The extracted text lands in the textarea rather than being submitted
- * directly, so the user sees exactly what will be reviewed — extraction from a
- * PDF is rarely perfect and silently reviewing a mangled text would be worse
- * than showing it.
+ * directly, so the user sees exactly what will be reviewed. That is a
+ * convenience for a PDF and a safeguard for photos: a transcription can misread
+ * a figure, and an unnoticed error would travel silently into the analysis.
  */
 export function ContractFileUpload({ onExtracted, disabled }: ContractFileUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [state, setState] = useState<'idle' | 'loading'>('idle')
+  const documentInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const [state, setState] = useState<'idle' | 'document' | 'photo'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
 
-  async function handleFile(file: File) {
-    setState('loading')
+  async function upload(files: File[], kind: 'document' | 'photo') {
+    setState(kind)
     setError(null)
     setNotice(null)
+    setWarning(null)
 
     try {
       const form = new FormData()
-      form.append('file', file)
+      for (const file of files) form.append('file', file)
 
       const res = await fetch('/api/extract-text', { method: 'POST', body: form })
-      const data = (await res.json().catch(() => null)) as
-        | { text?: string; truncated?: boolean; characters?: number; error?: string }
-        | null
+      const data = (await res.json().catch(() => null)) as ExtractResponse | null
 
       if (!res.ok || !data?.text) {
         setError(data?.error ?? 'Soubor se nepodařilo načíst.')
@@ -42,30 +56,67 @@ export function ContractFileUpload({ onExtracted, disabled }: ContractFileUpload
       }
 
       onExtracted(data.text)
-      setNotice(
-        data.truncated
-          ? `Načteno ${data.characters?.toLocaleString('cs-CZ')} znaků — dokument byl zkrácen na maximální délku. Zkontrolujte text níže.`
-          : `Načteno ${data.characters?.toLocaleString('cs-CZ')} znaků. Zkontrolujte text níže před spuštěním kontroly.`,
-      )
+
+      const characters = data.characters?.toLocaleString('cs-CZ') ?? '—'
+
+      if (data.source === 'photo') {
+        const pages = data.pages ?? files.length
+        setNotice(
+          `Přečteno ${pages} ${pageWord(pages)}, ${characters} znaků. ` +
+            'Text vznikl přepisem fotografií — projděte si jej prosím a opravte, ' +
+            'než spustíte kontrolu.',
+        )
+        if ((data.unreadableRatio ?? 0) > UNREADABLE_WARN_THRESHOLD) {
+          setWarning(
+            'Část textu se nepodařilo přečíst — v textu jsou označena místa [NEČITELNÉ]. ' +
+              'Doplňte je prosím ručně, jinak je kontrola vyhodnotí jako chybějící ujednání.',
+          )
+        }
+      } else {
+        setNotice(
+          data.truncated
+            ? `Načteno ${characters} znaků — dokument byl zkrácen na maximální délku. Zkontrolujte text níže.`
+            : `Načteno ${characters} znaků. Zkontrolujte text níže před spuštěním kontroly.`,
+        )
+      }
     } catch {
       setError('Soubor se nepodařilo načíst. Zkontrolujte připojení.')
     } finally {
       setState('idle')
       // Reset so selecting the same file again still fires onChange
-      if (inputRef.current) inputRef.current.value = ''
+      if (documentInputRef.current) documentInputRef.current.value = ''
+      if (photoInputRef.current) photoInputRef.current.value = ''
     }
   }
+
+  const busy = state !== 'idle'
 
   return (
     <div style={{ marginBottom: 'var(--space-md)' }}>
       <input
-        ref={inputRef}
+        ref={documentInputRef}
         type="file"
         accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) void handleFile(file)
+          if (file) void upload([file], 'document')
+        }}
+      />
+      {/*
+        No `capture` attribute on purpose: it forces the camera open and removes
+        the option to pick pages already photographed, which is how most people
+        will actually use this.
+      */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? [])
+          if (files.length > 0) void upload(files, 'photo')
         }}
       />
 
@@ -73,10 +124,18 @@ export function ContractFileUpload({ onExtracted, disabled }: ContractFileUpload
         <button
           type="button"
           className="glass-btn"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled || state === 'loading'}
+          onClick={() => documentInputRef.current?.click()}
+          disabled={disabled || busy}
         >
-          {state === 'loading' ? 'Načítám dokument…' : 'Nahrát PDF nebo DOCX'}
+          {state === 'document' ? 'Načítám dokument…' : 'Nahrát PDF nebo DOCX'}
+        </button>
+        <button
+          type="button"
+          className="glass-btn"
+          onClick={() => photoInputRef.current?.click()}
+          disabled={disabled || busy}
+        >
+          {state === 'photo' ? 'Přepisuji fotografie…' : 'Vyfotit nebo nahrát fotky'}
         </button>
         <span style={{ fontSize: '0.76rem', color: 'var(--color-text-subtle)' }}>
           nebo text vložte ručně níže
@@ -88,15 +147,27 @@ export function ContractFileUpload({ onExtracted, disabled }: ContractFileUpload
           {notice}
         </p>
       )}
+      {warning && (
+        <p style={{ margin: '8px 0 0', fontSize: '0.78rem', color: 'var(--accent-amber, #d99a2b)' }} role="alert">
+          {warning}
+        </p>
+      )}
       {error && (
         <p style={{ margin: '8px 0 0', fontSize: '0.78rem', color: 'var(--accent-rose)' }} role="alert">
           {error}
         </p>
       )}
+
       <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: 'var(--color-text-subtle)' }}>
-        Podporujeme PDF a DOCX do 10 MB. Naskenované smlouvy obsahují jen obrázek stránky —
-        z těch text přečíst nelze.
+        PDF a DOCX do 10 MB. Fotografie JPG, PNG nebo WEBP — až 8 stránek najednou.
+        Focte kolmo shora, za dobrého světla a tak, aby stránka vyplnila celý snímek.
       </p>
     </div>
   )
+}
+
+function pageWord(count: number): string {
+  if (count === 1) return 'stránku'
+  if (count >= 2 && count <= 4) return 'stránky'
+  return 'stránek'
 }
