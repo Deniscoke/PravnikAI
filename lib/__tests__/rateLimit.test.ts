@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { rateLimitResponse, checkRateLimit } from '../rateLimit'
+import { rateLimitResponse, checkRateLimit, readRedisRestConfig } from '../rateLimit'
 
 afterEach(() => vi.unstubAllEnvs())
 
@@ -77,6 +77,41 @@ describe('checkRateLimit without Redis configured', () => {
     const r = await checkRateLimit('k', { max: 5, windowMs: 60_000 })
     expect(r.allowed).toBe(true)
     expect(r.failClosed).toBeFalsy()
+  })
+})
+
+describe('readRedisRestConfig', () => {
+  function clearAll() {
+    for (const k of ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'KV_REST_API_URL', 'KV_REST_API_TOKEN']) {
+      vi.stubEnv(k, '')
+    }
+  }
+
+  it('reads the Upstash pair', () => {
+    clearAll()
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://a.upstash.io')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'tok')
+    expect(readRedisRestConfig()).toEqual({ url: 'https://a.upstash.io', token: 'tok' })
+  })
+
+  it('falls back to the KV_* pair injected by the Vercel integration', () => {
+    clearAll()
+    vi.stubEnv('KV_REST_API_URL', 'https://kv.upstash.io')
+    vi.stubEnv('KV_REST_API_TOKEN', 'kvtok')
+    expect(readRedisRestConfig()).toEqual({ url: 'https://kv.upstash.io', token: 'kvtok' })
+  })
+
+  it('strips wrapping quotes and whitespace pasted into the dashboard', () => {
+    clearAll()
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', ' "https://quoted.upstash.io" ')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', "'tok'")
+    expect(readRedisRestConfig()).toEqual({ url: 'https://quoted.upstash.io', token: 'tok' })
+  })
+
+  it('returns null when either half is missing', () => {
+    clearAll()
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://a.upstash.io')
+    expect(readRedisRestConfig()).toBeNull()
   })
 })
 

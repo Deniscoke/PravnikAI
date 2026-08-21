@@ -39,10 +39,32 @@ export function isProductionDeployment(): boolean {
   return process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
 }
 
-function getInstance(max: number, windowMs: number): Ratelimit | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+/**
+ * Reads the Upstash REST credentials.
+ *
+ * Accepts both namings: the Upstash defaults and the KV_* pair that Vercel's
+ * marketplace integration injects. Values are trimmed and stripped of wrapping
+ * quotes — a pasted `"https://…"` is otherwise rejected by the client and takes
+ * every rate-limited route down.
+ *
+ * Note the REST pair is required; a `redis://` connection string (REDIS_URL)
+ * cannot be used by the HTTP client.
+ */
+export function readRedisRestConfig(): { url: string; token: string } | null {
+  const clean = (v: string | undefined): string =>
+    (v ?? '').trim().replace(/^['"]|['"]$/g, '').trim()
+
+  const url = clean(process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL)
+  const token = clean(process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+
   if (!url || !token) return null
+  return { url, token }
+}
+
+function getInstance(max: number, windowMs: number): Ratelimit | null {
+  const config = readRedisRestConfig()
+  if (!config) return null
+  const { url, token } = config
 
   const cacheKey = `${max}:${windowMs}`
   if (instances.has(cacheKey)) return instances.get(cacheKey)!
