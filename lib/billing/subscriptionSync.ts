@@ -65,8 +65,10 @@ export async function applySubscriptionToDb(
     )
 
   if (subError) {
-    console.error('[billing] Failed to upsert subscription:', subError.message)
-    return null
+    // Bookkeeping failed, but entitlement must not depend on it: the tier is what
+    // grants access, while this row only supplies billing-period dates (usage
+    // counting falls back to the calendar month without it).
+    console.error('[billing] Failed to upsert subscription row:', subError.message)
   }
 
   const { error: prefError } = await serviceClient
