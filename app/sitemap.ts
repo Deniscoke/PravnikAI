@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getSiteUrl } from '@/lib/seo/site'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
+import { CONTRACT_GUIDES } from '@/lib/seo/contractGuides'
 
 const APP_URL = getSiteUrl()
 
@@ -29,8 +30,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   const entries: MetadataRoute.Sitemap = []
 
+  // Contract guides are the organic entry points — they rank for what people
+  // actually search ("kupní smlouva vzor") and lead into the generator.
+  const guideRoutes: RoutePriority[] = CONTRACT_GUIDES.map((guide) => ({
+    path: `/vzory/${guide.slug}`,
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  }))
+
   for (const locale of ACTIVE_LOCALES) {
-    for (const route of ROUTES) {
+    for (const route of [...ROUTES, ...guideRoutes]) {
       const url = `${APP_URL}/${locale}${route.path}`
 
       entries.push({
