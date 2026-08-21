@@ -11,6 +11,7 @@
  */
 
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 /**
@@ -57,19 +58,17 @@ export async function createServiceClient() {
     )
   }
 
-  const cookieStore = await cookies()
-
-  return createServerClient(
+  // Deliberately NOT built with the request cookies. A cookie-backed client sends
+  // the signed-in user's JWT as the Authorization header, so PostgREST evaluates
+  // the request as that user and RLS still applies — an "admin" write would then
+  // be silently filtered instead of bypassing RLS as intended.
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     serviceRoleKey,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll() {
-          // Service client doesn't need to set user cookies
-        },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
       },
     },
   )
