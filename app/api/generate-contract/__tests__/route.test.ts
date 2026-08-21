@@ -179,12 +179,13 @@ function makeRawRequest(raw: string): NextRequest {
 //   predani: handoverDate, handoverPlace, ownershipTransfer
 //   zaverecna: contractDate
 //
-// assessGenerationReadiness counts ALL empty optional section fields (ignores
-// field-level conditionals), so with paymentMethod='hotove' the conditional
-// fields paymentDeadline and bankAccount are still counted as missing.
-// With all 5 optional section fields absent → missingOptional=5 > 2 → 'draft'.
+// assessGenerationReadiness skips optional fields whose conditional is not met —
+// a field that does not apply is not "missing". With paymentMethod='prevod' the
+// conditional fields paymentDeadline and bankAccount DO apply and are empty, so
+// missingOptional = [paymentDeadline, bankAccount, contractPlace, additionalNotes]
+// = 4 > 2 → 'draft'. (defectsDescription stays out: subjectCondition='novy'.)
 
-/** All 13 required fields filled correctly — produces mode='draft' (5 optional absent). */
+/** All 13 required fields filled correctly — produces mode='draft' (4 applicable optionals absent). */
 const DRAFT_FORM_DATA: NormalizedFormData = {
   schemaId: 'kupni-smlouva-v1',
   parties: [
@@ -211,7 +212,8 @@ const DRAFT_FORM_DATA: NormalizedFormData = {
     cena: {
       price: '150000',
       vatNote: 'bez-dph',
-      paymentMethod: 'hotove',
+      // Bank transfer selected but account/due date left blank → genuinely missing optionals
+      paymentMethod: 'prevod',
     },
     predani: {
       handoverDate: '2026-07-01',
@@ -855,7 +857,7 @@ describe('11 — Draft mode behaviour', () => {
     mockLLMSuccess()
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body: GenerateContractResponse = await res.json()
-    // With DRAFT_FORM_DATA, 5 optional section fields are empty
+    // With DRAFT_FORM_DATA, 4 applicable optional section fields are empty
     expect(body.missingFields.length).toBeGreaterThan(2)
   })
 

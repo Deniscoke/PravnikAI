@@ -252,6 +252,18 @@ function matchesPlaceholderPattern(value: string): boolean {
   return PLACEHOLDER_PATTERNS.some((p) => p.test(value.trim()))
 }
 
+/**
+ * Keyboard mashing draws a long string from very few distinct characters
+ * ("asdasdasdasd", "asdsdsa", "aasdasdasda"). Real names, companies and
+ * addresses do not — even "Praha 4" and "AAA Auto" carry 4+ distinct letters,
+ * so the threshold stays clear of legitimate input.
+ */
+function isLowVarietyJunk(value: string): boolean {
+  const stripped = value.replace(/[\s.,\-/]/g, '').toLowerCase()
+  if (stripped.length < 6) return false
+  return new Set(stripped).size <= 3
+}
+
 // ── Per-type checkers ─────────────────────────────────────────────────────────
 
 function checkName(
@@ -266,9 +278,9 @@ function checkName(
     return [{ fieldId, partyId, severity: 'error',
       message: `${label}: "${value}" je testovací hodnota. Zadejte skutečné jméno nebo obchodní firmu.` }]
   }
-  if (isAllSameChar(value)) {
+  if (isAllSameChar(value) || isLowVarietyJunk(value)) {
     return [{ fieldId, partyId, severity: 'error',
-      message: `${label}: "${value}" obsahuje pouze opakující se znaky. Zadejte platné jméno.` }]
+      message: `${label}: "${value}" nevypadá jako skutečné jméno ani obchodní firma. Zadejte platný údaj.` }]
   }
   if (matchesPlaceholderPattern(value)) {
     return [{ fieldId, partyId, severity: 'error',
@@ -291,9 +303,9 @@ function checkAddress(value: string, fieldId: string, label: string): Validation
     return [{ fieldId, severity: 'error',
       message: `${label}: "${value}" je testovací hodnota. Zadejte skutečnou adresu.` }]
   }
-  if (isAllSameChar(value)) {
+  if (isAllSameChar(value) || isLowVarietyJunk(value)) {
     return [{ fieldId, severity: 'error',
-      message: `${label}: "${value}" obsahuje pouze opakující se znaky. Zadejte platnou adresu.` }]
+      message: `${label}: "${value}" nevypadá jako skutečná adresa. Zadejte ulici, číslo popisné a město.` }]
   }
   if (matchesPlaceholderPattern(value)) {
     return [{ fieldId, severity: 'error',
@@ -353,9 +365,9 @@ function checkPlaceholder(value: string, fieldId: string, label: string): Valida
     return [{ fieldId, severity: 'error',
       message: `${label}: "${value}" je testovací hodnota.` }]
   }
-  if (isAllSameChar(value)) {
+  if (isAllSameChar(value) || isLowVarietyJunk(value)) {
     return [{ fieldId, severity: 'error',
-      message: `${label}: "${value}" obsahuje pouze opakující se znaky.` }]
+      message: `${label}: "${value}" nevypadá jako platný údaj. Zadejte skutečnou hodnotu.` }]
   }
   return []
 }
@@ -575,12 +587,26 @@ export function assessGenerationReadiness(
 
   const conflicts = businessResult.issues.filter((i) => i.severity === 'error')
 
-  // Collect missing optional fields
+  // Collect missing optional fields, skipping any whose conditional is not met.
+  // A field that does not apply is not "missing" — reporting it made the prompt
+  // ask for e.g. a defect description on a brand-new item, or a payment due date
+  // when paying cash, and the model answered with a [DOPLNIT] placeholder.
   const missingOptional: string[] = []
   for (const section of schema.sections) {
+    if (section.conditional) {
+      const { fieldId, value: requiredValue } = section.conditional
+      if (getFieldValueFromData(data, fieldId) !== requiredValue) continue
+    }
+
+    const sectionData = data.sections[section.id] ?? {}
+
     for (const field of section.fields) {
       if (field.required) continue
-      const value = (data.sections[section.id]?.[field.id] ?? '').trim()
+      if (field.conditional) {
+        const { fieldId, value: requiredValue } = field.conditional
+        if ((sectionData[fieldId] ?? '') !== String(requiredValue)) continue
+      }
+      const value = (sectionData[field.id] ?? '').trim()
       if (!value) {
         missingOptional.push(`${section.id}.${field.id}`)
       }
