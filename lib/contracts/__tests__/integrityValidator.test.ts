@@ -238,6 +238,13 @@ describe('5 — applyIntegrityDecision routing', () => {
     expect(applyIntegrityDecision('complete', result)).toBe('draft')
   })
 
+  it('missing essential element → forces review-needed, never plain draft', () => {
+    // Only the price survived: no subject, no transfer of title, no defects clause.
+    const hollow = 'Kupní cena činí 45 000 Kč. Podpis: ____________'
+    const result = runIntegrityCheck(hollow, 'kupni-smlouva-v1', 'draft')
+    expect(applyIntegrityDecision('draft', result)).toBe('review-needed')
+  })
+
   it('ZKONTROLOVAT markers → forces review-needed from any mode', () => {
     const result = runIntegrityCheck(REVIEW_MARKER_CONTRACT, 'kupni-smlouva-v1', 'complete')
     expect(applyIntegrityDecision('complete', result)).toBe('review-needed')

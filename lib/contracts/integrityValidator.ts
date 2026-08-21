@@ -325,6 +325,17 @@ export function applyIntegrityDecision(mode: GenerationMode, result: IntegrityRe
     forcedMode = maxMode(forcedMode, 'draft', PRIORITY)
   }
 
+  // A missing essential element — the purchase price, the subject, transfer of
+  // title, the wage clause — means the model did not return a usable contract.
+  // That is never a working draft: it must be flagged for review so nobody
+  // mistakes a hollow document for something they can build on.
+  const missingEssential = result.issues.some(
+    (i) => i.severity === 'error' && i.code === 'MISSING_ESSENTIAL_KEYWORD',
+  )
+  if (missingEssential) {
+    forcedMode = maxMode(forcedMode, 'review-needed', PRIORITY)
+  }
+
   const hasErrors = result.issues.some((i) => i.severity === 'error')
   if (hasErrors) {
     forcedMode = maxMode(forcedMode, 'draft', PRIORITY)
