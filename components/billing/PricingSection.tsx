@@ -11,7 +11,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PLAN_INFO, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
+import { PLAN_INFO, TEAM_CHECKOUT_ENABLED, type SubscriptionTier, type BillingInterval } from '@/lib/billing/plans'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
 
@@ -227,6 +227,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
           const isPro     = tier === 'pro'
           const isCurrent = tier === currentTier
           const isLoading = loadingTier === tier
+          const teamDisabled = tier === 'team' && !TEAM_CHECKOUT_ENABLED
           const price     = tier === 'team' || interval === 'monthly' || plan.pricing.yearlyPerMonth == null
             ? plan.pricing.monthly
             : plan.pricing.yearlyPerMonth
@@ -378,14 +379,20 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
               {/* CTA button */}
               <button
                 onClick={() => handleUpgrade(tier)}
-                disabled={isCurrent || tier === 'free' || !!loadingTier}
-                aria-label={isCurrent ? `${plan.name} — aktuální tarif` : `Přejít na tarif ${plan.name}`}
+                disabled={isCurrent || tier === 'free' || !!loadingTier || teamDisabled}
+                aria-label={
+                  isCurrent
+                    ? `${plan.name} — aktuální tarif`
+                    : teamDisabled
+                      ? `${plan.name} — brzy k dispozici`
+                      : `Přejít na tarif ${plan.name}`
+                }
                 style={{
                   marginTop: 'auto',
                   padding: '11px 20px',
                   borderRadius: 'var(--radius-md)',
                   border: isPro ? 'none' : '1px solid var(--glass-border)',
-                  cursor: (isCurrent || tier === 'free') ? 'default' : 'pointer',
+                  cursor: (isCurrent || tier === 'free' || teamDisabled) ? 'default' : 'pointer',
                   fontSize: '0.87rem',
                   fontWeight: 600,
                   fontFamily: 'var(--font-body)',
@@ -403,7 +410,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                   boxShadow: (isPro && !isCurrent)
                     ? '0 4px 20px rgba(94,231,223,0.28)'
                     : 'none',
-                  opacity: (tier === 'free' && !isCurrent) ? 0.45 : 1,
+                  opacity: (tier === 'free' && !isCurrent) || teamDisabled ? 0.45 : 1,
                 }}
                 onMouseEnter={e => {
                   if (!isCurrent && tier !== 'free' && !loadingTier) {
@@ -423,7 +430,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                 ) : tier === 'free' ? (
                   'Základní tarif'
                 ) : tier === 'team' ? (
-                  'Přejít na Tým'
+                  teamDisabled ? 'Již brzy' : 'Přejít na Tým'
                 ) : (
                   'Přejít na Pro'
                 )}
