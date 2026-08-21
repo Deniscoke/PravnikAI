@@ -165,6 +165,10 @@ ${clauseList}
 Pokud nalezneš opravitelné problémy (BEZ vymýšlení dat) — oprav je a vlož opravený text do "correctedText".
 NIKDY nevymýšlej chybějící údaje — místo toho vlož [DOPLNIT: popis].
 
+KRITICKÉ: "correctedText" musí obsahovat CELOU smlouvu od nadpisu až po podpisové bloky,
+včetně všech nezměněných článků — nikdy jen opravenou pasáž nebo shrnutí změn.
+Pokud nechceš vracet celý dokument, pole "correctedText" zcela vynech.
+
 ## Výstupní formát — STRIKTNĚ JSON
 
 Vrať POUZE platný JSON objekt s touto strukturou (žádný text před ani za JSON):
@@ -183,7 +187,7 @@ Vrať POUZE platný JSON objekt s touto strukturou (žádný text před ani za J
   "jurisdictionSpecificRisks": [],
   "consumerOrRegulatoryFlags": [],
   "suggestedFixes": [],
-  "correctedText": "opravený text smlouvy (pouze pokud byly provedeny opravy)"
+  "correctedText": "CELÝ opravený text smlouvy včetně všech článků a podpisových bloků (jinak pole vynech)"
 }
 
 Pole bez nálezů vrať jako prázdné []. NIKDY nevymýšlej problémy. Piš všechny textové hodnoty v češtině.`
@@ -339,6 +343,24 @@ export function parseQualityGateResponse(raw: string, jurisdiction: Jurisdiction
       ? { correctedText: parsed.correctedText }
       : {}),
   }
+}
+
+/**
+ * Guards against the gate returning only the passage it rewrote instead of the
+ * whole document. Adopting such a fragment replaces the contract with a single
+ * clause — parties, articles and signature blocks all disappear.
+ *
+ * A genuine correction stays close to the original in size; a fragment is a small
+ * fraction of it. Below the threshold the Stage 1 draft is kept.
+ */
+export function isAcceptableCorrection(original: string, corrected: string): boolean {
+  const originalLength = original.trim().length
+  const correctedLength = corrected.trim().length
+
+  if (correctedLength === 0) return false
+  if (originalLength === 0) return true
+
+  return correctedLength >= originalLength * 0.6
 }
 
 // ─── Internal Helpers ────────────────────────────────────────────────────────

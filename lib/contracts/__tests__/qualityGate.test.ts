@@ -16,6 +16,28 @@
  */
 
 import { describe, it, expect } from 'vitest'
+import { isAcceptableCorrection } from '../qualityGate'
+
+describe('isAcceptableCorrection', () => {
+  const contract = 'A'.repeat(3000)
+
+  it('accepts a rewrite of comparable length', () => {
+    expect(isAcceptableCorrection(contract, 'B'.repeat(2900))).toBe(true)
+  })
+
+  it('accepts a correction that trims some redundancy', () => {
+    expect(isAcceptableCorrection(contract, 'B'.repeat(2100))).toBe(true)
+  })
+
+  it('rejects a fragment — the clause the gate rewrote, not the contract', () => {
+    // Reproduces the incident: a 3000-char contract replaced by a 186-char paragraph
+    expect(isAcceptableCorrection(contract, 'B'.repeat(186))).toBe(false)
+  })
+
+  it('rejects an empty correction', () => {
+    expect(isAcceptableCorrection(contract, '   ')).toBe(false)
+  })
+})
 import {
   parseQualityGateResponse,
   applyQualityGateDecision,

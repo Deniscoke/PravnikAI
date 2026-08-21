@@ -29,6 +29,7 @@ import {
   parseQualityGateResponse,
   applyQualityGateDecision,
   extractQualityWarnings,
+  isAcceptableCorrection,
 } from '@/lib/contracts/qualityGate'
 import type { QualityGateResult } from '@/lib/contracts/qualityGate'
 import {
@@ -197,7 +198,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
 
       if (qualityGate.correctedText) {
-        contractText = qualityGate.correctedText
+        if (isAcceptableCorrection(contractText, qualityGate.correctedText)) {
+          contractText = qualityGate.correctedText
+        } else {
+          console.warn(
+            '[generate-contract] Ignored quality-gate correction — looks like a fragment, not a full contract ' +
+            `(${qualityGate.correctedText.trim().length} chars vs ${contractText.trim().length}). Keeping Stage 1 draft.`,
+          )
+        }
       }
 
       effectiveMode = applyQualityGateDecision(mode, qualityGate)

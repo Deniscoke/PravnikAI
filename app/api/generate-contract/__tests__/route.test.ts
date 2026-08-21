@@ -1204,12 +1204,22 @@ describe('17 — Quality gate integration', () => {
     expect(contradictionWarning).toBeDefined()
   })
 
-  it('quality gate correctedText replaces Stage 1 draft', async () => {
-    const corrected = 'Opravená smlouva z quality gate — dostatečně dlouhý text pro parser validation check'
+  it('quality gate correctedText replaces Stage 1 draft when it is a full contract', async () => {
+    const corrected = `${MOCK_CONTRACT}\n\nDoplněno kontrolou kvality.`
     mockLLMSuccess(MOCK_CONTRACT, { correctedText: corrected })
     const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
     const body: GenerateContractResponse = await res.json()
     expect(body.contractText).toBe(corrected)
+  })
+
+  it('a fragment returned as correctedText is ignored — the Stage 1 draft survives', async () => {
+    // The gate answering with only the clause it rewrote must not wipe the contract
+    mockLLMSuccess(MOCK_CONTRACT, {
+      correctedText: 'Kupní cena za předmět koupě činí 45 000 Kč, a to včetně DPH.',
+    })
+    const res = await POST(makeRequest({ schemaId: 'kupni-smlouva-v1', formData: DRAFT_FORM_DATA }))
+    const body: GenerateContractResponse = await res.json()
+    expect(body.contractText).toBe(MOCK_CONTRACT)
   })
 
   it('without correctedText, Stage 1 draft is preserved', async () => {
