@@ -87,6 +87,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── 4. Route event to handler ──────────────────────────────────────────────
+  // Reported back in the 200 body: Stripe shows the response, so a silent
+  // handler failure is visible in the dashboard instead of looking like success.
+  let handled = true
   try {
     switch (event.type) {
       case 'checkout.session.completed':
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   } catch (err) {
     // Log but still return 200 to prevent Stripe retries on transient errors.
+    handled = false
     console.error(`[webhook] Error handling ${event.type}:`, err)
     // BR-2: release the idempotency claim so a future Stripe redelivery of the
     // SAME event.id can reprocess. Only when WE claimed it as 'new' (never on
@@ -125,7 +129,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Always return 200 quickly
-  return NextResponse.json({ received: true })
+  return NextResponse.json({ received: true, handled })
 }
 
 // ─── Event handlers ──────────────────────────────────────────────────────────
