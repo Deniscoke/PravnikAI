@@ -22,6 +22,7 @@ import { generateText } from '@/lib/llm/openaiClient'
 import { saveReviewToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
 import { logAiUsage } from '@/lib/billing/aiUsageLog'
+import { sanitizeSuggestion } from '@/lib/review/suggestionGuard'
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 import type { ReviewContractRequest, ReviewContractResponse } from '@/lib/review/types'
@@ -209,9 +210,12 @@ function normalizeRiskyClause(raw: unknown): ReviewContractResponse['riskyClause
     title: typeof c.title === 'string' ? c.title : '',
     severity: validateRisk(c.severity),
     explanation: typeof c.explanation === 'string' ? c.explanation : '',
-    ...(typeof c.suggestedRevision === 'string' && c.suggestedRevision
-      ? { suggestedRevision: c.suggestedRevision }
-      : {}),
+    ...(() => {
+      const safe = typeof c.suggestedRevision === 'string'
+        ? sanitizeSuggestion(c.suggestedRevision)
+        : undefined
+      return safe ? { suggestedRevision: safe } : {}
+    })(),
   }
 }
 
@@ -225,9 +229,12 @@ function normalizeMissingClause(raw: unknown): ReviewContractResponse['missingCl
   return {
     title: typeof c.title === 'string' ? c.title : '',
     reason: typeof c.reason === 'string' ? c.reason : '',
-    ...(typeof c.suggestedClause === 'string' && c.suggestedClause
-      ? { suggestedClause: c.suggestedClause }
-      : {}),
+    ...(() => {
+      const safe = typeof c.suggestedClause === 'string'
+        ? sanitizeSuggestion(c.suggestedClause)
+        : undefined
+      return safe ? { suggestedClause: safe } : {}
+    })(),
   }
 }
 
