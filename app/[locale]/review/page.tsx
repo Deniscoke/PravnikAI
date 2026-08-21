@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { ReviewResult } from '@/components/review/ReviewResult'
+import { ContractFileUpload } from '@/components/review/ContractFileUpload'
 import type { ReviewContractResponse } from '@/lib/review/types'
 import { localeToJurisdiction, type Locale } from '@/lib/contracts/types'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
@@ -252,6 +253,10 @@ export default function ReviewPage() {
                     {t.reviewPage.contractLabel}
                     <span className="required-mark" aria-hidden="true"> *</span>
                   </label>
+                  <ContractFileUpload
+                    onExtracted={setContractText}
+                    disabled={isSubmitting}
+                  />
                   <textarea
                     id="contract-text"
                     className="glass-input glass-textarea"
