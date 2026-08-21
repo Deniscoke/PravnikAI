@@ -346,6 +346,14 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
     const pageWidth = doc.page.width
     const pageHeight = doc.page.height
 
+    // The footer sits below the bottom margin. pdfkit reacts to text past the
+    // margin by starting a new page, which appended a blank page per rendered
+    // page (a 2-page contract exported as 6). Drop the bottom margin while the
+    // running header/footer is drawn, and never let these lines wrap.
+    const bottomMargin = doc.page.margins.bottom
+    doc.page.margins.bottom = 0
+    const runningLine = { lineBreak: false as const }
+
     // ── Header — contract name, top right ─────────────────────────────────
     doc
       .font('italic')
@@ -355,7 +363,7 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
         `${input.contractName} — ${SITE_NAME}`,
         doc.page.margins.left,
         20,
-        { width: pageWidth - 2 * doc.page.margins.left, align: 'right' },
+        { width: pageWidth - 2 * doc.page.margins.left, align: 'right', ...runningLine },
       )
 
     // ── Footer ─────────────────────────────────────────────────────────────
@@ -369,7 +377,7 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
           `${input.strings.page} ${pageNumber} ${input.strings.of} ${total}`,
         doc.page.margins.left,
         footerY,
-        { width: pageWidth - 2 * doc.page.margins.left, align: 'center' },
+        { width: pageWidth - 2 * doc.page.margins.left, align: 'center', ...runningLine },
       )
 
     if (legalBasisLine) {
@@ -380,8 +388,11 @@ function drawHeaderFooterAllPages(doc: PDFKit.PDFDocument, input: RenderInput): 
         .text(legalBasisLine, doc.page.margins.left, footerY + 12, {
           width: pageWidth - 2 * doc.page.margins.left,
           align: 'center',
+          ...runningLine,
         })
     }
+
+    doc.page.margins.bottom = bottomMargin
   }
 
   doc.fillColor('#000000')
