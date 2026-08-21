@@ -11,7 +11,7 @@
  */
 
 import type { ContractFamily } from '@/lib/contracts/types'
-import type { ContractLegalProfile, LegalRule, RuleKind } from './types'
+import type { ContractLegalProfile, LegalProfileKey, LegalRule, RuleKind } from './types'
 import { CONSEQUENCE_LABEL } from './types'
 import { COMMON_PROFILE } from './common'
 import { SALE_PROFILE } from './profiles/sale'
@@ -19,55 +19,113 @@ import { TENANCY_PROFILE } from './profiles/tenancy'
 import { EMPLOYMENT_PROFILE } from './profiles/employment'
 import { SERVICES_PROFILE } from './profiles/services'
 import { NDA_PROFILE } from './profiles/nda'
+import { EMPLOYMENT_AGREEMENT_PROFILE } from './profiles/employmentAgreement'
 
 export * from './types'
 export { COMMON_PROFILE }
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-export const CONTRACT_PROFILES: Record<ContractFamily, ContractLegalProfile> = {
+export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = {
   sale: SALE_PROFILE,
   tenancy: TENANCY_PROFILE,
   employment: EMPLOYMENT_PROFILE,
   services: SERVICES_PROFILE,
   nda: NDA_PROFILE,
+  'employment-agreement': EMPLOYMENT_AGREEMENT_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
 
-export function getContractProfile(family: ContractFamily): ContractLegalProfile {
+export function getContractProfile(family: LegalProfileKey): ContractLegalProfile {
   return CONTRACT_PROFILES[family]
 }
 
 // ─── Type detection from free text ────────────────────────────────────────────
 
 /**
- * Keywords that identify a contract type in Czech. Order matters: the first
- * family whose keywords appear wins, so the more specific terms come first.
+ * How a contract type is recognised in free text.
  *
- * Deliberately conservative. Guessing wrong is worse than not guessing — an
- * employment checklist applied to a lease produces confident nonsense — so
- * anything ambiguous returns null and the review falls back to the common rules.
+ * Two tiers, because scoring alone got this wrong in production. A real dohoda
+ * o provedeni prace was classified as employment: it says "zamestnanec",
+ * "zamestnavatel" and "mzda" three times over, and names its own type once.
+ * Scoring handed it the pracovni-smlouva checklist, which then reported lawful
+ * clauses as breaches of provisions that do not apply to it.
+ *
+ * A `decisive` phrase is a document naming itself. Nothing outscores that.
+ * `supporting` phrases only break ties among documents that never said what
+ * they were.
  */
-const FAMILY_KEYWORDS: ReadonlyArray<{ family: ContractFamily; keywords: string[] }> = [
-  { family: 'employment', keywords: ['pracovní smlouva', 'pracovní poměr', 'zaměstnanec', 'zaměstnavatel', 'zkušební doba', 'mzda'] },
-  { family: 'tenancy', keywords: ['nájemní smlouva', 'nájemce', 'pronajímatel', 'nájemné', 'podnájem', 'jistota', 'kauce'] },
-  { family: 'nda', keywords: ['mlčenlivost', 'nda', 'důvěrné informace', 'obchodní tajemství', 'non-disclosure'] },
-  { family: 'services', keywords: ['smlouva o dílo', 'zhotovitel', 'objednatel', 'dílo'] },
-  { family: 'sale', keywords: ['kupní smlouva', 'prodávající', 'kupující', 'kupní cena'] },
+interface FamilySignals {
+  family: LegalProfileKey
+  /** Phrases that settle the question outright, checked in list order. */
+  decisive: string[]
+  /** Weaker vocabulary, scored only when no decisive phrase appears. */
+  supporting: string[]
+}
+
+const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
+  {
+    // Before 'employment' — a dohoda shares almost all of its vocabulary.
+    family: 'employment-agreement',
+    decisive: [
+      'dohoda o provedení práce',
+      'dohoda o pracovní činnosti',
+      'dohody o provedení práce',
+      'dohody o pracovní činnosti',
+    ],
+    supporting: ['dpp', 'dpč'],
+  },
+  {
+    family: 'employment',
+    // 'pracovní poměr' is deliberately NOT decisive: a dohoda routinely
+    // contains the phrase in order to deny it ("nezakládá pracovní poměr").
+    decisive: ['pracovní smlouva', 'pracovní smlouvu'],
+    supporting: ['pracovní poměr', 'zaměstnanec', 'zaměstnavatel', 'zkušební doba', 'mzda'],
+  },
+  {
+    family: 'tenancy',
+    decisive: ['nájemní smlouva', 'nájemní smlouvu', 'smlouva o nájmu'],
+    supporting: ['nájemce', 'pronajímatel', 'nájemné', 'podnájem', 'jistota', 'kauce'],
+  },
+  {
+    family: 'nda',
+    decisive: ['dohoda o mlčenlivosti', 'smlouva o mlčenlivosti', 'non-disclosure'],
+    supporting: ['mlčenlivost', 'nda', 'důvěrné informace', 'obchodní tajemství'],
+  },
+  {
+    family: 'services',
+    decisive: ['smlouva o dílo', 'smlouvu o dílo'],
+    supporting: ['zhotovitel', 'objednatel', 'dílo'],
+  },
+  {
+    family: 'sale',
+    decisive: ['kupní smlouva', 'kupní smlouvu'],
+    supporting: ['prodávající', 'kupující', 'kupní cena'],
+  },
 ]
 
 /**
  * Best-effort mapping from a user-supplied type hint (or raw contract text) to a
- * known family. Returns null when nothing matches clearly.
+ * known profile. Returns null when nothing matches clearly — the review then
+ * falls back to the common rules, which is always safe. Guessing wrong is not:
+ * the wrong checklist reports lawful clauses as defects.
  */
-export function resolveContractFamily(text: string): ContractFamily | null {
+export function resolveContractFamily(text: string): LegalProfileKey | null {
   if (!text) return null
   const haystack = text.toLowerCase()
 
-  const scores = FAMILY_KEYWORDS.map(({ family, keywords }) => ({
+  // A document that names its own type has answered the question — unless two
+  // of them do, which is genuine ambiguity rather than a race won by list order.
+  const named = FAMILY_SIGNALS.filter(({ decisive }) =>
+    decisive.some((phrase) => haystack.includes(phrase)),
+  )
+  if (named.length === 1) return named[0].family
+  if (named.length > 1) return null
+
+  const scores = FAMILY_SIGNALS.map(({ family, supporting }) => ({
     family,
-    score: keywords.reduce((total, kw) => (haystack.includes(kw) ? total + 1 : total), 0),
+    score: supporting.reduce((total, kw) => (haystack.includes(kw) ? total + 1 : total), 0),
   })).filter((entry) => entry.score > 0)
 
   if (scores.length === 0) return null
@@ -147,7 +205,7 @@ export function renderKnowledgeForDrafting(family: ContractFamily): string {
  * checkable in a finished text — a rule without a `reviewCheck` is drafting
  * guidance and would only invite the model to report it as "missing".
  */
-export function renderKnowledgeForReview(family: ContractFamily | null): string {
+export function renderKnowledgeForReview(family: LegalProfileKey | null): string {
   const commonCheckable = COMMON_PROFILE.rules.filter((r) => r.reviewCheck)
 
   if (!family) {

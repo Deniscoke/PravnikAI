@@ -53,6 +53,20 @@ export const MINIMUM_MONTHLY_WAGE_CZK: LegalFact<number> = {
 }
 
 /**
+ * Minimum hourly wage. Derived from the monthly figure at a 40-hour week, but
+ * published as its own value — it is the one that matters for DPP and DPČ,
+ * where pay is agreed per hour and there is no monthly salary to compare.
+ */
+export const MINIMUM_HOURLY_WAGE_CZK: LegalFact<number> = {
+  value: 134.4,
+  law: '§ 111 zák. č. 262/2006 Sb.; sdělení MPSV č. 356/2025 Sb.',
+  effectiveFrom: '2026-01-01',
+  lastVerified: '2026-08-22',
+  source: 'https://mpsv.gov.cz/minimalni-mzda',
+  note: 'Odvozeno od měsíční minimální mzdy při 40hodinovém týdnu. Mění se každý leden spolu s ní.',
+}
+
+/**
  * Maximum probation period. The 2025 "flexinovela" raised it from 3/6 months.
  */
 export const PROBATION_MAX_MONTHS: LegalFact<number> = {
@@ -127,6 +141,7 @@ export function formatCzk(amount: number): string {
  */
 export const ALL_LEGAL_FACTS: ReadonlyArray<{ key: string; fact: LegalFact<number> }> = [
   { key: 'MINIMUM_MONTHLY_WAGE_CZK', fact: MINIMUM_MONTHLY_WAGE_CZK },
+  { key: 'MINIMUM_HOURLY_WAGE_CZK', fact: MINIMUM_HOURLY_WAGE_CZK },
   { key: 'PROBATION_MAX_MONTHS', fact: PROBATION_MAX_MONTHS },
   { key: 'PROBATION_MAX_MONTHS_MANAGER', fact: PROBATION_MAX_MONTHS_MANAGER },
   { key: 'FIXED_TERM_MAX_YEARS', fact: FIXED_TERM_MAX_YEARS },

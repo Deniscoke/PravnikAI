@@ -25,6 +25,21 @@
 import type { ContractFamily } from '@/lib/contracts/types'
 
 /**
+ * Key for a body of legal rules.
+ *
+ * Wider than ContractFamily on purpose. The generator offers five contract
+ * types; review has to cope with whatever people actually upload, and some of
+ * that has no generator counterpart. A dohoda o provedení práce is the case
+ * that forced this: it looks like employment to a keyword matcher, sits outside
+ * the pracovni pomer legally, and reviewing it against pracovni-smlouva rules
+ * produces confident, invented defects.
+ *
+ * Drafting still takes a ContractFamily, so a review-only profile can never be
+ * selected for generation.
+ */
+export type LegalProfileKey = ContractFamily | 'employment-agreement'
+
+/**
  * What happens when a rule is not respected.
  *
  * Ordered from most to least severe. The string values are deliberately
@@ -90,7 +105,7 @@ export interface LegalRule {
 }
 
 export interface ContractLegalProfile {
-  family: ContractFamily
+  family: LegalProfileKey
   /** Czech name, as it appears to users. */
   label: string
   /** Statutory home of this contract type. */

@@ -34,6 +34,8 @@ NEJSI asistent, neradíš, nevykládáš a nehodnotíš. Tvým jediným úkolem 
 7. Tabulku přepiš po řádcích, hodnoty odděl znakem |.
 8. Podpisové bloky a razítka přepiš včetně popisků. Je-li podpis nečitelný, uveď ${UNREADABLE_MARKER}.
 9. Nepřidávej vlastní komentáře, úvod, shrnutí ani poznámky o kvalitě obrázku.
+10. Obrázky jsou vodorovné pásy jedné stránky a SOUSEDNÍ PÁSY SE PŘEKRÝVAJÍ. Text, který se objeví na konci jednoho pásu i na začátku dalšího, přepiš POUZE JEDNOU. Nikdy kvůli překryvu nevynechávej řádek — raději ověř, zda věta navazuje.
+11. Nepřepisuj pásy odděleně. Výsledkem je jeden souvislý text dokumentu.
 
 ## Výstup
 
@@ -41,11 +43,17 @@ Vrať POUZE přepsaný text dokumentu. Žádný markdown, žádné uvozovky kole
 
 Není-li na obrázcích čitelný dokument, vrať přesně: ${UNREADABLE_MARKER}`
 
-function buildUserPrompt(pageCount: number): string {
+function buildUserPrompt(sliceCount: number, pageCount: number): string {
+  const pages =
+    pageCount === 1 ? 'jedné stránky' : `${pageCount} stránek dokumentu v pořadí za sebou`
+
   return (
-    `Přepiš text z ${pageCount === 1 ? 'následujícího obrázku' : `následujících ${pageCount} obrázků`}. ` +
-    `${pageCount > 1 ? 'Obrázky jsou stránky jednoho dokumentu v pořadí za sebou — přepiš je jako souvislý text, nikoli odděleně. ' : ''}` +
-    `Dodrž všechna pravidla doslovného přepisu.`
+    `Následuje ${sliceCount} ${sliceCount === 1 ? 'obrázek' : 'obrázků'} — jde o vodorovné ` +
+    `pásy ${pages}, seřazené shora dolů. Sousední pásy se překrývají, aby žádný řádek ` +
+    `nebyl rozříznut; překrývající se text uveď jen jednou.
+
+` +
+    `Přepiš vše jako jeden souvislý text dokumentu. Dodrž všechna pravidla doslovného přepisu.`
   )
 }
 
@@ -58,13 +66,17 @@ export interface OcrResult {
 }
 
 /**
- * @param imageDataUrls Pages in reading order, as data URLs.
+ * @param imageDataUrls Overlapping horizontal slices, in reading order.
+ * @param pageCount How many original pages those slices came from.
  */
-export async function transcribeContractImages(imageDataUrls: string[]): Promise<OcrResult> {
+export async function transcribeContractImages(
+  imageDataUrls: string[],
+  pageCount = imageDataUrls.length,
+): Promise<OcrResult> {
   const result = await transcribeImages({
     imageDataUrls,
     systemPrompt: SYSTEM_PROMPT,
-    userPrompt: buildUserPrompt(imageDataUrls.length),
+    userPrompt: buildUserPrompt(imageDataUrls.length, pageCount),
   })
 
   const text = result.text.trim()

@@ -58,18 +58,35 @@ describe('the transcription prompt', () => {
     expect(lastPrompt().systemPrompt).toMatch(/NEJSI asistent/)
   })
 
-  it('says the pages belong to one document when there are several', async () => {
+  it('warns that adjacent slices overlap', async () => {
+    // Without this the model either duplicates the overlapped lines or, worse,
+    // drops them believing they were already written.
     mockResult('text')
-    await transcribeContractImages([PAGE, PAGE, PAGE])
-    const { userPrompt } = lastPrompt()
-    expect(userPrompt).toMatch(/3 obrázků/)
-    expect(userPrompt).toMatch(/stránky jednoho dokumentu/)
+    await transcribeContractImages([PAGE, PAGE])
+    expect(lastPrompt().systemPrompt).toMatch(/SOUSEDNÍ PÁSY SE PŘEKRÝVAJÍ/)
+    expect(lastPrompt().systemPrompt).toMatch(/POUZE JEDNOU/)
   })
 
-  it('does not claim multiple pages for a single image', async () => {
+  it('describes the images as slices, not as separate pages', async () => {
     mockResult('text')
-    await transcribeContractImages([PAGE])
-    expect(lastPrompt().userPrompt).not.toMatch(/stránky jednoho dokumentu/)
+    await transcribeContractImages([PAGE, PAGE, PAGE], 1)
+    const { userPrompt } = lastPrompt()
+    expect(userPrompt).toMatch(/3 obrázků/)
+    expect(userPrompt).toMatch(/vodorovné pásy/)
+    expect(userPrompt).toMatch(/jedné stránky/)
+  })
+
+  it('reports the real page count, not the slice count', async () => {
+    // Six slices of two pages must not be announced as six pages.
+    mockResult('text')
+    await transcribeContractImages([PAGE, PAGE, PAGE, PAGE, PAGE, PAGE], 2)
+    expect(lastPrompt().userPrompt).toMatch(/2 stránek/)
+  })
+
+  it('asks for one continuous text rather than per-slice output', async () => {
+    mockResult('text')
+    await transcribeContractImages([PAGE, PAGE], 1)
+    expect(lastPrompt().userPrompt).toMatch(/jeden souvislý text/)
   })
 })
 

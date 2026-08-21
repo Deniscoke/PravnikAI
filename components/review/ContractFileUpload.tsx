@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react'
 
+import { slicePages, slicesToFiles } from '@/lib/ocr/pageSlicer'
+
 interface ContractFileUploadProps {
   /** Receives the extracted text, which then fills the textarea. */
   onExtracted: (text: string) => void
@@ -21,6 +23,9 @@ interface ExtractResponse {
 /** Above this share of unreadable words, the text is too holed to review quietly. */
 const UNREADABLE_WARN_THRESHOLD = 0.02
 
+/** Each page becomes roughly three slices, and the server accepts twenty. */
+const MAX_PAGES = 5
+
 /**
  * Loads a contract from a PDF, a DOCX, or photographs of its pages.
  *
@@ -32,20 +37,40 @@ const UNREADABLE_WARN_THRESHOLD = 0.02
 export function ContractFileUpload({ onExtracted, disabled }: ContractFileUploadProps) {
   const documentInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [state, setState] = useState<'idle' | 'document' | 'photo'>('idle')
+  const [state, setState] = useState<'idle' | 'document' | 'slicing' | 'photo'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
 
   async function upload(files: File[], kind: 'document' | 'photo') {
-    setState(kind)
     setError(null)
     setNotice(null)
     setWarning(null)
 
     try {
       const form = new FormData()
-      for (const file of files) form.append('file', file)
+
+      if (kind === 'photo') {
+        if (files.length > MAX_PAGES) {
+          setError(
+            `Najednou lze zpracovat nejvýše ${MAX_PAGES} stránek. Nahrajte je prosím po částech.`,
+          )
+          return
+        }
+
+        // Slice in the browser before uploading. A whole page sent as one image
+        // gets downsampled to about 768px wide by the vision API, at which point
+        // the model stops reading the contract and starts guessing at it.
+        setState('slicing')
+        const slices = await slicePages(files)
+        setState('photo')
+
+        for (const file of slicesToFiles(slices)) form.append('file', file)
+        form.append('pages', String(files.length))
+      } else {
+        setState(kind)
+        for (const file of files) form.append('file', file)
+      }
 
       const res = await fetch('/api/extract-text', { method: 'POST', body: form })
       const data = (await res.json().catch(() => null)) as ExtractResponse | null
@@ -135,7 +160,11 @@ export function ContractFileUpload({ onExtracted, disabled }: ContractFileUpload
           onClick={() => photoInputRef.current?.click()}
           disabled={disabled || busy}
         >
-          {state === 'photo' ? 'Přepisuji fotografie…' : 'Vyfotit nebo nahrát fotky'}
+          {state === 'slicing'
+            ? 'Připravuji stránky…'
+            : state === 'photo'
+              ? 'Přepisuji fotografie…'
+              : 'Vyfotit nebo nahrát fotky'}
         </button>
         <span style={{ fontSize: '0.76rem', color: 'var(--color-text-subtle)' }}>
           nebo text vložte ručně níže
@@ -159,8 +188,9 @@ export function ContractFileUpload({ onExtracted, disabled }: ContractFileUpload
       )}
 
       <p style={{ margin: '8px 0 0', fontSize: '0.72rem', color: 'var(--color-text-subtle)' }}>
-        PDF a DOCX do 10 MB. Fotografie JPG, PNG nebo WEBP — až 8 stránek najednou.
+        PDF a DOCX do 10 MB. Fotografie JPG, PNG nebo WEBP — až {MAX_PAGES} stránek najednou.
         Focte kolmo shora, za dobrého světla a tak, aby stránka vyplnila celý snímek.
+        Přepis z fotografie není nikdy dokonalý — text si po načtení projděte.
       </p>
     </div>
   )

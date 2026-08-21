@@ -18,7 +18,7 @@
  */
 
 import { renderKnowledgeForReview, resolveContractFamily } from '@/lib/legal/knowledge'
-import type { ContractFamily } from '@/lib/contracts/types'
+import type { LegalProfileKey } from '@/lib/legal/knowledge'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -128,7 +128,7 @@ Vrať VÝHRADNĚ validní JSON objekt (bez markdown, bez komentářů) s touto s
  * first — they know what they signed — and the contract text is only consulted
  * when they gave no hint or the hint matched nothing.
  */
-function detectFamily(input: ReviewPromptInput): ContractFamily | null {
+function detectFamily(input: ReviewPromptInput): LegalProfileKey | null {
   return (
     (input.contractTypeHint ? resolveContractFamily(input.contractTypeHint) : null) ??
     resolveContractFamily(input.contractText)

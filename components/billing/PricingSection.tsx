@@ -473,14 +473,21 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
       </div>
 
       {/* ── Footer note ───────────────────────────────────────────────────── */}
+      {/*
+        Outside the paragraph below: the button renders a <div>, and a <div>
+        inside a <p> is invalid HTML. React recovered by reordering the DOM,
+        which failed hydration and left this whole section — the pricing CTAs
+        included — inert on first load.
+      */}
+      <SubscriptionRefreshButton />
+
       <p style={{
         textAlign: 'center',
         fontSize: '0.76rem',
         color: 'var(--color-text-subtle)',
-        marginTop: 'var(--space-xl)',
+        marginTop: 'var(--space-md)',
         lineHeight: 1.6,
       }}>
-        <SubscriptionRefreshButton />
         Bezpečná platba přes Stripe · Zrušení kdykoli bez poplatku
         <br />
         Podpora:{' '}

@@ -29,13 +29,19 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024
 const MAX_TEXT_LENGTH = 100_000
 
 /**
- * Photo limits. Every page costs a vision call's worth of tokens, so these are
- * cost controls first and usability limits second — a contract longer than this
- * is better uploaded as a PDF anyway.
+ * Photo limits.
+ *
+ * The browser slices each page into overlapping horizontal strips before
+ * uploading (see lib/ocr/pageSlicer) — without that the API downsamples a full
+ * page to ~768px wide and the model starts inventing text rather than reading
+ * it. So what arrives here is strips, not pages: more images, each much smaller.
+ *
+ * Roughly three strips per page, so twenty strips is about five pages. These
+ * are cost controls first: every strip is billed as image tokens.
  */
-const MAX_IMAGES = 8
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024
-const MAX_TOTAL_IMAGE_BYTES = 20 * 1024 * 1024
+const MAX_IMAGES = 20
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024
+const MAX_TOTAL_IMAGE_BYTES = 25 * 1024 * 1024
 
 /** Formats the vision model reliably accepts. */
 const SUPPORTED_IMAGE_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -76,8 +82,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!guard.allowed) return guard.response
 
   let files: File[] = []
+  let form: FormData
   try {
-    const form = await req.formData()
+    form = await req.formData()
     files = form.getAll('file').filter((c): c is File => c instanceof File)
   } catch {
     return NextResponse.json({ error: 'Nepodařilo se načíst soubor.' }, { status: 400 })
@@ -102,7 +109,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   if (kinds.every((k) => k === 'image')) {
-    return handlePhotos(files)
+    // The client reports how many original pages the strips came from; without
+    // it we would tell the model it is looking at twenty separate pages.
+    const reported = Number.parseInt(String(form.get('pages') ?? ''), 10)
+    const pageCount = Number.isFinite(reported) && reported > 0 ? reported : files.length
+    return handlePhotos(files, pageCount)
   }
 
   if (files.length > 1) {
@@ -180,11 +191,13 @@ async function handleDocument(file: File, kind: 'pdf' | 'docx'): Promise<NextRes
 
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
-async function handlePhotos(files: File[]): Promise<NextResponse> {
+async function handlePhotos(files: File[], pageCount: number): Promise<NextResponse> {
   if (files.length > MAX_IMAGES) {
     return NextResponse.json(
       {
-        error: `Najednou lze nahrát nejvýše ${MAX_IMAGES} fotografií. Delší smlouvu nahrajte jako PDF.`,
+        error:
+          'Najednou lze zpracovat přibližně 5 stránek. Delší smlouvu nahrajte po částech ' +
+          'nebo jako PDF.',
         code: 'TOO_MANY_FILES',
       },
       { status: 413 },
@@ -218,7 +231,7 @@ async function handlePhotos(files: File[]): Promise<NextResponse> {
 
   let result: Awaited<ReturnType<typeof transcribeContractImages>>
   try {
-    result = await transcribeContractImages(dataUrls)
+    result = await transcribeContractImages(dataUrls, pageCount)
   } catch (err) {
     console.error('[extract-text] Transcription failed:', err)
     return NextResponse.json(
@@ -228,7 +241,8 @@ async function handlePhotos(files: File[]): Promise<NextResponse> {
   }
 
   console.info(
-    `[extract-text] Transcribed ${files.length} page(s), ${result.tokensUsed} tokens, model ${result.model}`,
+    `[extract-text] Transcribed ${pageCount} page(s) as ${files.length} slice(s), ` +
+      `${result.tokensUsed} tokens, model ${result.model}`,
   )
 
   if (result.unreadable) {
@@ -250,7 +264,7 @@ async function handlePhotos(files: File[]): Promise<NextResponse> {
     truncated: cleaned.length > MAX_TEXT_LENGTH,
     characters: Math.min(cleaned.length, MAX_TEXT_LENGTH),
     source: 'photo',
-    pages: files.length,
+    pages: pageCount,
     // Lets the client warn before the user reviews a text full of holes.
     unreadableRatio: Number(unreadableRatio(cleaned).toFixed(3)),
   })
