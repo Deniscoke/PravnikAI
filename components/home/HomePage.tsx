@@ -188,6 +188,7 @@ export default function HomePage() {
             <Link href={`/${locale}/review`}>{t.home.footer.links.review}</Link>
             <Link href="#cenik">{t.home.footer.links.pricing}</Link>
             <Link href="#faq">{t.home.footer.links.faq}</Link>
+            <Link href={`/${locale}/kontrola-smluv`}>Kontrola smlouvy online</Link>
             <Link href={`/${locale}/vzory/kupni-smlouva`}>Kupní smlouva — vzor</Link>
           </div>
           <div className="footer-links">

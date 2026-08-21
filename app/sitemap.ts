@@ -15,6 +15,7 @@ const ROUTES: RoutePriority[] = [
   { path: '', changeFrequency: 'weekly', priority: 1 },
   { path: '/generator', changeFrequency: 'weekly', priority: 0.95 },
   { path: '/review', changeFrequency: 'weekly', priority: 0.95 },
+  { path: '/kontrola-smluv', changeFrequency: 'monthly', priority: 0.9 },
   { path: '/ai', changeFrequency: 'monthly', priority: 0.6 },
   { path: '/duvera', changeFrequency: 'monthly', priority: 0.6 },
   { path: '/login', changeFrequency: 'monthly', priority: 0.5 },
