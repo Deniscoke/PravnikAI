@@ -28,7 +28,7 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const ip = getClientIp(req.headers)
-  const rl = await checkRateLimit(`portal:${ip}`, { max: 10, windowMs: 60_000 })
+  const rl = await checkRateLimit(`portal:${ip}`, { max: 10, windowMs: 60_000, whenUnavailable: 'allow' })
   if (!rl.allowed) {
     return rateLimitResponse(rl, 'Příliš mnoho požadavků. Zkuste to za chvíli.')
   }

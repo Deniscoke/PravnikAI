@@ -60,6 +60,16 @@ describe('checkRateLimit without Redis configured', () => {
     expect(r.failClosed).toBeFalsy()
   })
 
+  it("stays online in production for whenUnavailable: 'allow' routes (checkout, exports)", async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('VERCEL', '1')
+    vi.stubEnv('RATE_LIMIT_ALLOW_WITHOUT_REDIS', '')
+    clearRedisEnv()
+    const r = await checkRateLimit('k', { max: 5, windowMs: 60_000, whenUnavailable: 'allow' })
+    expect(r.allowed).toBe(true)
+    expect(r.failClosed).toBeFalsy()
+  })
+
   it('fails OPEN in non-production (dev/CI)', async () => {
     vi.stubEnv('NODE_ENV', 'test')
     vi.stubEnv('VERCEL', '')

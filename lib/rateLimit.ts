@@ -12,6 +12,17 @@ import { NextResponse } from 'next/server'
 interface RateLimitOptions {
   max: number
   windowMs: number
+  /**
+   * Behaviour in production when the limiter itself is unavailable (Redis missing,
+   * misconfigured, or erroring).
+   *
+   * 'block'  (default) — refuse the request. Correct for expensive AI routes, where
+   *                      an unmetered burst costs real money.
+   * 'allow'           — serve the request anyway. Correct for auth-gated routes that
+   *                      cost nothing per call (checkout, portal, exports): losing
+   *                      rate limiting must never take payments or downloads offline.
+   */
+  whenUnavailable?: 'block' | 'allow'
 }
 
 export interface RateLimitResult {
@@ -59,22 +70,25 @@ function getInstance(max: number, windowMs: number): Ratelimit | null {
 
 export async function checkRateLimit(
   key: string,
-  { max, windowMs }: RateLimitOptions,
+  { max, windowMs, whenUnavailable = 'block' }: RateLimitOptions,
 ): Promise<RateLimitResult> {
   const limiter = getInstance(max, windowMs)
+  const bypassed = process.env.RATE_LIMIT_ALLOW_WITHOUT_REDIS === '1'
+  /** Only expensive routes are taken offline when the limiter cannot be reached. */
+  const shouldBlock =
+    isProductionDeployment() && !bypassed && whenUnavailable === 'block'
+  const degraded = (): RateLimitResult =>
+    shouldBlock
+      ? { allowed: false, remaining: 0, resetAt: Date.now() + windowMs, failClosed: true }
+      : { allowed: true, remaining: max - 1, resetAt: Date.now() + windowMs }
 
   if (!limiter) {
-    const allowBypass = process.env.RATE_LIMIT_ALLOW_WITHOUT_REDIS === '1'
-    if (isProductionDeployment() && !allowBypass) {
+    if (isProductionDeployment()) {
       console.error(
-        '[rateLimit] FAIL-CLOSED: UPSTASH_REDIS_REST_URL/TOKEN missing in production.',
+        `[rateLimit] Upstash not configured in production — ${shouldBlock ? 'FAIL-CLOSED' : 'serving unmetered'} (key=${key}).`,
       )
-      return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs, failClosed: true }
     }
-    if (isProductionDeployment() && allowBypass) {
-      console.warn('[rateLimit] BYPASS: RATE_LIMIT_ALLOW_WITHOUT_REDIS=1 — rate limiting disabled.')
-    }
-    return { allowed: true, remaining: max - 1, resetAt: Date.now() + windowMs }
+    return degraded()
   }
 
   try {
@@ -86,10 +100,7 @@ export async function checkRateLimit(
     }
   } catch (err) {
     console.error('[rateLimit] Upstash request failed:', err instanceof Error ? err.message : err)
-    if (isProductionDeployment() && process.env.RATE_LIMIT_ALLOW_WITHOUT_REDIS !== '1') {
-      return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs, failClosed: true }
-    }
-    return { allowed: true, remaining: max - 1, resetAt: Date.now() + windowMs }
+    return degraded()
   }
 }
 

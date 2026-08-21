@@ -263,24 +263,7 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
         </pre>
       </div>
 
-      {/* ── Bottom actions ── */}
-      <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center', marginTop: 'var(--space-xl)', flexWrap: 'wrap' }}>
-        <button className="glass-btn glass-btn--primary" onClick={copyToClipboard}>
-          {copied ? <><CheckIcon /> {t.result.copied}</> : <><CopyIcon /> {t.result.copyToClipboard}</>}
-        </button>
-        <button className="glass-btn" onClick={() => requestExport('docx')} disabled={exportingDocx}>
-          {exportingDocx ? <><SpinnerIcon /> {t.result.exporting}</> : <><DocxIcon /> {t.result.downloadDocx}</>}
-        </button>
-        <button className="glass-btn" onClick={() => requestExport('pdf')} disabled={exportingPdf}>
-          {exportingPdf ? <><SpinnerIcon /> {t.result.exporting}</> : <><PdfIcon /> {t.result.downloadPdf}</>}
-        </button>
-        <ActionButton action={onBack} className="glass-btn">
-          {t.result.editAndRegenerate}
-        </ActionButton>
-        <ActionButton action={onReset} className="glass-btn glass-btn--ghost">
-          {t.result.newContract}
-        </ActionButton>
-      </div>
+      {/* Actions live in the header row above — a second copy here only duplicated them. */}
 
       {/* ── Compliance disclaimer ── */}
       <div className="glass-card" style={{
@@ -317,9 +300,18 @@ export function ContractResult({ result, contractName, onBack, onReset }: Contra
           }}
         >
           <div
-            className="glass-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 460, padding: 'var(--space-xl)' }}
+            style={{
+              maxWidth: 460,
+              padding: 'var(--space-xl)',
+              // Opaque, self-contained surface: the translucent glass card became
+              // unreadable when composited over the animated background blobs.
+              background: 'var(--color-overlay-surface)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.45)',
+              isolation: 'isolate',
+            }}
           >
             <h3 id="export-gate-title" style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: 'var(--space-sm)' }}>
               Návrh obsahuje nevyplněná místa

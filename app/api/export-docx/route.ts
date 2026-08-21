@@ -53,7 +53,7 @@ interface ExportRequest {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 0a. Rate limit ────────────────────────────────────────────────────────
   const ip = getClientIp(req.headers)
-  const rl = await checkRateLimit(`export-docx:${ip}`, { max: 20, windowMs: 60_000 })
+  const rl = await checkRateLimit(`export-docx:${ip}`, { max: 20, windowMs: 60_000, whenUnavailable: 'allow' })
   if (!rl.allowed) {
     return rateLimitResponse(rl, 'Too many requests. Try again shortly.')
   }

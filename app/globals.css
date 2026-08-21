@@ -35,6 +35,8 @@
 
   /* Semantic surface / text */
   --color-bg:           #0b0e1a;
+  /* Opaque surface for modals — glass panels smear over the animated background */
+  --color-overlay-surface: #161c30;
   --color-surface:      rgba(255, 255, 255, 0.04);
   --color-text:         #ffffff;
   --color-text-muted:   rgba(255, 255, 255, 0.62);
@@ -84,6 +86,7 @@
   --shadow-float:       0 20px 60px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08);
   --reflection-top:     linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 50%);
   --color-bg:           #e8f0fa;
+  --color-overlay-surface: #ffffff;
   --color-surface:      rgba(255, 255, 255, 0.55);
   --color-text:         #0f172a;
   --color-text-muted:   rgba(15, 23, 42, 0.66);

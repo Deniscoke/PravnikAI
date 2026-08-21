@@ -59,7 +59,7 @@ describe('ContractResult — pre-export gate', () => {
 
     render(<ContractResult result={BASE} contractName="Kupní smlouva" onBack={() => {}} onReset={() => {}} />)
 
-    await user.click(screen.getByRole('button', { name: /Stáhnout DOCX/i }))
+    await user.click(screen.getByRole('button', { name: /DOCX/i }))
 
     expect(screen.queryByText(/Návrh obsahuje nevyplněná místa/i)).not.toBeInTheDocument()
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith('/api/export-docx', expect.anything()))
@@ -71,7 +71,7 @@ describe('ContractResult — pre-export gate', () => {
 
     render(<ContractResult result={WITH_MARKERS} contractName="Kupní smlouva" onBack={() => {}} onReset={() => {}} />)
 
-    await user.click(screen.getByRole('button', { name: /Stáhnout DOCX/i }))
+    await user.click(screen.getByRole('button', { name: /DOCX/i }))
 
     expect(screen.getByText(/Návrh obsahuje nevyplněná místa/i)).toBeInTheDocument()
     expect(screen.getByText(/Počet nalezených položek: 2/)).toBeInTheDocument()
@@ -84,7 +84,7 @@ describe('ContractResult — pre-export gate', () => {
 
     render(<ContractResult result={WITH_MARKERS} contractName="Kupní smlouva" onBack={() => {}} onReset={() => {}} />)
 
-    await user.click(screen.getByRole('button', { name: /Stáhnout DOCX/i }))
+    await user.click(screen.getByRole('button', { name: /DOCX/i }))
     await user.click(screen.getByRole('button', { name: /Exportovat i tak/i }))
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith('/api/export-docx', expect.anything()))
@@ -97,7 +97,7 @@ describe('ContractResult — pre-export gate', () => {
 
     render(<ContractResult result={WITH_MARKERS} contractName="Kupní smlouva" onBack={() => {}} onReset={() => {}} />)
 
-    await user.click(screen.getByRole('button', { name: /Stáhnout DOCX/i }))
+    await user.click(screen.getByRole('button', { name: /DOCX/i }))
     await user.click(screen.getByRole('button', { name: /Vrátit se k návrhu/i }))
 
     expect(screen.queryByText(/Návrh obsahuje nevyplněná místa/i)).not.toBeInTheDocument()
