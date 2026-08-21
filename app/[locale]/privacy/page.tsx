@@ -88,6 +88,10 @@ export default async function PrivacyPage({ params }: Props) {
             <li>
               <strong>Diagnostická data:</strong> chybové a provozní záznamy v nástroji Sentry.
             </li>
+            <li>
+              <strong>Anonymní statistika návštěvnosti:</strong> agregované údaje o zobrazených
+              stránkách a výkonu webu. Měření probíhá bez cookies a bez profilování jednotlivců.
+            </li>
           </ul>
         </section>
 
@@ -170,7 +174,7 @@ export default async function PrivacyPage({ params }: Props) {
             <li><strong>Supabase</strong> &mdash; databáze, autentizace a ukládání uživatelských dat.</li>
             <li><strong>OpenAI API</strong> &mdash; zpracování vstupů a výstupů pro AI generování a orientační kontrolu.</li>
             <li><strong>Stripe</strong> &mdash; platby a správa předplatného.</li>
-            <li><strong>Vercel</strong> &mdash; hosting a serverless provoz aplikace.</li>
+            <li><strong>Vercel</strong> &mdash; hosting, serverless provoz aplikace a anonymní statistika návštěvnosti (bez cookies).</li>
             <li><strong>Upstash</strong> &mdash; rate limiting (ochrana proti zneužití).</li>
             <li><strong>Sentry</strong> &mdash; monitoring chyb a provozní diagnostika.</li>
             <li><strong>Resend</strong> &mdash; e-mailová komunikace / zpětná vazba v betě.</li>

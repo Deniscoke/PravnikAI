@@ -168,6 +168,10 @@ export default async function GdprPage({ params }: Props) {
             nevyžadujeme souhlas s cookies dle směrnice ePrivacy &mdash; nezbytné technické cookies
             jsou povoleny bez souhlasu (čl. 5 odst. 3 směrnice 2002/58/ES).
           </p>
+          <p>
+            Návštěvnost měříme pouze anonymně a <strong>bez cookies</strong> (Vercel Analytics).
+            Neukládáme identifikátory do vašeho prohlížeče a nevytváříme profily uživatelů.
+          </p>
         </section>
       </div>
     </main>

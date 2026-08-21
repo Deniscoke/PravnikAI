@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -77,6 +78,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
           <CookieConsent />
         </AuthProvider>
+        {/* Cookieless, GDPR-friendly traffic analytics (no consent banner needed) */}
+        <Analytics />
       </body>
     </html>
   )
