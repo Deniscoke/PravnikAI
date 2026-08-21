@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { CookieConsent } from '@/components/CookieConsent'
 import { FeedbackButton } from '@/components/beta/FeedbackButton'
+import { BetaBanner } from '@/components/beta/BetaBanner'
 import { createClient } from '@/lib/supabase/server'
 import { getSiteUrl, SEO_DESCRIPTION_DEFAULT, SITE_NAME } from '@/lib/seo/site'
 import { getMessages, coerceLocale } from '@/lib/i18n'
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="scene__blob scene__blob--2" />
           <div className="scene__blob scene__blob--3" />
         </div>
+        <BetaBanner />
         <ThemeToggle />
         <AuthProvider initialUser={user ?? null}>
           {children}

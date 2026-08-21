@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { PricingSection } from '@/components/billing/PricingSection'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { BetaSignupForm } from '@/components/beta/BetaSignupForm'
 import { getSchemasByCategory } from '@/lib/contracts/contractSchemas'
 import { getHomeFaqItems } from '@/lib/seo/faq'
 import { useLocale, useTranslations } from '@/lib/i18n/client'
@@ -59,6 +60,38 @@ export default function HomePage() {
       </header>
 
       <main>
+        {/* Contract review deserves the same weight as the generator: free
+            templates are everywhere, "someone check this before I sign" is not. */}
+        <section className="section" id="kontrola">
+          <div className="section__header">
+            <h2 className="section__title">Dostali jste smlouvu k podpisu?</h2>
+            <span className="section__subtitle">
+              Vložte text a projděte si rizika dřív, než ho podepíšete
+            </span>
+          </div>
+          <div className="glass-card" style={{ padding: 'var(--space-xl)', maxWidth: 860, margin: '0 auto' }}>
+            <p style={{ fontSize: '0.95rem', lineHeight: 1.7, marginTop: 0 }}>
+              Orientační kontrola projde text smlouvy a upozorní na jednostranné formulace,
+              chybějící ustanovení a místa, která je potřeba doplnit — podle českého práva.
+              Dá vám <strong>přehled a otázky</strong>, se kterými můžete jít za protistranou
+              nebo za advokátem.
+            </p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+              Nejde o právní posudek a nenahrazuje advokáta — je to první síto, které zabere pár minut.
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', marginTop: 'var(--space-lg)' }}>
+              <Link href={`/${locale}/review`} className="glass-btn glass-btn--primary" style={{ padding: '12px 26px' }}>
+                <SearchIcon /> Zkontrolovat smlouvu
+              </Link>
+              <Link href={`/${locale}/kontrola-smluv`} className="glass-btn glass-btn--ghost" style={{ padding: '12px 26px' }}>
+                Jak kontrola funguje
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <div className="divider" />
+
         <section className="section" id="funkce">
           <div className="section__header">
             <h2 className="section__title">{t.home.sectionFeaturesTitle}</h2>
@@ -152,6 +185,23 @@ export default function HomePage() {
             <span className="section__subtitle">{t.home.sectionPricingSubtitle}</span>
           </div>
           <PricingSection currentTier="free" />
+        </section>
+
+        <div className="divider" />
+
+        <section className="section" id="beta">
+          <div className="glass-card" style={{ padding: 'var(--space-xl)', maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 600, marginTop: 0, marginBottom: 'var(--space-sm)' }}>
+              Chcete vědět, až spustíme ostrý provoz?
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: 'var(--space-lg)' }}>
+              Právo365 je zatím v beta verzi. Nechte nám e-mail a ozveme se jednou zprávou,
+              až bude vše připravené. Žádný spam.
+            </p>
+            <div style={{ textAlign: 'left' }}>
+              <BetaSignupForm source="homepage" />
+            </div>
+          </div>
         </section>
 
         <div className="divider" />
