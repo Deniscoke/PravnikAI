@@ -41,27 +41,21 @@ export const ndaSmlouva: ContractSchema = {
       requiresSignature: true,
       defaultJurisdictionClause: 'Příslušný obecný soud dle místa sídla žalovaného',
     },
+    // Zákonné požadavky nejsou zde — jsou v lib/legal/knowledge a vkládají se
+    // do uživatelského promptu. Zde zůstávají jen pokyny ke stylu a pravidla
+    // proti vymýšlení obsahu, která nejsou právní úpravou.
     aiInstructions:
-      'Generuj NDA jako inominátní smlouvu dle § 1746 odst. 2 NOZ.\n\n' +
-      'POVINNÝ CHECKLIST KLAUZULÍ pro smlouvu o mlčenlivosti (NDA):\n' +
-      '1. Identifikace smluvních stran — poskytovatel a příjemce (nebo oboustranně)\n' +
-      '2. Účel smlouvy — důvod sdílení důvěrných informací\n' +
-      '3. Definice důvěrných informací — konkrétní vymezení, co je důvěrné; odkaz na § 504 NOZ (obchodní tajemství)\n' +
-      '4. Výjimky z důvěrnosti — informace veřejně dostupné, nezávisle vyvinuté, získané od třetí strany bez omezení, vyžádané zákonem\n' +
-      '5. Povinnosti příjemce — ochrana informací, omezení přístupu, zákaz kopírování/šíření\n' +
-      '6. Povolené použití — výhradně pro sjednaný účel\n' +
-      '7. Doba trvání — platnost NDA a doba trvání závazku mlčenlivosti po ukončení (přežívající klauzule)\n' +
-      '8. Vrácení/zničení — povinnost vrátit nebo zničit důvěrné materiály po ukončení\n' +
-      '9. Smluvní pokuta — přiměřená výše (§ 2051 NOZ — soud může nepřiměřenou pokutu snížit)\n' +
-      '10. Náhrada škody — právo na náhradu škody vedle smluvní pokuty\n' +
-      '11. Oboustrannost — u vzájemného NDA jasně uveď symetrické závazky\n' +
-      '12. Závěrečná ustanovení — rozhodné právo, řešení sporů, počet vyhotovení\n' +
-      '13. Podpisové bloky\n\n' +
-      'PRÁVNÍ POZNÁMKY:\n' +
-      '- NDA musí mít znaky obchodního tajemství dle § 504 NOZ: tajnost, hospodářská hodnota, zajištění ochrany\n' +
-      '- Smluvní pokuta musí být přiměřená — soud může snížit nepřiměřenou (§ 2051 NOZ)\n' +
+      'Generuj NDA jako nepojmenovanou smlouvu dle § 1746 odst. 2 NOZ.\n' +
+      'Zákonné požadavky na tento typ smlouvy najdeš v sekci „Právní požadavky" ' +
+      'v zadání — projdi ji celou a řiď se jí.\n\n' +
+      'POKYNY KE ZPRACOVÁNÍ:\n' +
+      '- Pro NDA neexistují zákonná dispozitivní pravidla, která by mezery doplnila. ' +
+      'Co není ve smlouvě, to neplatí — proto piš úplně a určitě\n' +
+      '- Závazek mlčenlivosti přežívá ukončení smlouvy; uveď to výslovně\n' +
       '- Nevymýšlej konkrétní výši smluvní pokuty, pokud není v zadání\n' +
-      '- Závazek mlčenlivosti může přežívat ukončení smlouvy — to je standardní a žádoucí',
+      '- Nepřebírej anglosaské konstrukce (liquidated damages, indemnity) — ' +
+      'v českém právu nemají přímý protějšek\n' +
+      '- Nikdy nepoužívej slovenskou právní terminologii',
   },
 
   parties: [

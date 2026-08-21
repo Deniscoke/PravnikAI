@@ -40,28 +40,21 @@ export const najemniSmlouva: ContractSchema = {
       requiresSignature: true,
       defaultJurisdictionClause: 'Příslušný soud dle polohy nemovitosti (§ 89a OSŘ)',
     },
+    // Zákonné požadavky nejsou zde — jsou v lib/legal/knowledge a vkládají se
+    // do uživatelského promptu. Zde zůstávají jen pokyny ke stylu a pravidla
+    // proti vymýšlení obsahu, která nejsou právní úpravou.
     aiInstructions:
-      'Generuj nájemní smlouvu na byt dle § 2235–2301 NOZ.\n\n' +
-      'POVINNÝ CHECKLIST KLAUZULÍ pro nájemní smlouvu bytu:\n' +
-      '1. Identifikace smluvních stran — pronajímatel (vlastník) a nájemce\n' +
-      '2. Označení bytu — adresa, dispozice, podlaží, číslo jednotky (pokud existuje)\n' +
-      '3. Účel nájmu — zajištění bytové potřeby nájemce (§ 2235 NOZ)\n' +
-      '4. Nájemné — výše měsíčního nájemného, splatnost, způsob platby\n' +
-      '5. Úhrada služeb — vymezení služeb spojených s užíváním bytu, zálohová platba, vyúčtování\n' +
-      '6. Jistota (kauce) — max. trojnásobek měsíčního nájemného (§ 2254 NOZ), podmínky vrácení\n' +
-      '7. Doba nájmu — určitá (datum od–do) nebo neurčitá\n' +
-      '8. Předání bytu — stav bytu při předání, předávací protokol\n' +
-      '9. Práva a povinnosti — údržba, opravy, úpravy bytu (§ 2257–2267 NOZ)\n' +
-      '10. Podnájem — podmínky podnájmu (§ 2274–2278 NOZ)\n' +
-      '11. Výpověď — výpovědní důvody a lhůty dle § 2288–2291 NOZ (pronajímatel), § 2287 NOZ (nájemce)\n' +
-      '12. Zvyšování nájemného — mechanismus dle § 2248–2253 NOZ\n' +
-      '13. Vrácení bytu — stav při vrácení, lhůta pro vrácení jistoty\n' +
-      '14. Závěrečná ustanovení — rozhodné právo, počet vyhotovení\n' +
-      '15. Podpisové bloky\n\n' +
-      'PRÁVNÍ POZNÁMKY:\n' +
-      '- Nájemce bytu požívá zvýšené zákonné ochrany — nelze se odchýlit k jeho tíži (§ 2235 odst. 1 NOZ)\n' +
-      '- Nájemné uváděj číselně i slovy\n' +
-      '- Nevymýšlej smluvní pokuty — u nájmu bytu je smluvní pokuta neplatná (§ 2239 NOZ)',
+      'Generuj nájemní smlouvu na byt dle § 2235–2301 NOZ.\n' +
+      'Zákonné požadavky na tento typ smlouvy najdeš v sekci „Právní požadavky" ' +
+      'v zadání — projdi ji celou a řiď se jí.\n\n' +
+      'POKYNY KE ZPRACOVÁNÍ:\n' +
+      '- Nájemce bytu požívá zvýšené zákonné ochrany. Ustanovení, které zkracuje jeho ' +
+      'zákonná práva, do smlouvy nevkládej — zákon k němu stejně nepřihlíží (§ 2235 odst. 2 NOZ)\n' +
+      '- Nájemné a jistotu uváděj číselně i slovy\n' +
+      '- Nikdy nevkládej smluvní pokutu k tíži nájemce — k takovému ujednání se ' +
+      'podle § 2239 NOZ nepřihlíží (nejde o neplatnost, ale o zdánlivé ujednání)\n' +
+      '- Nevymýšlej sankce, lhůty ani povinnosti, které nejsou v zadání\n' +
+      '- Nikdy nepoužívej slovenskou právní terminologii',
   },
 
   parties: [

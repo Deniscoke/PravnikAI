@@ -324,9 +324,16 @@ describe('1 — Required 5-section structure', () => {
 
     it(`mode="${mode}": sections are separated by --- dividers`, () => {
       const { userPrompt } = buildFor(mode)
-      // 6 sections + header = 6 dividers joining 7 parts (A–F)
+      // Header + A–F, plus the CZ statutory requirements block that follows
+      // section A: 8 parts joined by 7 dividers.
       const dividerCount = (userPrompt.match(/\n\n---\n\n/g) ?? []).length
-      expect(dividerCount).toBe(6)
+      expect(dividerCount).toBe(7)
+    })
+
+    it(`mode="${mode}": carries the statutory requirements for the contract type`, () => {
+      const { userPrompt } = buildFor(mode)
+      expectContains(userPrompt, '## Právní požadavky')
+      expectContains(userPrompt, 'PODSTATNÉ NÁLEŽITOSTI')
     })
 
     it(`mode="${mode}": returns non-empty systemPrompt`, () => {

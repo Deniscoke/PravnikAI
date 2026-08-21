@@ -49,27 +49,20 @@ export const pracovniSmlouva: ContractSchema = {
       requiresSignature: true,
       defaultJurisdictionClause: 'Příslušný soud dle místa výkonu práce (§ 12 OSŘ)',
     },
+    // Zákonné požadavky nejsou zde — jsou v lib/legal/knowledge a vkládají se
+    // do uživatelského promptu. Zde zůstávají jen pokyny ke stylu a pravidla
+    // proti vymýšlení obsahu, která nejsou právní úpravou.
     aiInstructions:
-      'Generuj pracovní smlouvu výhradně dle ZP č. 262/2006 Sb.\n\n' +
-      'POVINNÝ CHECKLIST KLAUZULÍ pro pracovní smlouvu:\n' +
-      '1. Identifikace zaměstnavatele — obchodní firma/název, IČO, sídlo\n' +
-      '2. Identifikace zaměstnance — jméno, příjmení, bydliště, datum narození\n' +
-      '3. Druh práce — povinná náležitost dle § 34 odst. 1 písm. a) ZP\n' +
-      '4. Místo výkonu práce — povinná náležitost dle § 34 odst. 1 písm. b) ZP\n' +
-      '5. Den nástupu do práce — povinná náležitost dle § 34 odst. 1 písm. c) ZP\n' +
-      '6. Mzda / plat — výše, složky, termín a způsob výplaty; nesmí být pod minimální mzdou (§ 111 ZP)\n' +
-      '7. Pracovní doba — stanovená týdenní pracovní doba, rozvrh (§ 79–80 ZP)\n' +
-      '8. Zkušební doba — max. 4 měsíce (8 u vedoucích), nesmí být delší než polovina doby trvání PP (§ 35 ZP)\n' +
-      '9. Doba trvání — určitá (s uvedením data/události) nebo neurčitá\n' +
-      '10. Dovolená — minimálně 4 týdny (§ 213 ZP)\n' +
-      '11. Výpovědní doba — minimálně 2 měsíce (§ 51 ZP); po novele č. 120/2025 Sb. běží od doručení výpovědi\n' +
-      '12. Závěrečná ustanovení — rozhodné právo, počet vyhotovení\n' +
-      '13. Podpisové bloky — zaměstnavatel i zaměstnanec\n\n' +
-      'PRÁVNÍ POZNÁMKY:\n' +
-      '- Pracovní smlouvu NELZE uzavřít ústně — vyžaduje písemnou formu (§ 34 odst. 2 ZP)\n' +
-      '- Nikdy nepoužívej slovenskou právní terminologii\n' +
+      'Generuj pracovní smlouvu výhradně dle ZP č. 262/2006 Sb.\n' +
+      'Zákonné požadavky na tento typ smlouvy najdeš v sekci „Právní požadavky" ' +
+      'v zadání — projdi ji celou a řiď se jí.\n\n' +
+      'POKYNY KE ZPRACOVÁNÍ:\n' +
+      '- Odchýlit se od zákoníku práce lze jen ve prospěch zaměstnance. Nikdy nevkládej ' +
+      'ustanovení, které jeho postavení zhoršuje oproti zákonu\n' +
       '- Konkurenční doložka jen pokud je v zadání (§ 310 ZP) — nevymýšlej ji\n' +
-      '- Nevymýšlej benefity, prémie ani jiné složky mzdy, které nejsou v zadání',
+      '- Nevymýšlej benefity, prémie ani jiné složky mzdy, které nejsou v zadání\n' +
+      '- Mzdu uváděj číselně i slovy\n' +
+      '- Nikdy nepoužívej slovenskou právní terminologii',
   },
 
   parties: [

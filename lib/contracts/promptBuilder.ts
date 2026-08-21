@@ -29,6 +29,7 @@
 
 import { buildSystemPrompt as assembleSystemPrompt } from './systemPrompt'
 import { getPromptBundle, type PromptLang } from './prompts'
+import { renderKnowledgeForDrafting } from '@/lib/legal/knowledge'
 import type {
   ContractSchema,
   NormalizedFormData,
@@ -78,6 +79,12 @@ export function buildPrompt(input: PromptInput): BuiltPrompt {
   const userPromptParts = [
     lang.userPromptHeading,
     buildContextSection(schema, lang, jurisdiction),
+    // Statutory requirements for this contract type. Czech only — the knowledge
+    // base covers CZ law, and half-applying it to DE or UK would be worse than
+    // leaving those jurisdictions on the schema's own instructions.
+    ...(jurisdiction === 'CZ'
+      ? [renderKnowledgeForDrafting(schema.metadata.contractFamily)]
+      : []),
     buildDataSection(schema, data, missingSet, lang, jurisdiction),
     buildMissingSection(schema, data, missingFields, lang, jurisdiction),
     buildInstructionSection(mode, lang),

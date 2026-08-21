@@ -35,24 +35,19 @@ export const kupniSmlouva: ContractSchema = {
       requiresSignature: true,
       defaultJurisdictionClause: 'Obecný soud dle místa bydliště/sídla žalovaného (CPC)',
     },
+    // Zákonné požadavky nejsou zde — jsou v lib/legal/knowledge a vkládají se
+    // do uživatelského promptu. Zde zůstávají jen pokyny ke stylu a pravidla
+    // proti vymýšlení obsahu, která nejsou právní úpravou.
     aiInstructions:
-      'Generuj kupní smlouvu výhradně dle § 2079–2183 NOZ.\n\n' +
-      'POVINNÝ CHECKLIST KLAUZULÍ pro kupní smlouvu:\n' +
-      '1. Identifikace smluvních stran — přesné údaje dle zadání, žádné vymyšlené\n' +
-      '2. Předmět koupě — určitý a podrobný popis předmětu včetně identifikačních znaků\n' +
-      '3. Kupní cena — přesná výše, způsob a termín úhrady; u splátek harmonogram\n' +
-      '4. Přechod vlastnického práva — výslovné ujednání okamžiku přechodu (§ 1099 NOZ)\n' +
-      '5. Předání předmětu koupě — místo, způsob a termín předání; předávací protokol\n' +
-      '6. Prohlášení prodávajícího — že je vlastníkem, předmět není zatížen právy třetích osob\n' +
-      '7. Odpovědnost za vady — práva z vadného plnění dle § 2099–2112 NOZ, lhůty pro uplatnění\n' +
-      '8. Nebezpečí škody na věci — přechod nebezpečí při předání (§ 2121 NOZ)\n' +
-      '9. Odstoupení od smlouvy — podmínky pro odstoupení dle § 2001–2005 NOZ\n' +
-      '10. Závěrečná ustanovení — rozhodné právo, řešení sporů, počet vyhotovení\n' +
-      '11. Podpisové bloky — pro obě smluvní strany\n\n' +
-      'PRÁVNÍ POZNÁMKY:\n' +
-      '- U spotřebitelského prodeje dodržuj § 2158–2174 NOZ (zvláštní ochrana spotřebitele)\n' +
+      'Generuj kupní smlouvu výhradně dle § 2079–2183 NOZ.\n' +
+      'Zákonné požadavky na tento typ smlouvy najdeš v sekci „Právní požadavky" ' +
+      'v zadání — projdi ji celou a řiď se jí.\n\n' +
+      'POKYNY KE ZPRACOVÁNÍ:\n' +
       '- Kupní cenu uváděj číselně i slovy\n' +
-      '- Nevymýšlej smluvní pokuty, úroky z prodlení ani jiné sankce, pokud nejsou v zadání',
+      '- Předmět koupě popiš tak podrobně, jak to zadání dovoluje; chybějící ' +
+      'identifikační údaj nahraď placeholderem, nikdy jej nedomýšlej\n' +
+      '- Nevymýšlej smluvní pokuty, úroky z prodlení ani jiné sankce, pokud nejsou v zadání\n' +
+      '- Nikdy nepoužívej slovenskou právní terminologii',
   },
 
   parties: [

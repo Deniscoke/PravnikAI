@@ -9,19 +9,65 @@ v modelu ani v promptu — nikdo se prostě neptal, jestli ta čísla ještě pl
 
 ---
 
-## 1. Kde hodnoty žijí
+## 1. Kde právní znalosti žijí
 
-Všechny zákonné hodnoty jsou na jediném místě:
+Právní obsah aplikace má **dvě vrstvy** a obě jsou jediným zdrojem pravdy pro to,
+co pokrývají.
 
-```
-lib/legal/czechLegalFacts.ts
-```
+### 1.1 Čísla — `lib/legal/czechLegalFacts.ts`
 
-Každá nese ustanovení, datum účinnosti, zdroj a **datum posledního ověření člověkem**.
+Minimální mzda, zkušební doba, jistota, limit hotovosti. Každá hodnota nese
+ustanovení, datum účinnosti, zdroj a **datum posledního ověření člověkem**.
 Validátory, schémata i prompty z ní jen čtou — nikde jinde se číslo nepíše natvrdo.
 
-Test `lib/legal/__tests__/czechLegalFacts.test.ts` upozorní, jakmile je některá hodnota
-neověřená déle než **rok**. Ten test má selhat — je to připomínka, ne chyba.
+### 1.2 Pravidla — `lib/legal/knowledge/`
+
+```
+types.ts                 typový systém (viz níže)
+common.ts                pravidla platná pro každou smlouvu
+profiles/sale.ts         kupní smlouva
+profiles/tenancy.ts      nájem bytu
+profiles/employment.ts   pracovní smlouva
+profiles/services.ts     smlouva o dílo
+profiles/nda.ts          dohoda o mlčenlivosti
+index.ts                 registr + renderery pro prompty
+```
+
+Každé pravidlo nese požadavek, **následek jeho porušení**, citaci ustanovení
+a volitelně to, co má kontrola v hotovém textu hledat.
+
+**Následek je uzavřený typ, ne volný text.** České právo rozlišuje neplatnost
+(vada při vzniku), zdánlivost („nepřihlíží se") a porušení smlouvy zakládající
+právo odstoupit. Model tyto instituty opakovaně zaměňoval a výsledek zněl
+sebejistě a byl nesprávný. Tím, že si následek nemůže zvolit sám, tato chyba
+zmizela z principu.
+
+### 1.3 Kdo z toho čte
+
+| Vrstva | Generování smlouvy | Kontrola smlouvy |
+|---|---|---|
+| `czechLegalFacts` | validátory, schémata, prompty | validátory |
+| `knowledge` | `renderKnowledgeForDrafting()` | `renderKnowledgeForReview()` |
+
+Renderery jsou **oddělené záměrně**: generátor dostane jen požadavky, kontrola
+jen kontrolní body. Znalost se píše jednou, do promptu jde vždy jen jeho polovina —
+tyto texty se posílají při každém požadavku a tvoří provozní náklad produktu.
+
+> **Schémata už zákonné požadavky neobsahují.** V `aiInstructions` zůstaly pouze
+> pokyny ke stylu a pravidla proti vymýšlení obsahu. Právní checklist tam byl
+> duplicitně a duplicity se časem rozejdou — přesně to je chyba, kterou tento
+> dokument řeší.
+
+### 1.4 Testy stáří
+
+`lib/legal/__tests__/czechLegalFacts.test.ts` a
+`lib/legal/knowledge/__tests__/knowledge.test.ts` upozorní, jakmile je hodnota
+nebo profil neověřený déle než **rok**. Ty testy mají selhat — je to připomínka,
+ne chyba.
+
+Druhý z nich navíc hlídá, že podstatná náležitost nikdy nemá následek
+„doporučeno", že zakázané ujednání vždy nese skutečnou sankci a že se do znalostní
+báze nedostane konkrétní procento úroku z prodlení (mění se každé pololetí).
 
 ---
 
@@ -35,6 +81,11 @@ neověřená déle než **rok**. Ten test má selhat — je to připomínka, ne 
 | **zák. č. 254/2004 Sb.** | limit plateb v hotovosti | e-Sbírka |
 | **zák. č. 85/1996 Sb.** (o advokacii) | vymezení, co *není* právní služba — týká se provozovatele | e-Sbírka |
 | **GDPR / zák. č. 110/2019 Sb.** | zpracování osobních údajů | [ÚOOÚ](https://www.uoou.cz) |
+| **nař. vlády č. 351/2013 Sb.** | úrok z prodlení — **vzorec**, nikdy pevné procento (repo ČNB + 8 p. b., mění se pololetně) | [ČNB](https://www.cnb.cz/) |
+| **zák. č. 216/1994 Sb.** | rozhodčí doložka — od 1. 12. 2016 zakázaná ve spotřebitelských smlouvách | e-Sbírka |
+| **nař. vlády č. 308/2015 Sb.** | vymezení běžné údržby a drobných oprav v nájmu | e-Sbírka |
+| **zák. č. 256/2013 Sb.** (katastrální) | vklad vlastnického práva k nemovitosti | [ČÚZK](https://www.cuzk.cz) |
+| **zák. č. 56/2001 Sb.** | přepis vozidla v registru | e-Sbírka |
 
 ---
 
@@ -73,12 +124,17 @@ Je to nejrychleji zastarávající hodnota v celém systému.
 ## 5. Postup při změně zákona
 
 1. Ověř novou hodnotu v oficiálním zdroji (ne v článku na zpravodajském webu).
-2. Uprav `value` a `effectiveFrom` v `lib/legal/czechLegalFacts.ts`.
-3. Nastav `lastVerified` na dnešní datum.
+2. **Jde-li o číslo** — uprav `value` a `effectiveFrom` v `lib/legal/czechLegalFacts.ts`.
+   **Jde-li o pravidlo** — uprav dotčené pravidlo v `lib/legal/knowledge/`; zkontroluj,
+   zda se nezměnil i jeho `consequence`.
+3. Nastav `lastVerified` na dnešní datum — u hodnoty i u celého profilu.
 4. Spusť `npm test` — část testů na hodnotách schválně trvá, takže uvidíš, co se rozjelo.
-5. Projdi texty, které hodnotu **popisují slovy** (SEO stránky `lib/seo/contractGuides.ts`,
-   instrukce pro AI v `lib/contracts/schemas/`) — ty se z konstanty negenerují vždy.
+5. Projdi texty, které hodnotu **popisují slovy** (SEO stránky `lib/seo/contractGuides.ts`)
+   — ty se z konstanty negenerují vždy.
 6. Nasaď a zaznamenej změnu do commit message i sem, pokud šlo o věcnou novelu.
+
+> Změnil-li se výklad, ale ne text zákona, stačí upravit `reviewCheck` — kontrola
+> pak hledá nový jev, aniž by se měnil samotný požadavek.
 
 ---
 
@@ -86,6 +142,7 @@ Je to nejrychleji zastarávající hodnota v celém systému.
 
 | Datum | Změna | Dopad |
 |---|---|---|
+| 2026-08-21 | Zavedena `lib/legal/knowledge` — pravidla pro pět smluvních typů; kontrola smluv poprvé dostává typový checklist | Zrušen duplicitní checklist ve schématech; opravena formulace u § 2239 (nešlo o neplatnost, ale o zdánlivost) |
 | 2026-08-21 | Zavedena `czechLegalFacts` jako jediný zdroj pravdy | Opraveny tři zastaralé hodnoty najednou |
 | 2026-01-01 | Minimální mzda 22 400 Kč (indexace) | `MINIMUM_MONTHLY_WAGE_CZK` |
 | 2025-06-01 | Flexinovela ZP (zák. č. 120/2025 Sb.): zkušební doba 4/8 měsíců, výpovědní doba běží od doručení | `PROBATION_MAX_MONTHS`, texty ke zkušební a výpovědní době |

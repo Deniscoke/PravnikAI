@@ -6,9 +6,19 @@
  * The LLM receives pasted contract text and returns structured risk analysis
  * as JSON matching ReviewContractResponse.
  *
+ * The review used to run on general instructions alone, with no idea which
+ * contract type it was looking at. That is why it could flag a contract this
+ * app had itself generated: the drafter worked from a statutory checklist and
+ * the reviewer worked from nothing. Both now read the same knowledge base in
+ * lib/legal/knowledge — the reviewer gets the half of it phrased as things to
+ * look for.
+ *
  * Provider-agnostic — no LLM SDK coupling. Only lib/llm/openaiClient.ts
  * knows which provider is used.
  */
+
+import { renderKnowledgeForReview, resolveContractFamily } from '@/lib/legal/knowledge'
+import type { ContractFamily } from '@/lib/contracts/types'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -113,8 +123,21 @@ Vrať VÝHRADNĚ validní JSON objekt (bez markdown, bez komentářů) s touto s
 
 // ─── User prompt builder ──────────────────────────────────────────────────────
 
+/**
+ * Works out which statutory checklist applies. The user's own label is trusted
+ * first — they know what they signed — and the contract text is only consulted
+ * when they gave no hint or the hint matched nothing.
+ */
+function detectFamily(input: ReviewPromptInput): ContractFamily | null {
+  return (
+    (input.contractTypeHint ? resolveContractFamily(input.contractTypeHint) : null) ??
+    resolveContractFamily(input.contractText)
+  )
+}
+
 export function buildReviewPrompt(input: ReviewPromptInput): BuiltReviewPrompt {
   const sections: string[] = []
+  const family = detectFamily(input)
 
   // Section A — Contract type context
   if (input.contractTypeHint) {
@@ -137,6 +160,10 @@ export function buildReviewPrompt(input: ReviewPromptInput): BuiltReviewPrompt {
     `---\n${input.contractText}\n---`
   )
 
+  // Section B2 — Statutory checklist for this contract type.
+  // Placed after the contract text so it sits closest to the model's answer.
+  sections.push(renderKnowledgeForReview(family))
+
   // Section C — Analysis instructions
   sections.push(
     `## Instrukce pro analýzu\n\n` +
@@ -154,7 +181,11 @@ export function buildReviewPrompt(input: ReviewPromptInput): BuiltReviewPrompt {
     `jako právní poradenství ve smyslu zák. č. 85/1996 Sb., o advokacii. ` +
     `Před právním jednáním na základě této analýzy konzultujte advokáta."\n` +
     `7. Do "legalBasis" uveď všechna zákonná ustanovení, na která odkazuješ.\n` +
-    `8. Do "reviewMode" vždy uveď "ai-assisted-review".`
+    `8. Do "reviewMode" vždy uveď "ai-assisted-review".\n` +
+    `9. Kontrolní seznam výše je závazný. Zjištění, které v něm má uvedený následek, ` +
+    `popiš přesně tímto následkem a cituj u něj uvedené ustanovení. Nevymýšlej jiný.\n` +
+    `10. Kontrolní seznam není osnova výstupu. Uveď jen body, které v tomto konkrétním ` +
+    `textu skutečně chybí nebo jsou vadné — bod, který je ve smlouvě v pořádku, nehlas.`
   )
 
   // Section D — Safety constraints (last for recency weight)
