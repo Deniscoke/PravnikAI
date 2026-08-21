@@ -58,7 +58,39 @@ tyto texty se posílají při každém požadavku a tvoří provozní náklad pr
 > duplicitně a duplicity se časem rozejdou — přesně to je chyba, kterou tento
 > dokument řeší.
 
-### 1.4 Testy stáří
+### 1.4 Hlídač překonané úpravy — `lib/legal/staleLawGuard.ts`
+
+Model má nastudovaný **český internet z doby před flexinovelou** mnohotisíckrát,
+současné znění řádově méně. I když v promptu dostane správnou hodnotu, ve volném
+textu sáhne po formulaci, kterou zná — „zkušební doba nejvýše 3 měsíce".
+
+Hlídač hledá **šest konkrétních zrušených tvrzení**:
+
+| Tvrzení | Platilo do | Dnes |
+|---|---|---|
+| Zkušební doba nejvýše 3 (6) měsíců | 31. 5. 2025 | 4 (8) měsíců |
+| Výpovědní doba začíná prvním dnem dalšího měsíce | 31. 5. 2025 | běží od doručení |
+| Minimální mzda 18 900 Kč a starší | 31. 12. 2025 | 22 400 Kč |
+| Jistota až šestinásobek nájemného | 30. 6. 2020 | trojnásobek |
+| Limit hotovosti 350 000 Kč | 2018 | 270 000 Kč |
+| „Ze zákona záruka 24 měsíců" | 5. 1. 2023 | práva z vadného plnění, 2 roky |
+
+Pracuje **proximitně, ne podle klíčových slov**. Každé z těch čísel je někde
+zcela správné — „tři měsíce" je správná výpovědní doba u nájmu bytu. Pravidlo
+se spustí jen tehdy, když se zastaralá hodnota objeví *společně* s tématem,
+o kterém by byla nesprávná, v krátkém úseku textu. Falešný poplach je horší než
+přehlédnutí: zamlčel by správnou formulaci a uživateli tvrdil, že jeho v pořádku
+sepsaná smlouva je vadná.
+
+Kde se uplatní:
+
+- **generování** — nález je chyba a smlouva se přeřadí na `review-needed`
+- **kontrola** — navrhované znění s překonanou úpravou se uživateli vůbec nezobrazí
+
+> Přibude-li novela, přidej pravidlo sem. Je to nejlevnější místo, kde jde
+> zastaralou právní znalost zachytit — funguje i tehdy, když prompt selže.
+
+### 1.5 Testy stáří
 
 `lib/legal/__tests__/czechLegalFacts.test.ts` a
 `lib/legal/knowledge/__tests__/knowledge.test.ts` upozorní, jakmile je hodnota

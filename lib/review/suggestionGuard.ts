@@ -14,7 +14,11 @@
  * remedy the law recognises.
  *
  * The prompt says the same thing, but a prompt is a request, not a guarantee.
+ *
+ * It also refuses wording that repeats superseded law — see lib/legal/staleLawGuard.
  */
+
+import { findStaleLaw } from '@/lib/legal/staleLawGuard'
 
 /** Non-performance being described. */
 const NON_PERFORMANCE = /nezaplac|neuhraz|nezaplat|neuhrad|prodlen[ií]|nedodrž/i
@@ -38,9 +42,24 @@ export function hasIncoherentInvalidityRemedy(text: string): boolean {
  */
 export function sanitizeSuggestion(suggestion: string | undefined): string | undefined {
   if (!suggestion) return undefined
+
   if (hasIncoherentInvalidityRemedy(suggestion)) {
     console.warn('[review] Withheld a suggested wording tying non-payment to invalidity')
     return undefined
   }
+
+  // Wording that repeats repealed law is the worst possible output here: it is
+  // specific, quotable, and wrong. Better to leave the user with the finding
+  // and no draft clause than with a clause from a law that no longer applies.
+  const stale = findStaleLaw(suggestion)
+  if (stale.length > 0) {
+    console.warn(
+      `[review] Withheld a suggested wording repeating superseded law: ${stale
+        .map((f) => f.id)
+        .join(', ')}`,
+    )
+    return undefined
+  }
+
   return suggestion
 }

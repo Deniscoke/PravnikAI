@@ -360,3 +360,95 @@ describe('8 — extractIntegrityWarnings', () => {
     }
   })
 })
+
+// ─── Legal soundness of the generated text ────────────────────────────────────
+
+/**
+ * These two checks exist because the model's training data is full of Czech law
+ * as it stood before 2025. Told the current rule in the prompt, it still reaches
+ * for the phrasing it has seen thousands of times when it writes prose.
+ */
+describe('superseded law in generated output', () => {
+  const withStaleProbation = `PRACOVNÍ SMLOUVA
+
+Článek I. — Smluvní strany
+Zaměstnavatel: ACME Czech s.r.o.
+
+Článek II. — Druh práce
+Druh práce: programátor. Místo výkonu práce: Praha. Den nástupu: 1. 9. 2026.
+
+Článek III. — Mzda
+Mzda činí 45 000 Kč měsíčně.
+
+Článek IV. — Zkušební doba
+Zkušební doba činí nejvýše 3 měsíce.
+
+Článek V. — Výpovědní doba
+Výpovědní doba činí dva měsíce.
+
+Podpis zaměstnavatele: _______________
+Podpis zaměstnance: _______________`
+
+  it('flags a repealed probation limit as an error', () => {
+    const result = runIntegrityCheck(withStaleProbation, 'pracovni-smlouva-v1', 'CZ', 'complete')
+    const issue = result.issues.find((i) => i.code === 'SUPERSEDED_LAW')
+    expect(issue).toBeDefined()
+    expect(issue?.severity).toBe('error')
+    expect(issue?.message).toMatch(/4 měsíce/)
+  })
+
+  it('forces the result to review-needed rather than draft', () => {
+    // Quoting a repealed rule is not a tidying-up job — it is wrong on the
+    // merits, and calling it a "draft" would understate that.
+    const result = runIntegrityCheck(withStaleProbation, 'pracovni-smlouva-v1', 'CZ', 'complete')
+    expect(applyIntegrityDecision('complete', result)).toBe('review-needed')
+  })
+
+  it('leaves a contract stating the current limit alone', () => {
+    const current = withStaleProbation.replace('nejvýše 3 měsíce', 'nejvýše 4 měsíce')
+    const result = runIntegrityCheck(current, 'pracovni-smlouva-v1', 'CZ', 'complete')
+    expect(result.issues.some((i) => i.code === 'SUPERSEDED_LAW')).toBe(false)
+  })
+})
+
+describe('contractual penalty in a residential lease', () => {
+  const lease = `NÁJEMNÍ SMLOUVA
+
+Článek I. — Předmět nájmu
+Byt č. 4, Dlouhá 12, Praha 1.
+
+Článek II. — Nájemné
+Nájemné činí 18 000 Kč měsíčně. Jistota činí trojnásobek nájemného.
+
+Článek III. — Výpovědní podmínky
+Výpovědní doba činí tři měsíce.
+
+Článek IV. — Sankce
+Při prodlení s úhradou nájemného se sjednává smluvní pokuta ve výši 0,5 % denně.
+
+Podpis pronajímatele: _______________
+Podpis nájemce: _______________`
+
+  it('flags it — § 2239 disregards the clause entirely', () => {
+    const result = runIntegrityCheck(lease, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
+    const issue = result.issues.find((i) => i.code === 'TENANCY_PENALTY_CLAUSE')
+    expect(issue).toBeDefined()
+    expect(issue?.message).toMatch(/2239/)
+    expect(applyIntegrityDecision('complete', result)).toBe('review-needed')
+  })
+
+  it('does not flag the same clause in a sale contract, where it is lawful', () => {
+    const sale = GOOD_KUPNI + '\n\nPři prodlení se sjednává smluvní pokuta ve výši 0,05 % denně.'
+    const result = runIntegrityCheck(sale, 'kupni-smlouva-v1', 'CZ', 'complete')
+    expect(result.issues.some((i) => i.code === 'TENANCY_PENALTY_CLAUSE')).toBe(false)
+  })
+
+  it('accepts a lease with no penalty clause', () => {
+    const clean = lease.replace(
+      'Při prodlení s úhradou nájemného se sjednává smluvní pokuta ve výši 0,5 % denně.',
+      'Při prodlení s úhradou nájemného náleží pronajímateli zákonný úrok z prodlení.',
+    )
+    const result = runIntegrityCheck(clean, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
+    expect(result.issues.some((i) => i.code === 'TENANCY_PENALTY_CLAUSE')).toBe(false)
+  })
+})

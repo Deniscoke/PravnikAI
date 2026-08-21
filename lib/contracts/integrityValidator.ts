@@ -20,6 +20,10 @@
 
 import type { GenerationMode, DraftingPosture, Jurisdiction } from './types'
 import { getPromptBundle } from './prompts'
+import { findStaleLaw } from '@/lib/legal/staleLawGuard'
+
+/** Schemas that are residential leases, where § 2239 NOZ applies. */
+const TENANCY_SCHEMA_IDS = new Set(['najemni-smlouva-byt-v1'])
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -277,6 +281,33 @@ function runIntegrityCheckCore(
     issues.push(...checkConsumerPostureConflict(text))
   }
 
+  // ── 6. Superseded law ─────────────────────────────────────────────────────
+  // The model has read the pre-2025 Czech internet far more often than the
+  // current one, so it reaches for repealed wording even when the prompt
+  // carries the right value. This catches it in the output.
+  if (jurisdiction === 'CZ') {
+    for (const stale of findStaleLaw(text)) {
+      issues.push({
+        code: 'SUPERSEDED_LAW',
+        message: `Text uvádí překonanou úpravu: ${stale.claim} ${stale.correction}`,
+        severity: 'error',
+      })
+    }
+  }
+
+  // ── 7. Contractual penalty against a residential tenant ───────────────────
+  // § 2239 NOZ disregards it outright. A generated lease containing one gives
+  // the landlord a clause that does nothing and the tenant a false worry.
+  if (jurisdiction === 'CZ' && TENANCY_SCHEMA_IDS.has(schemaId) && /smluvn[íi]\s+pokut/i.test(text)) {
+    issues.push({
+      code: 'TENANCY_PENALTY_CLAUSE',
+      message:
+        'Smlouva obsahuje smluvní pokutu k tíži nájemce — podle § 2239 zák. č. 89/2012 Sb. ' +
+        'se k takovému ujednání nepřihlíží. Pronajímateli zůstává zákonný úrok z prodlení.',
+      severity: 'error',
+    })
+  }
+
   // ── Compute overall severity ──────────────────────────────────────────────
   const hasErrors = issues.some((i) => i.severity === 'error')
   const hasWarnings = issues.some((i) => i.severity === 'warning')
@@ -333,6 +364,16 @@ export function applyIntegrityDecision(mode: GenerationMode, result: IntegrityRe
     (i) => i.severity === 'error' && i.code === 'MISSING_ESSENTIAL_KEYWORD',
   )
   if (missingEssential) {
+    forcedMode = maxMode(forcedMode, 'review-needed', PRIORITY)
+  }
+
+  // A contract quoting repealed law, or carrying a clause the law disregards,
+  // is not a draft somebody can tidy up — it is wrong on the merits. Labelling
+  // it 'draft' would understate that.
+  const legallyUnsound = result.issues.some(
+    (i) => i.code === 'SUPERSEDED_LAW' || i.code === 'TENANCY_PENALTY_CLAUSE',
+  )
+  if (legallyUnsound) {
     forcedMode = maxMode(forcedMode, 'review-needed', PRIORITY)
   }
 
