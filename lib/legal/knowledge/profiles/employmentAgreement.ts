@@ -150,7 +150,10 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 141 ve spojení s § 77 odst. 2 zák. č. 262/2006 Sb.',
       reviewCheck:
-        'Splatnost odsunutá dále než do konce následujícího měsíce, nebo zcela chybějící.',
+        'Konec následujícího měsíce je zákonné MAXIMUM, nikoli cíl. Dřívější termín ' +
+        '(např. do 15. nebo 20. dne) je pro zaměstnance VÝHODNĚJŠÍ — nikdy jej nenavrhuj ' +
+        'prodloužit. Vadou je jen splatnost pozdější než zákonné maximum, nebo úplně ' +
+        'chybějící termín.',
     },
 
     // ─── Dovolená — jiný režim než u pracovního poměru ───────────────────────

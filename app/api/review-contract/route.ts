@@ -28,6 +28,7 @@ import {
   filterLegalBasis,
 } from '@/lib/review/citationGuard'
 import { detectContractFamily } from '@/lib/review/reviewPromptBuilder'
+import { triageRiskyClauses } from '@/lib/review/findingTriage'
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 import type { ReviewContractRequest, ReviewContractResponse } from '@/lib/review/types'
@@ -150,13 +151,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // dropped, not softened. A dohoda reviewed against § 213 and § 51 produced two
   // high-severity defects in a lawful contract; nothing in that reasoning
   // survives removing the provision it started from.
-  const riskyClauses = dropInapplicableFindings(
-    Array.isArray(parsed.riskyClauses)
-      ? parsed.riskyClauses.map(normalizeRiskyClause).filter(isValidRiskyClause)
-      : [],
-    family,
-    'risky clause',
+  // A finding whose own explanation concludes the clause is lawful is not a
+  // risk. It keeps its substance but moves to the negotiation points, where
+  // "lawful but could be sharper" belongs.
+  const triaged = triageRiskyClauses(
+    dropInapplicableFindings(
+      Array.isArray(parsed.riskyClauses)
+        ? parsed.riskyClauses.map(normalizeRiskyClause).filter(isValidRiskyClause)
+        : [],
+      family,
+      'risky clause',
+    ),
   )
+  const riskyClauses = triaged.risky
 
   const missingClauses = dropInapplicableFindings(
     Array.isArray(parsed.missingClauses)
@@ -171,9 +178,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     summary: String(parsed.summary),
     riskyClauses,
     missingClauses,
-    negotiationFlags: Array.isArray(parsed.negotiationFlags)
-      ? parsed.negotiationFlags.filter(isNonEmptyString).map(String)
-      : [],
+    negotiationFlags: [
+      ...(Array.isArray(parsed.negotiationFlags)
+        ? parsed.negotiationFlags.filter(isNonEmptyString).map(String)
+        : []),
+      ...triaged.movedToNegotiation,
+    ],
     lawyerReviewRequired: Boolean(parsed.lawyerReviewRequired ?? true),
     disclaimer: String(
       parsed.disclaimer ??
