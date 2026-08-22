@@ -33,6 +33,7 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
         'dokumentaci nebo specifikaci a učiň ji přílohou smlouvy.',
       consequence: 'nevznikne',
       law: '§ 2586 odst. 1 a § 553 zák. č. 89/2012 Sb.',
+      detect: /předmět\w*\s+díla|dílem\s+se\s+rozumí|specifikac\w*\s+díla/i,
       reviewCheck:
         'Dílo popsané obecně („rekonstrukce koupelny") bez rozsahu prací, materiálů ' +
         'a kvalitativních parametrů — nejčastější příčina sporů u stavebních zakázek.',

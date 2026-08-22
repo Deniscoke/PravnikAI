@@ -35,6 +35,15 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
     'Práce konaná mimo pracovní poměr. Nezakládá pracovní poměr, a proto se na ni ' +
     'nevztahují ustanovení o pracovní smlouvě, výpovědi ani o dovolené podle § 213.',
   lastVerified: '2026-08-22',
+  // Every one of these was cited against a real, lawful dohoda.
+  inapplicable: [
+    { section: '213', law: '262/2006', why: 'Dovolená u dohody se řídí § 77 odst. 8, nikoli § 213 — nárok vzniká až při trvání alespoň 28 dní a 80 odpracovaných hodinách.' },
+    { section: '51', law: '262/2006', why: 'Výpovědní doba podle § 51 platí pro pracovní poměr. Dohoda se ruší podle § 77 odst. 4 s patnáctidenní lhůtou.' },
+    { section: '50', law: '262/2006', why: 'Úprava výpovědi z pracovního poměru se na dohodu nevztahuje.' },
+    { section: '34', law: '262/2006', why: 'Podstatné náležitosti pracovní smlouvy podle § 34 se na dohodu nevztahují.' },
+    { section: '52', law: '262/2006', why: 'Výpovědní důvody zaměstnavatele se na dohodu nevztahují — lze ji zrušit i bez důvodu.' },
+    { section: '67', law: '262/2006', why: 'Odstupné se u dohody neposkytuje.' },
+  ],
   sources: [
     'https://www.zakonyprolidi.cz/cs/2006-262 (§ 74–77)',
     'https://mpsv.gov.cz/ — rozvrhování pracovní doby u dohod, minimální mzda',
@@ -98,6 +107,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 75 zák. č. 262/2006 Sb.',
       appliesWhen: 'Jde o dohodu o provedení práce (DPP), nikoli o pracovní činnosti.',
+      detect: /300\s*hodin/i,
       reviewCheck:
         `Sjednaný rozsah nad ${DPP_MAX_HOURS_PER_YEAR} hodin ročně, nebo úplně chybějící ` +
         'ujednání o rozsahu — bez něj nelze ověřit dodržení zákonného limitu.',
@@ -126,6 +136,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
         'Pro řadu prací je závazná vyšší zaručená mzda.',
       consequence: 'neplatnost',
       law: MINIMUM_HOURLY_WAGE_CZK.law,
+      detect: /odměn\w*|za\s+hodinu|Kč\s*\/\s*hod/i,
       reviewCheck:
         `Hodinová odměna nižší než ${MINIMUM_HOURLY_WAGE_CZK.value.toLocaleString('cs-CZ')} Kč. ` +
         'Vyšší sazba není vadou — zkontroluj jen, zda není pod minimem.',

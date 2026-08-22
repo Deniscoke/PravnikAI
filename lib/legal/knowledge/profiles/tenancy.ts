@@ -49,6 +49,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
         'nepřiměřená.',
       consequence: 'neprihlizi-se',
       law: '§ 2239 zák. č. 89/2012 Sb.',
+      detect: /smluvn[íi]\s+pokut/i,
       reviewCheck:
         'Přítomnost jakékoli smluvní pokuty vůči nájemci — za prodlení s nájemným, ' +
         'za předčasné ukončení, za porušení domovního řádu. Zákon k ní nepřihlíží. ' +
@@ -63,6 +64,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
         'od jejího poskytnutí.',
       consequence: 'neprihlizi-se',
       law: RENT_DEPOSIT_MAX_MULTIPLE.law,
+      detect: /jistot\w*|kauc\w*/i,
       reviewCheck:
         `Kauce vyšší než ${RENT_DEPOSIT_MAX_MULTIPLE.value} měsíční nájmy; ujednání ` +
         'vylučující úroky z jistoty nebo umožňující ji nevrátit.',
@@ -87,6 +89,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
         'a zálohy na služby — jde o dvě různé platby s odlišným režimem.',
       consequence: 'nevznikne',
       law: '§ 2235 odst. 1 a § 2246 zák. č. 89/2012 Sb.',
+      detect: /nájemn[ée]/i,
       reviewCheck:
         'Jedna souhrnná částka „nájemné včetně všeho" bez rozlišení služeb — ' +
         'znemožňuje vyúčtování a je v neprospěch nájemce.',

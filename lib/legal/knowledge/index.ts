@@ -111,21 +111,50 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
  * falls back to the common rules, which is always safe. Guessing wrong is not:
  * the wrong checklist reports lawful clauses as defects.
  */
+/**
+ * Lowercases and strips diacritics.
+ *
+ * Transcription from a photograph loses accents when the image is poor, and a
+ * document that reads "dohoda o provedeni prace" is still a dohoda. Comparing
+ * both sides stripped costs nothing and removes a whole class of misreads.
+ */
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // combining marks left by NFD
+}
+
+/**
+ * True when the phrase appears at the start of a word.
+ *
+ * A plain substring search put "nda" inside "kalendarnim" and classified a
+ * dohoda as an NDA. Anchoring the front stops that; leaving the back open keeps
+ * Czech inflection working, so "zamestnanec" still matches "zamestnancem".
+ */
+function containsPhrase(haystack: string, phrase: string): boolean {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`\\b${escaped}`).test(haystack)
+}
+
 export function resolveContractFamily(text: string): LegalProfileKey | null {
   if (!text) return null
-  const haystack = text.toLowerCase()
+  const haystack = normalize(text)
 
   // A document that names its own type has answered the question — unless two
   // of them do, which is genuine ambiguity rather than a race won by list order.
   const named = FAMILY_SIGNALS.filter(({ decisive }) =>
-    decisive.some((phrase) => haystack.includes(phrase)),
+    decisive.some((phrase) => containsPhrase(haystack, normalize(phrase))),
   )
   if (named.length === 1) return named[0].family
   if (named.length > 1) return null
 
   const scores = FAMILY_SIGNALS.map(({ family, supporting }) => ({
     family,
-    score: supporting.reduce((total, kw) => (haystack.includes(kw) ? total + 1 : total), 0),
+    score: supporting.reduce(
+      (total, kw) => (containsPhrase(haystack, normalize(kw)) ? total + 1 : total),
+      0,
+    ),
   })).filter((entry) => entry.score > 0)
 
   if (scores.length === 0) return null

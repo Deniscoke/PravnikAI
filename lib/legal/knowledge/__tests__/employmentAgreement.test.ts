@@ -70,6 +70,25 @@ describe('type detection', () => {
     expect(resolveContractFamily('DOHODA O PRACOVNÍ ČINNOSTI')).toBe('employment-agreement')
   })
 
+  it('still recognises the type when a photo lost the diacritics', () => {
+    // Transcription from a poor photograph drops accents. The document is no
+    // less a dohoda for it, and misreading it costs the user a wrong review.
+    expect(resolveContractFamily('DOHODA O PROVEDENI PRACE')).toBe('employment-agreement')
+    expect(resolveContractFamily('NAJEMNI SMLOUVA')).toBe('tenancy')
+    expect(resolveContractFamily('KUPNI SMLOUVA')).toBe('sale')
+  })
+
+  it('does not match a keyword buried inside another word', () => {
+    // "nda" sat inside "kalendarnim" and classified a dohoda as an NDA once the
+    // diacritics were gone. Short tokens have to start a word.
+    const dpp = `DOHODA O PROVEDENI PRACE
+rozsah prace v kalendarnim roce nepresahne 300 hodin`
+    expect(resolveContractFamily(dpp)).toBe('employment-agreement')
+    expect(resolveContractFamily('Objednatel vede agenda projektu, zhotovitel provede dilo')).not.toBe(
+      'nda',
+    )
+  })
+
   it('prefers the type a document names over the vocabulary it uses', () => {
     // A lease that mentions an employee is still a lease.
     const lease = 'NÁJEMNÍ SMLOUVA — nájemce je zaměstnanec pronajímatele, mzda 30000'

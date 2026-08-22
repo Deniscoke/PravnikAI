@@ -19,6 +19,7 @@
 
 import { renderKnowledgeForReview, resolveContractFamily } from '@/lib/legal/knowledge'
 import type { LegalProfileKey } from '@/lib/legal/knowledge'
+import { auditContract, renderAudit } from './structuralAudit'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ Vrať VÝHRADNĚ validní JSON objekt (bez markdown, bez komentářů) s touto s
  * first — they know what they signed — and the contract text is only consulted
  * when they gave no hint or the hint matched nothing.
  */
-function detectFamily(input: ReviewPromptInput): LegalProfileKey | null {
+export function detectContractFamily(input: ReviewPromptInput): LegalProfileKey | null {
   return (
     (input.contractTypeHint ? resolveContractFamily(input.contractTypeHint) : null) ??
     resolveContractFamily(input.contractText)
@@ -137,7 +138,7 @@ function detectFamily(input: ReviewPromptInput): LegalProfileKey | null {
 
 export function buildReviewPrompt(input: ReviewPromptInput): BuiltReviewPrompt {
   const sections: string[] = []
-  const family = detectFamily(input)
+  const family = detectContractFamily(input)
 
   // Section A — Contract type context
   if (input.contractTypeHint) {
@@ -163,6 +164,12 @@ export function buildReviewPrompt(input: ReviewPromptInput): BuiltReviewPrompt {
   // Section B2 — Statutory checklist for this contract type.
   // Placed after the contract text so it sits closest to the model's answer.
   sections.push(renderKnowledgeForReview(family))
+
+  // Section B3 — What a deterministic search of the text already established.
+  // Handing over verified observations turns "what is missing?" — an open
+  // question, and where invention happens — into "confirm these findings".
+  const audit = renderAudit(auditContract(input.contractText, family))
+  if (audit) sections.push(audit)
 
   // Section C — Analysis instructions
   sections.push(

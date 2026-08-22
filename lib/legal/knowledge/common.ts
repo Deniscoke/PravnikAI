@@ -151,6 +151,7 @@ export const COMMON_PROFILE: CommonLegalProfile = {
       consequence: 'neplatnost',
       law: 'zák. č. 216/1994 Sb. ve znění zák. č. 258/2016 Sb. (účinnost 1. 12. 2016)',
       appliesWhen: 'Jedna strana je spotřebitel.',
+      detect: /rozhodč[íi]\s+doložk|rozhodce/i,
       reviewCheck:
         'Přítomnost rozhodčí doložky ve smlouvě se spotřebitelem — od 1. 12. 2016 je zakázaná.',
     },

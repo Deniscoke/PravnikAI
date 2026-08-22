@@ -47,6 +47,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
         'Uveď měnu a zda jde o cenu včetně DPH.',
       consequence: 'nevznikne',
       law: '§ 2079 odst. 1 a § 2080 zák. č. 89/2012 Sb.',
+      detect: /kupní\s+cen|cena\s+činí|celková\s+cena/i,
       reviewCheck:
         'Cena „bude dohodnuta později" bez způsobu určení; chybějící údaj o DPH ' +
         'u podnikatele; cena bez uvedení měny.',
@@ -186,6 +187,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
         'nájemní práva, exekuce ani jiná práva třetích osob, nebo je výslovně uvést.',
       consequence: 'riziko',
       law: '§ 1920 a § 2123 zák. č. 89/2012 Sb.',
+      detect: /zástavn\w*|věcn\w*\s+břemen|exekuc\w*|práv\w*\s+třetích\s+osob/i,
       reviewCheck:
         'Chybí prohlášení o právních vadách — u nemovitosti a vozidla patří mezi ' +
         'nejzávažnější opomenutí.',

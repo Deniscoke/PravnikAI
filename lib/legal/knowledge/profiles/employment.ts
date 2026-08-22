@@ -66,6 +66,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       requirement: 'Druh práce, který má zaměstnanec vykonávat.',
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. a) zák. č. 262/2006 Sb.',
+      detect: /druh\s+práce|pracovní\s+pozic|funkc\w*/i,
       reviewCheck:
         'Druh práce vymezený tak široce, že umožňuje přidělit jakoukoli práci ' +
         '(„dle potřeb zaměstnavatele") — obchází ochranu při převedení na jinou práci.',
@@ -76,6 +77,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       requirement: 'Místo nebo místa výkonu práce.',
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. b) zák. č. 262/2006 Sb.',
+      detect: /místo\s+výkonu\s+práce|pracoviště/i,
       reviewCheck:
         'Místo určené jako „území České republiky" — zbavuje zaměstnance nároku ' +
         'na cestovní náhrady.',
@@ -86,6 +88,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       requirement: 'Den nástupu do práce; tímto dnem pracovní poměr vzniká.',
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. c) a § 36 zák. č. 262/2006 Sb.',
+      detect: /den\s+nástupu|nástup\w*\s+do\s+práce|datum\s+nástupu/i,
     },
 
     // ─── Mzda ────────────────────────────────────────────────────────────────

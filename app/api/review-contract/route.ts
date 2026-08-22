@@ -23,6 +23,11 @@ import { saveReviewToHistory } from '@/lib/supabase/actions'
 import { assertBillingAccess } from '@/lib/billing/guard'
 import { logAiUsage } from '@/lib/billing/aiUsageLog'
 import { sanitizeSuggestion } from '@/lib/review/suggestionGuard'
+import {
+  dropInapplicableFindings,
+  filterLegalBasis,
+} from '@/lib/review/citationGuard'
+import { detectContractFamily } from '@/lib/review/reviewPromptBuilder'
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit'
 import { formatOpenAiUserHint } from '@/lib/llm/userVisibleLlmError'
 import type { ReviewContractRequest, ReviewContractResponse } from '@/lib/review/types'
@@ -133,13 +138,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // ── 6. Build typed response (filter garbage, don't normalize it) ──────────
 
-  const riskyClauses = Array.isArray(parsed.riskyClauses)
-    ? parsed.riskyClauses.map(normalizeRiskyClause).filter(isValidRiskyClause)
-    : []
+  // Which body of law actually governs this document. The same answer the
+  // prompt was built from, so the guard below cannot disagree with the checklist
+  // the model was given.
+  const family = detectContractFamily({
+    contractText: body.contractText,
+    contractTypeHint: body.contractTypeHint,
+  })
 
-  const missingClauses = Array.isArray(parsed.missingClauses)
-    ? parsed.missingClauses.map(normalizeMissingClause).filter(isValidMissingClause)
-    : []
+  // Findings resting on a provision that does not govern this contract type are
+  // dropped, not softened. A dohoda reviewed against § 213 and § 51 produced two
+  // high-severity defects in a lawful contract; nothing in that reasoning
+  // survives removing the provision it started from.
+  const riskyClauses = dropInapplicableFindings(
+    Array.isArray(parsed.riskyClauses)
+      ? parsed.riskyClauses.map(normalizeRiskyClause).filter(isValidRiskyClause)
+      : [],
+    family,
+    'risky clause',
+  )
+
+  const missingClauses = dropInapplicableFindings(
+    Array.isArray(parsed.missingClauses)
+      ? parsed.missingClauses.map(normalizeMissingClause).filter(isValidMissingClause)
+      : [],
+    family,
+    'missing clause',
+  )
 
   const response: ReviewContractResponse = {
     overallRisk: validateRisk(parsed.overallRisk),
@@ -164,7 +189,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       ? parsed.assumptions.filter(isNonEmptyString).map(String)
       : undefined,
     legalBasis: Array.isArray(parsed.legalBasis)
-      ? parsed.legalBasis.filter(isNonEmptyString).map(String)
+      ? filterLegalBasis(parsed.legalBasis.filter(isNonEmptyString).map(String), family)
       : undefined,
     reviewMode: 'ai-assisted-review',
   }

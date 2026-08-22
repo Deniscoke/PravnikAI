@@ -102,6 +102,33 @@ export interface LegalRule {
    * consumers). Rendered verbatim so the model does not over-apply it.
    */
   appliesWhen?: string
+  /**
+   * Pattern that finds this element in a finished contract, letting the
+   * deterministic audit answer "is it there?" without asking the model.
+   *
+   * Present only where a match is genuinely reliable. A loose pattern is worse
+   * than none: the audit is presented to the model as established fact, so a
+   * false negative becomes a confidently reported missing clause.
+   */
+  detect?: RegExp
+}
+
+/**
+ * A provision that specifically does NOT govern this contract type.
+ *
+ * Exists because the damaging failure is not a missing citation but a
+ * plausible wrong one. A review of a dohoda cited § 213 and § 51 — real
+ * provisions, correctly quoted, and simply not applicable — and reported a
+ * lawful contract as defective twice over. Listing them lets that be caught
+ * deterministically.
+ */
+export interface InapplicableProvision {
+  /** Section number as it appears in citations, e.g. '213'. */
+  section: string
+  /** Act the section belongs to, e.g. '262/2006'. */
+  law: string
+  /** Shown to the user when a finding rests on it. */
+  why: string
 }
 
 export interface ContractLegalProfile {
@@ -113,6 +140,8 @@ export interface ContractLegalProfile {
   /** One-line description of what distinguishes this type. */
   characterisation: string
   rules: LegalRule[]
+  /** Provisions that do not govern this type, however plausible they look. */
+  inapplicable?: InapplicableProvision[]
   /** Where the rules were verified. */
   sources: string[]
   /** Date a human last checked this profile against the sources (ISO). */

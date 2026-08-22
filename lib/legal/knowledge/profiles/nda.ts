@@ -37,6 +37,7 @@ export const NDA_PROFILE: ContractLegalProfile = {
         'označení při předání. Musí být zjistitelné, co konkrétně mlčenlivosti podléhá.',
       consequence: 'neprihlizi-se',
       law: '§ 553 a § 1746 odst. 2 zák. č. 89/2012 Sb.',
+      detect: /důvěrn\w*\s+informac/i,
       reviewCheck:
         'Definice typu „veškeré informace, které strana obdrží" bez jakéhokoli omezení — ' +
         'pro neurčitost k ní nemusí být přihlédnuto a celá povinnost padá.',
