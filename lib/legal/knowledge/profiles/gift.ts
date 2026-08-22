@@ -36,25 +36,27 @@ export const GIFT_PROFILE: ContractLegalProfile = {
     {
       id: 'gift-predmet',
       kind: 'essential',
+      label: 'předmět daru',
       requirement:
         'Dar musí být určen nezaměnitelně. U nemovitosti údaji z katastru (obec, ' +
         'katastrální území, číslo parcely nebo jednotky, list vlastnictví); ' +
         'u vozidla VIN a SPZ; u peněz částka a měna.',
       consequence: 'nevznikne',
       law: '§ 2055 a § 553 zák. č. 89/2012 Sb.',
-      detect: /předmět\w*\s+dar|daruje|dar\w*\s+(nemovitost|věc|částk)/i,
+      detect: /předmět\S*\s+dar|daruje|dar\S*\s+(nemovitost|věc|částk)/i,
       reviewCheck: 'Dar popsaný jen druhově, bez identifikačních údajů.',
     },
     {
       id: 'gift-bezplatnost',
       kind: 'essential',
+      label: 'bezplatnost',
       requirement:
         'Ve smlouvě musí být zřejmé, že se převádí bezplatně. Je-li sjednáno ' +
         'jakékoli protiplnění, nejde o darování, ale o jiný smluvní typ — ' +
         'nejčastěji o koupi nebo směnu.',
       consequence: 'nevznikne',
       law: '§ 2055 odst. 1 zák. č. 89/2012 Sb.',
-      detect: /bezplatn\w*|bez\s+(jakéhokoli\w*\s+)?protiplnění|bez\s+úplaty/i,
+      detect: /bezplatn\S*|bez\s+(jakéhokoli\S*\s+)?protiplnění|bez\s+úplaty/i,
       reviewCheck:
         'Chybí výslovné vyjádření bezplatnosti, nebo naopak text obsahuje ' +
         'protiplnění — pak nejde o darování a použijí se jiná pravidla.',
@@ -62,12 +64,13 @@ export const GIFT_PROFILE: ContractLegalProfile = {
     {
       id: 'gift-prijeti',
       kind: 'essential',
+      label: 'přijetí daru',
       requirement:
         'Obdarovaný musí dar přijmout. Darování je dvoustranné právní jednání — ' +
         'jednostranné prohlášení dárce nestačí.',
       consequence: 'nevznikne',
       law: '§ 2055 odst. 1 zák. č. 89/2012 Sb.',
-      detect: /přijímá|dar\s+přijal|obdarovan\w*\s+přijímá/i,
+      detect: /přijímá|dar\s+přijal|obdarovan\S*\s+přijímá/i,
       reviewCheck: 'Chybí projev vůle obdarovaného dar přijmout.',
     },
 

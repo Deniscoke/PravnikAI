@@ -85,6 +85,12 @@ export interface LegalRule {
   /** The requirement itself, in Czech, phrased for a lay reader. */
   requirement: string
   consequence: LegalConsequence
+  /**
+   * Short name of the element, for messages that have no room for the full
+   * requirement — "kupní cena", "poučení o námitkách". Falls back to the rule
+   * id when absent, so it is only worth setting where a human will read it.
+   */
+  label?: string
   /** Provision this follows from. Always cite; never leave empty. */
   law: string
   /**

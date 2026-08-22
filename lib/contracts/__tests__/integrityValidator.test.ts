@@ -186,11 +186,19 @@ describe('3 — Essential keyword checks', () => {
     expect(result.missingEssentialKeywords).toHaveLength(0)
   })
 
-  it('kupní smlouva checks for vlastnické právo', () => {
-    // Replace all word-forms that contain 'vlastnick' to ensure the keyword is absent
-    const textWithoutOwnership = GOOD_KUPNI.replace(/vlastnick\w*/gi, 'NAHRAZENO')
-    const result = runIntegrityCheck(textWithoutOwnership, 'kupni-smlouva-v1', 'complete')
-    expect(result.missingEssentialKeywords.some((k) => k.includes('vlastnick'))).toBe(true)
+  it('kupní smlouva checks for the price, which is an essential element', () => {
+    const withoutPrice = GOOD_KUPNI.replace(/kupní cena/gi, 'NAHRAZENO')
+    const result = runIntegrityCheck(withoutPrice, 'kupni-smlouva-v1', 'complete')
+    expect(result.missingEssentialKeywords.some((k) => k.includes('cena'))).toBe(true)
+  })
+
+  it('does not treat transfer of title as an essential element', () => {
+    // It used to, because the hand-written keyword list said so. § 1099 supplies
+    // the moment ownership passes when the parties are silent, so its absence is
+    // something for the review to raise, not a defect in the generated document.
+    const withoutOwnership = GOOD_KUPNI.replace(/vlastnick\w*/gi, 'NAHRAZENO')
+    const result = runIntegrityCheck(withoutOwnership, 'kupni-smlouva-v1', 'complete')
+    expect(result.missingEssentialKeywords.some((k) => k.includes('vlastnick'))).toBe(false)
   })
 })
 
@@ -431,7 +439,7 @@ Podpis nájemce: _______________`
 
   it('flags it — § 2239 disregards the clause entirely', () => {
     const result = runIntegrityCheck(lease, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
-    const issue = result.issues.find((i) => i.code === 'TENANCY_PENALTY_CLAUSE')
+    const issue = result.issues.find((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')
     expect(issue).toBeDefined()
     expect(issue?.message).toMatch(/2239/)
     expect(applyIntegrityDecision('complete', result)).toBe('review-needed')
@@ -440,7 +448,7 @@ Podpis nájemce: _______________`
   it('does not flag the same clause in a sale contract, where it is lawful', () => {
     const sale = GOOD_KUPNI + '\n\nPři prodlení se sjednává smluvní pokuta ve výši 0,05 % denně.'
     const result = runIntegrityCheck(sale, 'kupni-smlouva-v1', 'CZ', 'complete')
-    expect(result.issues.some((i) => i.code === 'TENANCY_PENALTY_CLAUSE')).toBe(false)
+    expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)
   })
 
   it('accepts a lease with no penalty clause', () => {
@@ -449,6 +457,6 @@ Podpis nájemce: _______________`
       'Při prodlení s úhradou nájemného náleží pronajímateli zákonný úrok z prodlení.',
     )
     const result = runIntegrityCheck(clean, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
-    expect(result.issues.some((i) => i.code === 'TENANCY_PENALTY_CLAUSE')).toBe(false)
+    expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)
   })
 })

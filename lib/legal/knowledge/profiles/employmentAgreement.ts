@@ -78,6 +78,8 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'dpp-vymezeni-prace',
       kind: 'essential',
+      label: 'vymezení sjednané práce',
+      detect: /sjednan\S*\s+prác|pracovní\s+úkol|druh\S*\s+prác/i,
       requirement:
         'Musí být vymezen sjednaný pracovní úkol nebo druh práce, který má ' +
         'zaměstnanec vykonat.',
@@ -100,6 +102,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'dpp-rozsah-300-hodin',
       kind: 'mandatory',
+      label: 'rozsah práce v hodinách',
       requirement:
         `U dohody o provedení práce nesmí rozsah práce překročit ${DPP_MAX_HOURS_PER_YEAR} hodin ` +
         'v kalendářním roce u téhož zaměstnavatele. Započítává se i doba z jiných ' +
@@ -129,6 +132,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'dpp-odmena-minimum',
       kind: 'mandatory',
+      label: 'odměna z dohody',
       requirement:
         `Odměna z dohody nesmí být nižší než minimální mzda přepočtená na hodinu, ` +
         `která od ${MINIMUM_HOURLY_WAGE_CZK.effectiveFrom} činí ` +
@@ -136,7 +140,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
         'Pro řadu prací je závazná vyšší zaručená mzda.',
       consequence: 'neplatnost',
       law: MINIMUM_HOURLY_WAGE_CZK.law,
-      detect: /odměn\w*|za\s+hodinu|Kč\s*\/\s*hod/i,
+      detect: /odměn\S*|za\s+hodinu|Kč\s*\/\s*hod/i,
       reviewCheck:
         `Hodinová odměna nižší než ${MINIMUM_HOURLY_WAGE_CZK.value.toLocaleString('cs-CZ')} Kč. ` +
         'Vyšší sazba není vadou — zkontroluj jen, zda není pod minimem.',

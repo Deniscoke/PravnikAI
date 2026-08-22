@@ -75,6 +75,23 @@ describe('rule bookkeeping', () => {
     ).toEqual([])
   })
 
+  it('no detect pattern uses the ASCII word class', () => {
+    // JavaScript's \w is ASCII-only, so "vypovedn\w*\s+dob" never matches
+    // "vypovedni doba" — it stops dead at the diacritic. Seven patterns were
+    // silently unmatchable before this was noticed, which meant the audit
+    // reported present elements as missing. \S handles Czech suffixes.
+    const offenders = ALL_RULES.filter((r) => r.detect && r.detect.source.includes('\\w'))
+    expect(offenders.map((r) => r.id)).toEqual([])
+  })
+
+  it('every detect pattern is anchored to something, not a bare wildcard', () => {
+    for (const rule of ALL_RULES) {
+      if (!rule.detect) continue
+      expect(rule.detect.source.length, `${rule.id} has a suspiciously loose pattern`)
+        .toBeGreaterThan(2)
+    }
+  })
+
   it('every profile names the sources it was verified against', () => {
     for (const profile of ALL_PROFILES) {
       expect(profile.sources.length, `${profile.family} lists no sources`).toBeGreaterThan(0)

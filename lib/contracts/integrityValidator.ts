@@ -21,9 +21,13 @@
 import type { GenerationMode, DraftingPosture, Jurisdiction } from './types'
 import { getPromptBundle } from './prompts'
 import { findStaleLaw } from '@/lib/legal/staleLawGuard'
-
-/** Schemas that are residential leases, where § 2239 NOZ applies. */
-const TENANCY_SCHEMA_IDS = new Set(['najemni-smlouva-byt-v1'])
+import {
+  COMMON_PROFILE,
+  getContractProfile,
+  type LegalRule,
+  type RuleKind,
+} from '@/lib/legal/knowledge'
+import { getSchemaOrNull } from './contractSchemas'
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -42,101 +46,83 @@ export interface IntegrityResult {
   issues: IntegrityIssue[]
 }
 
-// ─── Essential keyword registry (CZ) ───────────────────────────────────────
+// ─── Checks derived from the knowledge base ──────────────────────────────────
+
+/**
+ * What a document of this type must contain, and what it must not.
+ *
+ * Derived from lib/legal/knowledge rather than kept here. This file used to
+ * hold its own hand-written list of required terms per schema, which was a
+ * second source of truth about the same question the profiles already answer.
+ * Two lists drift, and when they do nobody can tell which one is right — the
+ * same failure that put a two-year-old minimum wage into production.
+ *
+ * Deriving also means a new contract type gets integrity checking for free
+ * rather than needing a fifth place to be registered.
+ */
 
 interface KeywordCheck {
-  /** Lowercase substring or simple pattern to search for (case-insensitive) */
-  term: string
-  /** Human-readable description used in warnings */
+  /** Pattern that finds the element in the finished text. */
+  pattern: RegExp
+  /** Short human name used in the warning. */
   description: string
   /** 'error' = missing is a hard problem; 'warning' = notable but not blocking */
   severity: 'error' | 'warning'
 }
 
-const ESSENTIAL_KEYWORDS: Record<string, KeywordCheck[]> = {
-  'CZ:kupni-smlouva-v1': [
-    { term: 'kupní cena',  description: 'kupní cena',                severity: 'error' },
-    { term: 'předmět',     description: 'předmět koupě',             severity: 'error' },
-    { term: 'vlastnick',   description: 'přechod vlastnického práva', severity: 'error' },
-    { term: 'vad',         description: 'odpovědnost za vady',        severity: 'error' },
-    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
-  ],
-  'CZ:pracovni-smlouva-v1': [
-    { term: 'druh práce',  description: 'druh práce',                severity: 'error' },
-    { term: 'místo výkonu',description: 'místo výkonu práce',         severity: 'error' },
-    { term: 'nástup',      description: 'den nástupu do práce',       severity: 'error' },
-    { term: 'mzd',         description: 'mzda / plat',                severity: 'error' },
-    { term: 'výpovědn',    description: 'výpovědní doba',             severity: 'error' },
-    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
-  ],
-  'CZ:najemni-smlouva-byt-v1': [
-    { term: 'nájemn',      description: 'výše nájemného',             severity: 'error' },
-    { term: 'byt',         description: 'označení bytu',              severity: 'error' },
-    { term: 'jistot',      description: 'jistota / kauce',            severity: 'warning' },
-    { term: 'výpovědn',    description: 'výpovědní podmínky',         severity: 'error' },
-    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
-  ],
-  'CZ:smlouva-o-dilo-v1': [
-    { term: 'předmět díla',description: 'předmět díla',               severity: 'error' },
-    { term: 'cen',         description: 'cena díla',                  severity: 'error' },
-    { term: 'termín',      description: 'termín zhotovení',           severity: 'error' },
-    { term: 'vad',         description: 'odpovědnost za vady díla',   severity: 'error' },
-    { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
-  ],
-  'CZ:dohoda-o-provedeni-prace-v1': [
-    { term: 'sjednaná práce', description: 'vymezení sjednané práce',   severity: 'error' },
-    { term: 'odměn',          description: 'odměna z dohody',            severity: 'error' },
-    { term: 'hodin',          description: 'rozsah práce v hodinách',    severity: 'error' },
-    { term: 'místo výkonu',   description: 'místo výkonu práce',         severity: 'error' },
-    { term: 'podpis',         description: 'podpisový blok',             severity: 'warning' },
-  ],
-  'CZ:dohoda-o-pracovni-cinnosti-v1': [
-    { term: 'sjednaná práce', description: 'vymezení sjednané práce',   severity: 'error' },
-    { term: 'odměn',          description: 'odměna z dohody',            severity: 'error' },
-    { term: 'hodin',          description: 'rozsah práce v hodinách',    severity: 'error' },
-    { term: 'místo výkonu',   description: 'místo výkonu práce',         severity: 'error' },
-    { term: 'podpis',         description: 'podpisový blok',             severity: 'warning' },
-  ],
-  'CZ:smlouva-o-zapujcce-v1': [
-    { term: 'zápůjčk',    description: 'označení zápůjčky',              severity: 'error' },
-    { term: 'vrát',       description: 'závazek vrátit zápůjčku',        severity: 'error' },
-    { term: 'předán',     description: 'potvrzení o předání peněz',      severity: 'error' },
-    { term: 'vydlužitel', description: 'označení vydlužitele',           severity: 'error' },
-    { term: 'podpis',     description: 'podpisový blok',                 severity: 'warning' },
-  ],
-  'CZ:darovaci-smlouva-v1': [
-    { term: 'bezplatn',   description: 'vyjádření bezplatnosti daru',    severity: 'error' },
-    { term: 'přijímá',    description: 'přijetí daru obdarovaným',       severity: 'error' },
-    { term: 'dar',        description: 'označení předmětu daru',         severity: 'error' },
-    { term: 'obdarovan',  description: 'označení obdarovaného',          severity: 'error' },
-    { term: 'podpis',     description: 'podpisový blok',                 severity: 'warning' },
-  ],
-  'CZ:vypoved-z-najmu-bytu-v1': [
-    { term: 'vypovíd',  description: 'projev vůle vypovědět nájem',   severity: 'error' },
-    { term: 'nájm',     description: 'označení vypovídaného nájmu',   severity: 'error' },
-    { term: 'výpovědn', description: 'výpovědní doba',                severity: 'error' },
-    { term: 'doruč',    description: 'způsob doručení',               severity: 'warning' },
-    { term: 'podpis',   description: 'podpis vypovídající strany',    severity: 'warning' },
-  ],
-  'CZ:nda-smlouva-v1': [
-    { term: 'důvěrn',      description: 'definice důvěrných informací', severity: 'error' },
-    { term: 'mlčenlivost', description: 'povinnost mlčenlivosti',       severity: 'error' },
-    { term: 'pokut',       description: 'smluvní pokuta',               severity: 'warning' },
-    { term: 'podpis',      description: 'podpisový blok',               severity: 'warning' },
-  ],
-}
+/** Kinds whose absence is a real defect rather than a missed opportunity. */
+const REQUIRED_KINDS = new Set<RuleKind>(['essential', 'form', 'mandatory'])
 
 const GENERIC_CZ_FALLBACK: KeywordCheck[] = [
-  { term: 'smluvní stran', description: 'identifikace smluvních stran', severity: 'error' },
-  { term: 'předmět',       description: 'předmět smlouvy',              severity: 'error' },
-  { term: 'podpis',        description: 'podpisový blok',               severity: 'warning' },
+  { pattern: /smluvní\s+stran/i, description: 'identifikace smluvních stran', severity: 'error' },
+  { pattern: /předmět/i, description: 'předmět smlouvy', severity: 'error' },
 ]
 
+/**
+ * Rules whose absence makes the generated document defective.
+ *
+ * Deliberately only the required kinds. Integrity asks whether the model
+ * produced a legally sound document, not whether it produced a maximally
+ * complete one — a missing recommended clause is something for the review to
+ * raise with the user, not a defect in generation. Including advisory rules
+ * here made 'pass' effectively unreachable and drained the warnings of meaning.
+ */
 function getKeywords(schemaId: string, jurisdiction: Jurisdiction): KeywordCheck[] {
-  const key = `${jurisdiction}:${schemaId}`
-  if (ESSENTIAL_KEYWORDS[key]) return ESSENTIAL_KEYWORDS[key]
-  if (jurisdiction === 'CZ' && ESSENTIAL_KEYWORDS[schemaId]) return ESSENTIAL_KEYWORDS[schemaId]
-  return GENERIC_CZ_FALLBACK
+  const required = checkableRules(schemaId, jurisdiction).filter((rule) =>
+    REQUIRED_KINDS.has(rule.kind),
+  )
+  if (required.length === 0) return GENERIC_CZ_FALLBACK
+
+  return required.map((rule) => ({
+    pattern: rule.detect,
+    description: rule.label ?? rule.id,
+    severity: 'error' as const,
+  }))
+}
+
+/** Rules describing a clause the law strikes out, so its presence is the defect. */
+function getProhibitedRules(schemaId: string, jurisdiction: Jurisdiction): DetectableRule[] {
+  return checkableRules(schemaId, jurisdiction).filter((rule) => rule.kind === 'prohibited')
+}
+
+type DetectableRule = LegalRule & { detect: RegExp }
+
+function checkableRules(schemaId: string, jurisdiction: Jurisdiction): DetectableRule[] {
+  if (jurisdiction !== 'CZ') return []
+  const family = getSchemaOrNull(schemaId)?.metadata.contractFamily
+  if (!family) return []
+
+  // Common rules ride along: a consumer arbitration clause is void whatever
+  // kind of contract it sits in, so checking it per type would mean repeating
+  // it in every profile.
+  return [...getContractProfile(family).rules, ...COMMON_PROFILE.rules].filter(
+    (rule): rule is DetectableRule => rule.detect instanceof RegExp,
+  )
+}
+
+/** A global regex carries lastIndex between calls; rebuild without the flag. */
+function matches(pattern: RegExp, text: string): boolean {
+  return new RegExp(pattern.source, pattern.flags.replace('g', '')).test(text)
 }
 
 // ─── Signature block detection ────────────────────────────────────────────────
@@ -281,7 +267,7 @@ function runIntegrityCheckCore(
   const lower = text.toLowerCase()
 
   for (const kw of keywords) {
-    if (!lower.includes(kw.term.toLowerCase())) {
+    if (!matches(kw.pattern, text)) {
       missingEssentialKeywords.push(kw.description)
       issues.push({
         code: 'MISSING_ESSENTIAL_KEYWORD',
@@ -330,16 +316,18 @@ function runIntegrityCheckCore(
     }
   }
 
-  // ── 7. Contractual penalty against a residential tenant ───────────────────
-  // § 2239 NOZ disregards it outright. A generated lease containing one gives
-  // the landlord a clause that does nothing and the tenant a false worry.
-  if (jurisdiction === 'CZ' && TENANCY_SCHEMA_IDS.has(schemaId) && /smluvn[íi]\s+pokut/i.test(text)) {
+  // ── 7. Clauses the law strikes out ────────────────────────────────────────
+  // Presence is the defect here, not absence. A conditional rule (consumer
+  // only, real estate only) drops to a warning because nothing here can verify
+  // the condition holds.
+  for (const rule of getProhibitedRules(schemaId, jurisdiction)) {
+    if (!matches(rule.detect, text)) continue
+
     issues.push({
-      code: 'TENANCY_PENALTY_CLAUSE',
+      code: 'PROHIBITED_CLAUSE_PRESENT',
       message:
-        'Smlouva obsahuje smluvní pokutu k tíži nájemce — podle § 2239 zák. č. 89/2012 Sb. ' +
-        'se k takovému ujednání nepřihlíží. Pronajímateli zůstává zákonný úrok z prodlení.',
-      severity: 'error',
+        `Text obsahuje ustanovení, které zákon vylučuje: ${rule.requirement} (${rule.law})`,
+      severity: rule.appliesWhen ? 'warning' : 'error',
     })
   }
 
@@ -406,7 +394,7 @@ export function applyIntegrityDecision(mode: GenerationMode, result: IntegrityRe
   // is not a draft somebody can tidy up — it is wrong on the merits. Labelling
   // it 'draft' would understate that.
   const legallyUnsound = result.issues.some(
-    (i) => i.code === 'SUPERSEDED_LAW' || i.code === 'TENANCY_PENALTY_CLAUSE',
+    (i) => i.code === 'SUPERSEDED_LAW' || i.code === 'PROHIBITED_CLAUSE_PRESENT',
   )
   if (legallyUnsound) {
     forcedMode = maxMode(forcedMode, 'review-needed', PRIORITY)

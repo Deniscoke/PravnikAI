@@ -58,13 +58,14 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
     {
       id: 'tenancy-jistota',
       kind: 'mandatory',
+      label: 'jistota (kauce)',
       requirement:
         `Jistota (kauce) nesmí přesáhnout ${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního ` +
         'nájemného. Při skončení nájmu ji pronajímatel vrátí a nájemce má právo na úroky ' +
         'od jejího poskytnutí.',
       consequence: 'neprihlizi-se',
       law: RENT_DEPOSIT_MAX_MULTIPLE.law,
-      detect: /jistot\w*|kauc\w*/i,
+      detect: /jistot\S*|kauc\S*/i,
       reviewCheck:
         `Kauce vyšší než ${RENT_DEPOSIT_MAX_MULTIPLE.value} měsíční nájmy; ujednání ` +
         'vylučující úroky z jistoty nebo umožňující ji nevrátit.',
@@ -74,16 +75,19 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
     {
       id: 'tenancy-predmet',
       kind: 'essential',
+      label: 'označení bytu',
       requirement:
         'Byt musí být určen nezaměnitelně — adresou, číslem bytu, podlažím, podlahovou ' +
         'plochou a popisem místností. Uveď i příslušenství (sklep, garážové stání) a vybavení.',
       consequence: 'nevznikne',
       law: '§ 2235 odst. 1 a § 553 zák. č. 89/2012 Sb.',
+      detect: /byt\S*/i,
       reviewCheck: 'Byt označený jen adresou domu bez určení konkrétní jednotky.',
     },
     {
       id: 'tenancy-najemne',
       kind: 'essential',
+      label: 'výše nájemného',
       requirement:
         'Nájemné musí být ujednáno pevnou částkou za měsíc. Uveď odděleně nájemné ' +
         'a zálohy na služby — jde o dvě různé platby s odlišným režimem.',
@@ -125,12 +129,14 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
     {
       id: 'tenancy-vypoved-pronajimatel',
       kind: 'mandatory',
+      label: 'výpovědní podmínky',
       requirement:
         'Pronajímatel může nájem bytu vypovědět jen z důvodů výslovně uvedených v zákoně, ' +
         'písemně, s uvedením důvodu a s poučením nájemce o právu vznést proti výpovědi ' +
         'námitky a navrhnout přezkoumání soudem. Výpovědní doba je tři měsíce.',
       consequence: 'neplatnost',
       law: '§ 2288–2291 zák. č. 89/2012 Sb.',
+      detect: /výpovědn\S*/i,
       reviewCheck:
         'Ujednání dávající pronajímateli právo vypovědět nájem „bez udání důvodu", ' +
         'kratší výpovědní doba, nebo chybějící poučení o námitkách — výpověď je pak vadná.',

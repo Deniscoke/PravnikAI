@@ -35,6 +35,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
     {
       id: 'notice-forma-doruceni',
       kind: 'form',
+      label: 'způsob doručení',
       requirement:
         'Výpověď vyžaduje písemnou formu a musí dojít druhé straně. Samotné ' +
         'vyhotovení ani odeslání nestačí — rozhodující je dojití.',
@@ -61,6 +62,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
     {
       id: 'notice-oznaceni-najmu',
       kind: 'essential',
+      label: 'označení vypovídaného nájmu',
       requirement:
         'Označ nájemní smlouvu, kterou se vypovídá — datum uzavření a byt ' +
         '(adresa, číslo bytu). Bez toho není zřejmé, co se ukončuje.',
@@ -74,6 +76,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
     {
       id: 'notice-poucen-namitky',
       kind: 'essential',
+      label: 'poučení o právu vznést námitky',
       requirement:
         'Vypovídá-li nájem PRONAJÍMATEL, musí nájemce poučit o právu vznést proti ' +
         'výpovědi námitky a navrhnout přezkoumání oprávněnosti výpovědi soudem. ' +
@@ -81,7 +84,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
       consequence: 'neplatnost',
       law: '§ 2286 odst. 2 zák. č. 89/2012 Sb.',
       appliesWhen: 'Výpověď dává pronajímatel.',
-      detect: /námitk|přezkoum\w*\s+(oprávněnosti|soudem)|soudní\s+přezkum/i,
+      detect: /námitk|přezkoum\S*\s+(oprávněnosti|soudem)|soudní\s+přezkum/i,
       reviewCheck:
         'Nejzávažnější a nejčastější vada výpovědi z nájmu. Chybí-li poučení ' +
         'o právu vznést námitky a navrhnout přezkoumání soudem, je celá výpověď ' +
@@ -90,6 +93,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
     {
       id: 'notice-duvod',
       kind: 'essential',
+      label: 'výpovědní důvod',
       requirement:
         'Pronajímatel musí ve výpovědi uvést důvod, a to důvod, který zákon ' +
         'připouští. Nájem bytu nelze vypovědět „bez udání důvodu".',
@@ -105,6 +109,8 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
     {
       id: 'notice-vypovedni-doba-delka',
       kind: 'mandatory',
+      label: 'výpovědní doba',
+      detect: /výpovědn\S*\s+dob/i,
       requirement:
         'Výpovědní doba činí tři měsíce, nejde-li o výpověď bez výpovědní doby ' +
         'podle § 2291.',

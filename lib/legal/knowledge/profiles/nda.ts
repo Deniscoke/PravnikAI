@@ -32,12 +32,13 @@ export const NDA_PROFILE: ContractLegalProfile = {
     {
       id: 'nda-vymezeni-informaci',
       kind: 'essential',
+      label: 'definice důvěrných informací',
       requirement:
         'Důvěrné informace musí být vymezeny určitě — druhem, okruhem, nebo způsobem ' +
         'označení při předání. Musí být zjistitelné, co konkrétně mlčenlivosti podléhá.',
       consequence: 'neprihlizi-se',
       law: '§ 553 a § 1746 odst. 2 zák. č. 89/2012 Sb.',
-      detect: /důvěrn\w*\s+informac/i,
+      detect: /důvěrn\S*\s+informac/i,
       reviewCheck:
         'Definice typu „veškeré informace, které strana obdrží" bez jakéhokoli omezení — ' +
         'pro neurčitost k ní nemusí být přihlédnuto a celá povinnost padá.',
@@ -58,11 +59,13 @@ export const NDA_PROFILE: ContractLegalProfile = {
     {
       id: 'nda-ucel',
       kind: 'recommended',
+      label: 'povinnost mlčenlivosti a účel',
       requirement:
         'Uveď účel, pro který se informace poskytují, a zákaz jejich užití k jinému účelu. ' +
         'Bez vymezení účelu nelze posoudit, zda došlo k porušení.',
       consequence: 'riziko',
       law: '§ 1730 odst. 2 zák. č. 89/2012 Sb.',
+      detect: /mlčenlivost|účel/i,
       reviewCheck: 'Chybí vymezení účelu — povinnost mlčenlivosti pak nemá měřítko.',
     },
 

@@ -28,6 +28,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
     {
       id: 'sale-predmet',
       kind: 'essential',
+      label: 'předmět koupě',
       requirement:
         'Předmět koupě musí být určen nezaměnitelně. U nemovitosti údaji z katastru ' +
         '(obec, katastrální území, číslo parcely, číslo jednotky, list vlastnictví); ' +
@@ -35,6 +36,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
         'který je odliší od jiných věcí téhož druhu.',
       consequence: 'nevznikne',
       law: '§ 2079 odst. 1 a § 553 zák. č. 89/2012 Sb.',
+      detect: /předmět\S*\s+koupě|předmět\S*\s+smlouvy|prodávající\s+prodává/i,
       reviewCheck:
         'Předmět popsaný jen druhově („osobní automobil", „byt v Praze") bez ' +
         'identifikačních údajů — smlouva pak nemusí vzniknout pro neurčitost.',
@@ -42,6 +44,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
     {
       id: 'sale-cena',
       kind: 'essential',
+      label: 'kupní cena',
       requirement:
         'Kupní cena musí být ujednána, nebo musí být ujednán alespoň způsob jejího určení. ' +
         'Uveď měnu a zda jde o cenu včetně DPH.',
@@ -87,12 +90,14 @@ export const SALE_PROFILE: ContractLegalProfile = {
     {
       id: 'sale-prechod-vlastnictvi',
       kind: 'default',
+      label: 'přechod vlastnického práva',
       requirement:
         'U movité věci se vlastnické právo nabývá zpravidla převzetím věci; nebezpečí škody ' +
         'přechází zároveň s odevzdáním. Strany si mohou ujednat výhradu vlastnictví do ' +
         'zaplacení ceny.',
       consequence: 'doporuceni',
       law: '§ 1099, § 2082, § 2132 zák. č. 89/2012 Sb.',
+      detect: /vlastnick\S*\s+práv|přechod\S*\s+vlastnic/i,
       reviewCheck:
         'Chybí ujednání o okamžiku přechodu vlastnictví a nebezpečí škody — u dodání ' +
         'na dálku je to častý zdroj sporu.',
@@ -134,11 +139,13 @@ export const SALE_PROFILE: ContractLegalProfile = {
     {
       id: 'sale-vady-obecne',
       kind: 'default',
+      label: 'odpovědnost za vady',
       requirement:
         'Prodávající odpovídá za vady, které má věc při přechodu nebezpečí škody. Kupující ' +
         'musí vadu vytknout bez zbytečného odkladu poté, co ji mohl při včasné prohlídce zjistit.',
       consequence: 'doporuceni',
       law: '§ 2099–2117 zák. č. 89/2012 Sb.',
+      detect: /vad\S*/i,
     },
     {
       id: 'sale-vady-nemovitost',
@@ -187,7 +194,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
         'nájemní práva, exekuce ani jiná práva třetích osob, nebo je výslovně uvést.',
       consequence: 'riziko',
       law: '§ 1920 a § 2123 zák. č. 89/2012 Sb.',
-      detect: /zástavn\w*|věcn\w*\s+břemen|exekuc\w*|práv\w*\s+třetích\s+osob/i,
+      detect: /zástavn\S*|věcn\S*\s+břemen|exekuc\S*|práv\S*\s+třetích\s+osob/i,
       reviewCheck:
         'Chybí prohlášení o právních vadách — u nemovitosti a vozidla patří mezi ' +
         'nejzávažnější opomenutí.',

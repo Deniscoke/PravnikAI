@@ -37,13 +37,14 @@ export const LOAN_PROFILE: ContractLegalProfile = {
     {
       id: 'loan-predani',
       kind: 'essential',
+      label: 'potvrzení o předání',
       requirement:
         'Zápůjčka vzniká až skutečným přenecháním peněz nebo věci. Samotný podpis ' +
         'smlouvy dluh nezakládá. Ve smlouvě proto výslovně potvrď, že předmět ' +
         'zápůjčky byl předán — nebo popiš, jak a kdy k předání dojde.',
       consequence: 'nevznikne',
       law: '§ 2390 zák. č. 89/2012 Sb.',
-      detect: /předal\w*|převzal\w*|byla\s+poukázána|připsán\w*\s+na\s+účet|obdržel\w*/i,
+      detect: /předal\S*|převzal\S*|byla\s+poukázána|připsán\S*\s+na\s+účet|obdržel\S*/i,
       reviewCheck:
         'Chybí potvrzení o předání peněz nebo ujednání o způsobu jejich poskytnutí. ' +
         'Bez něj nelze prokázat, že zápůjčka vůbec vznikla — a to je nejčastější ' +
@@ -52,21 +53,23 @@ export const LOAN_PROFILE: ContractLegalProfile = {
     {
       id: 'loan-predmet',
       kind: 'essential',
+      label: 'výše zápůjčky',
       requirement:
         'Uveď výši zápůjčky číselně i slovy a měnu. U nepeněžité zápůjčky popiš ' +
         'věc tak, aby bylo zřejmé, co má být vráceno.',
       consequence: 'nevznikne',
       law: '§ 2390 a § 553 zák. č. 89/2012 Sb.',
-      detect: /výše\s+zápůjčky|částk\w*|Kč|EUR/i,
+      detect: /výše\s+zápůjčky|částk\S*|Kč|EUR/i,
       reviewCheck: 'Chybí výše zápůjčky nebo měna.',
     },
     {
       id: 'loan-zavazek-vratit',
       kind: 'essential',
+      label: 'závazek vrátit',
       requirement: 'Výslovný závazek vydlužitele vrátit věc stejného druhu, u peněz stejnou částku.',
       consequence: 'nevznikne',
       law: '§ 2390 zák. č. 89/2012 Sb.',
-      detect: /vrátit|vrácení|splat\w*/i,
+      detect: /vrátit|vrácení|splat\S*/i,
     },
 
     // ─── Splatnost ───────────────────────────────────────────────────────────
@@ -79,7 +82,7 @@ export const LOAN_PROFILE: ContractLegalProfile = {
         'strany zbytečně vystavuje nejistotě.',
       consequence: 'riziko',
       law: '§ 2393 zák. č. 89/2012 Sb.',
-      detect: /do\s+\d{1,2}\.\s*\d{1,2}\.\s*\d{4}|splátk\w*|splatnost/i,
+      detect: /do\s+\d{1,2}\.\s*\d{1,2}\.\s*\d{4}|splátk\S*|splatnost/i,
       reviewCheck: 'Chybí datum vrácení i splátkový kalendář.',
     },
     {

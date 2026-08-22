@@ -27,13 +27,14 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
     {
       id: 'services-vymezeni-dila',
       kind: 'essential',
+      label: 'předmět díla',
       requirement:
         'Dílo musí být vymezeno určitě — co má být zhotoveno, opraveno, upraveno nebo ' +
         'udržováno, v jakém rozsahu a jaké kvalitě. U stavby odkaž na projektovou ' +
         'dokumentaci nebo specifikaci a učiň ji přílohou smlouvy.',
       consequence: 'nevznikne',
       law: '§ 2586 odst. 1 a § 553 zák. č. 89/2012 Sb.',
-      detect: /předmět\w*\s+díla|dílem\s+se\s+rozumí|specifikac\w*\s+díla/i,
+      detect: /předmět\S*\s+díla|dílem\s+se\s+rozumí|specifikac\S*\s+díla/i,
       reviewCheck:
         'Dílo popsané obecně („rekonstrukce koupelny") bez rozsahu prací, materiálů ' +
         'a kvalitativních parametrů — nejčastější příčina sporů u stavebních zakázek.',
@@ -41,12 +42,14 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
     {
       id: 'services-uplatnost',
       kind: 'essential',
+      label: 'cena díla',
       requirement:
         'Podstatnou náležitostí je úplatnost — nikoli však konkrétní výše ceny. ' +
         'Cenu lze určit pevnou částkou, odkazem na rozpočet, nebo odhadem. ' +
         'Není-li ujednána vůbec, platí cena obvyklá za srovnatelné dílo.',
       consequence: 'nevznikne',
       law: '§ 2586 odst. 2 a § 2610 zák. č. 89/2012 Sb.',
+      detect: /cen\S*|úplat\S*|odměn\S*/i,
       reviewCheck:
         'Nehlas chybějící číselnou cenu jako důvod neplatnosti — smlouva je platná ' +
         'a uplatní se cena obvyklá. Skutečným rizikem je spor o její výši.',
@@ -90,11 +93,13 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
     {
       id: 'services-termin',
       kind: 'recommended',
+      label: 'termín zhotovení',
       requirement:
         'Uveď termín provedení a předání díla. Není-li ujednán, je zhotovitel povinen ' +
         'dílo provést v době přiměřené jeho povaze.',
       consequence: 'riziko',
       law: '§ 2610 odst. 2 zák. č. 89/2012 Sb.',
+      detect: /termín\S*|lhůt\S*/i,
       reviewCheck:
         'Chybí termín, nebo je vázán na neurčitou událost bez pevného data.',
     },
@@ -147,12 +152,14 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
     {
       id: 'services-vady-obecne',
       kind: 'default',
+      label: 'odpovědnost za vady díla',
       requirement:
         'Dílo má vadu, neodpovídá-li smlouvě. Objednatel musí vadu vytknout bez zbytečného ' +
         'odkladu; zjevné vady při převzetí, jinak právo z vady soud nepřizná, namítne-li ' +
         'zhotovitel opožděné vytknutí.',
       consequence: 'riziko',
       law: '§ 2615–2619 zák. č. 89/2012 Sb.',
+      detect: /vad\S*/i,
     },
     {
       id: 'services-vady-stavba',

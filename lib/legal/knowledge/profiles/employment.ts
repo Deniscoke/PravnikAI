@@ -63,10 +63,11 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'employment-druh-prace',
       kind: 'essential',
+      label: 'druh práce',
       requirement: 'Druh práce, který má zaměstnanec vykonávat.',
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. a) zák. č. 262/2006 Sb.',
-      detect: /druh\s+práce|pracovní\s+pozic|funkc\w*/i,
+      detect: /druh\s+práce|pracovní\s+pozic|funkc\S*/i,
       reviewCheck:
         'Druh práce vymezený tak široce, že umožňuje přidělit jakoukoli práci ' +
         '(„dle potřeb zaměstnavatele") — obchází ochranu při převedení na jinou práci.',
@@ -74,6 +75,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'employment-misto-prace',
       kind: 'essential',
+      label: 'místo výkonu práce',
       requirement: 'Místo nebo místa výkonu práce.',
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. b) zák. č. 262/2006 Sb.',
@@ -85,16 +87,18 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'employment-den-nastupu',
       kind: 'essential',
+      label: 'den nástupu do práce',
       requirement: 'Den nástupu do práce; tímto dnem pracovní poměr vzniká.',
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. c) a § 36 zák. č. 262/2006 Sb.',
-      detect: /den\s+nástupu|nástup\w*\s+do\s+práce|datum\s+nástupu/i,
+      detect: /den\s+nástupu|nástup\S*\s+do\s+práce|datum\s+nástupu/i,
     },
 
     // ─── Mzda ────────────────────────────────────────────────────────────────
     {
       id: 'employment-mzda-minimum',
       kind: 'mandatory',
+      label: 'mzda nebo plat',
       requirement:
         `Mzda nesmí být nižší než minimální mzda, která od ` +
         `${MINIMUM_MONTHLY_WAGE_CZK.effectiveFrom} činí ` +
@@ -102,6 +106,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
         'vyšší zaručená mzda podle skupiny prací.',
       consequence: 'neplatnost',
       law: MINIMUM_MONTHLY_WAGE_CZK.law,
+      detect: /mzd\S*|plat\S*/i,
       reviewCheck:
         `Sjednaná mzda pod ${formatCzk(MINIMUM_MONTHLY_WAGE_CZK.value)} u plného úvazku. ` +
         'Zkontroluj i zaručenou mzdu — může být výrazně vyšší než minimální.',
@@ -151,12 +156,14 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
     {
       id: 'employment-vypovedni-doba',
       kind: 'mandatory',
+      label: 'výpovědní doba',
       requirement:
         'Výpovědní doba činí nejméně dva měsíce, u výpovědi z důvodů podle § 52 písm. f) ' +
         'až h) jeden měsíc. Musí být stejná pro obě strany. Od 1. 6. 2025 běží ode dne ' +
         'doručení výpovědi, nikoli od prvního dne následujícího měsíce.',
       consequence: 'neplatnost',
       law: '§ 51 zák. č. 262/2006 Sb., ve znění zák. č. 120/2025 Sb.',
+      detect: /výpovědn\S*\s+dob/i,
       reviewCheck:
         'Text uvádí, že výpovědní doba začíná prvním dnem následujícího měsíce — ' +
         'to je úprava platná do 31. 5. 2025 a dnes je nesprávná. Rovněž zkontroluj, ' +
