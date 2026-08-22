@@ -209,7 +209,22 @@ export interface SchemaMetadata {
  * Allows the UI to group "the same" contract type (e.g. NDA) across CZ/DE/UK
  * even though each has its own jurisdiction-specific schema.
  */
-export type ContractFamily = 'nda' | 'sale' | 'employment' | 'tenancy' | 'services'
+/**
+ * Body of law a contract belongs to.
+ *
+ * 'employment-agreement' covers dohody konane mimo pracovni pomer (DPP, DPC).
+ * It is deliberately separate from 'employment': a dohoda sits outside the
+ * pracovni pomer, so the rules on notice periods and leave that govern a
+ * pracovni smlouva do not apply to it. Treating them as one family produced a
+ * review that reported a lawful dohoda as defective.
+ */
+export type ContractFamily =
+  | 'nda'
+  | 'sale'
+  | 'employment'
+  | 'employment-agreement'
+  | 'tenancy'
+  | 'services'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

@@ -83,6 +83,20 @@ const ESSENTIAL_KEYWORDS: Record<string, KeywordCheck[]> = {
     { term: 'vad',         description: 'odpovědnost za vady díla',   severity: 'error' },
     { term: 'podpis',      description: 'podpisový blok',             severity: 'warning' },
   ],
+  'CZ:dohoda-o-provedeni-prace-v1': [
+    { term: 'sjednaná práce', description: 'vymezení sjednané práce',   severity: 'error' },
+    { term: 'odměn',          description: 'odměna z dohody',            severity: 'error' },
+    { term: 'hodin',          description: 'rozsah práce v hodinách',    severity: 'error' },
+    { term: 'místo výkonu',   description: 'místo výkonu práce',         severity: 'error' },
+    { term: 'podpis',         description: 'podpisový blok',             severity: 'warning' },
+  ],
+  'CZ:dohoda-o-pracovni-cinnosti-v1': [
+    { term: 'sjednaná práce', description: 'vymezení sjednané práce',   severity: 'error' },
+    { term: 'odměn',          description: 'odměna z dohody',            severity: 'error' },
+    { term: 'hodin',          description: 'rozsah práce v hodinách',    severity: 'error' },
+    { term: 'místo výkonu',   description: 'místo výkonu práce',         severity: 'error' },
+    { term: 'podpis',         description: 'podpisový blok',             severity: 'warning' },
+  ],
   'CZ:nda-smlouva-v1': [
     { term: 'důvěrn',      description: 'definice důvěrných informací', severity: 'error' },
     { term: 'mlčenlivost', description: 'povinnost mlčenlivosti',       severity: 'error' },

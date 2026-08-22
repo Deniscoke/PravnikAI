@@ -91,7 +91,12 @@ export default async function ContractGuidePage({ params }: Props) {
         </div>
 
         <section>
-          <h2>Co má {guide.h1.toLowerCase()} obsahovat</h2>
+          {/*
+            Lowercasing only the first letter. Applying it to the whole title
+            turned "Dohoda o provedení práce (DPP)" into "(dpp)" — acronyms are
+            common in contract names and a mangled one reads as a typo.
+          */}
+          <h2>Co má {guide.h1.charAt(0).toLowerCase() + guide.h1.slice(1)} obsahovat</h2>
           {guide.mustContain.map((item, i) => (
             <div key={item.title} style={{ marginBottom: 'var(--space-md)' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 4 }}>
