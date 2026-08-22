@@ -20,6 +20,8 @@ import { EMPLOYMENT_PROFILE } from './profiles/employment'
 import { SERVICES_PROFILE } from './profiles/services'
 import { NDA_PROFILE } from './profiles/nda'
 import { EMPLOYMENT_AGREEMENT_PROFILE } from './profiles/employmentAgreement'
+import { LOAN_PROFILE } from './profiles/loan'
+import { GIFT_PROFILE } from './profiles/gift'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -33,6 +35,8 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   services: SERVICES_PROFILE,
   nda: NDA_PROFILE,
   'employment-agreement': EMPLOYMENT_AGREEMENT_PROFILE,
+  loan: LOAN_PROFILE,
+  gift: GIFT_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -103,14 +107,18 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     decisive: ['kupní smlouva', 'kupní smlouvu'],
     supporting: ['prodávající', 'kupující', 'kupní cena'],
   },
+  {
+    family: 'loan',
+    decisive: ['smlouva o zápůjčce', 'smlouvu o zápůjčce', 'smlouva o půjčce', 'smlouvu o půjčce'],
+    supporting: ['zapůjčitel', 'vydlužitel', 'zápůjčk', 'zapůjč'],
+  },
+  {
+    family: 'gift',
+    decisive: ['darovací smlouva', 'darovací smlouvu'],
+    supporting: ['dárce', 'obdarovan', 'darování', 'bezplatně převádí'],
+  },
 ]
 
-/**
- * Best-effort mapping from a user-supplied type hint (or raw contract text) to a
- * known profile. Returns null when nothing matches clearly — the review then
- * falls back to the common rules, which is always safe. Guessing wrong is not:
- * the wrong checklist reports lawful clauses as defects.
- */
 /**
  * Lowercases and strips diacritics.
  *
@@ -137,6 +145,12 @@ function containsPhrase(haystack: string, phrase: string): boolean {
   return new RegExp(`\\b${escaped}`).test(haystack)
 }
 
+/**
+ * Best-effort mapping from a user-supplied type hint (or raw contract text) to a
+ * known profile. Returns null when nothing matches clearly — the review then
+ * falls back to the common rules, which is always safe. Guessing wrong is not:
+ * the wrong checklist reports lawful clauses as defects.
+ */
 export function resolveContractFamily(text: string): LegalProfileKey | null {
   if (!text) return null
   const haystack = normalize(text)

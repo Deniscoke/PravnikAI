@@ -225,6 +225,8 @@ export type ContractFamily =
   | 'employment-agreement'
   | 'tenancy'
   | 'services'
+  | 'loan'
+  | 'gift'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

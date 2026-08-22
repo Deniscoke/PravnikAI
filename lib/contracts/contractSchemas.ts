@@ -23,6 +23,8 @@ import { smlouvaODilo } from './schemas/cz/smlouvaODilo'
 import { ndaSmlouva } from './schemas/cz/ndaSmlouva'
 import { dohodaOProvedeniPrace } from './schemas/cz/dohodaOProvedeniPrace'
 import { dohodaOPracovniCinnosti } from './schemas/cz/dohodaOPracovniCinnosti'
+import { smlouvaOZapujcce } from './schemas/cz/smlouvaOZapujcce'
+import { darovaciSmlouva } from './schemas/cz/darovaciSmlouva'
 
 // ─── Registry ────────────────────────────────────────────────────────────────
 
@@ -38,6 +40,8 @@ export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
   [ndaSmlouva.metadata.schemaId]: ndaSmlouva,
   [dohodaOProvedeniPrace.metadata.schemaId]: dohodaOProvedeniPrace,
   [dohodaOPracovniCinnosti.metadata.schemaId]: dohodaOPracovniCinnosti,
+  [smlouvaOZapujcce.metadata.schemaId]: smlouvaOZapujcce,
+  [darovaciSmlouva.metadata.schemaId]: darovaciSmlouva,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

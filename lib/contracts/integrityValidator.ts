@@ -97,6 +97,20 @@ const ESSENTIAL_KEYWORDS: Record<string, KeywordCheck[]> = {
     { term: 'místo výkonu',   description: 'místo výkonu práce',         severity: 'error' },
     { term: 'podpis',         description: 'podpisový blok',             severity: 'warning' },
   ],
+  'CZ:smlouva-o-zapujcce-v1': [
+    { term: 'zápůjčk',    description: 'označení zápůjčky',              severity: 'error' },
+    { term: 'vrát',       description: 'závazek vrátit zápůjčku',        severity: 'error' },
+    { term: 'předán',     description: 'potvrzení o předání peněz',      severity: 'error' },
+    { term: 'vydlužitel', description: 'označení vydlužitele',           severity: 'error' },
+    { term: 'podpis',     description: 'podpisový blok',                 severity: 'warning' },
+  ],
+  'CZ:darovaci-smlouva-v1': [
+    { term: 'bezplatn',   description: 'vyjádření bezplatnosti daru',    severity: 'error' },
+    { term: 'přijímá',    description: 'přijetí daru obdarovaným',       severity: 'error' },
+    { term: 'dar',        description: 'označení předmětu daru',         severity: 'error' },
+    { term: 'obdarovan',  description: 'označení obdarovaného',          severity: 'error' },
+    { term: 'podpis',     description: 'podpisový blok',                 severity: 'warning' },
+  ],
   'CZ:nda-smlouva-v1': [
     { term: 'důvěrn',      description: 'definice důvěrných informací', severity: 'error' },
     { term: 'mlčenlivost', description: 'povinnost mlčenlivosti',       severity: 'error' },
