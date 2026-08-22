@@ -83,11 +83,17 @@ describe('rule bookkeeping', () => {
 })
 
 describe('consequence discipline', () => {
-  it('an essential element can never be merely recommended', () => {
-    // Without a podstatná náležitost the contract does not come into existence.
-    // Labelling one 'doporuceni' would tell a user something legally false.
+  it('an essential element can never be merely advisory', () => {
+    // Omitting an essential element has to cost something real. Which real
+    // consequence depends on the document: a contract missing a podstatná
+    // náležitost never comes into existence, while a notice missing the
+    // instruction required by § 2286 odst. 2 exists and is invalid. Both are
+    // acceptable; 'riziko' and 'doporuceni' are not, because they would tell a
+    // user an omission is survivable when it is not.
     const wrong = ALL_RULES.filter(
-      (r) => r.kind === 'essential' && !['nevznikne', 'neprihlizi-se'].includes(r.consequence),
+      (r) =>
+        r.kind === 'essential' &&
+        !['nevznikne', 'neplatnost', 'neprihlizi-se'].includes(r.consequence),
     )
     expect(wrong.map((r) => r.id)).toEqual([])
   })

@@ -39,7 +39,8 @@ describe('probation period', () => {
 describe('notice period', () => {
   it('catches the claim that it starts the following month', () => {
     const finding = findStaleLaw(
-      'Výpovědní doba začíná běžet prvním dnem kalendářního měsíce následujícího po doručení výpovědi.',
+      'Pracovní poměr se řídí zákoníkem práce. Výpovědní doba začíná běžet prvním ' +
+        'dnem kalendářního měsíce následujícího po doručení výpovědi.',
     )
     expect(finding.map((f) => f.id)).toContain('stale-notice-period-start')
     expect(finding[0].correction).toMatch(/doručení/)
@@ -49,6 +50,24 @@ describe('notice period', () => {
     expect(
       hasStaleLaw('Výpovědní doba činí dva měsíce a běží ode dne doručení výpovědi.'),
     ).toBe(false)
+  })
+
+  it('leaves a lease notice alone — § 2286 was never changed', () => {
+    // The flexinovela moved the start of the notice period for employment only.
+    // A lease notice period still runs from the first of the following month,
+    // so firing here would tell a user their correct notice cites repealed law.
+    const lease = `VÝPOVĚĎ Z NÁJMU BYTU
+      Pronajímatel vypovídá nájem. Výpovědní doba činí tři měsíce a běží od prvního
+      dne kalendářního měsíce následujícího po doručení této výpovědi nájemci
+      (§ 2286 zák. č. 89/2012 Sb.).`
+    expect(hasStaleLaw(lease)).toBe(false)
+  })
+
+  it('still fires on the same wording in an employment contract', () => {
+    const employment = `PRACOVNÍ SMLOUVA podle zákoníku práce
+      Výpovědní doba začíná běžet prvním dnem kalendářního měsíce následujícího
+      po doručení výpovědi zaměstnanci.`
+    expect(findStaleLaw(employment).map((f) => f.id)).toContain('stale-notice-period-start')
   })
 
   it('does not fire on an unrelated reference to the following month', () => {

@@ -52,6 +52,17 @@ interface StaleLawRule {
   assertsLimit?: RegExp
   /** How far apart the signals may be, in characters. */
   window: number
+  /**
+   * Must appear somewhere in the text for the rule to apply at all.
+   *
+   * Some repealed rules were only ever about one area of law. The notice period
+   * is the case in point: the flexinovela changed when it starts for an
+   * employment relationship, and left § 2286 alone, so a lease notice saying it
+   * runs from the first of the following month is still correct.
+   */
+  context?: RegExp
+  /** Suppresses the rule when the text is clearly about something else. */
+  notContext?: RegExp
   claim: string
   correction: string
   changedOn: string
@@ -80,6 +91,11 @@ const RULES: StaleLawRule[] = [
   {
     id: 'stale-notice-period-start',
     subject: /výpovědn[ií]\s+dob/i,
+    // Employment only. § 2286 still starts a lease notice period on the first
+    // of the following month, so firing there would tell a user their correct
+    // notice is based on repealed law.
+    context: /zákoník\s+práce|pracovní\s+poměr|zaměstnan|262\/2006/i,
+    notContext: /nájem|nájemc|pronajímatel|2286|89\/2012/i,
     // Czech declension: prvním/prvního/první dnem/dne, in either word order.
     // Note \S* rather than \w* — JavaScript's \w is ASCII-only, so it stops
     // dead at the first diacritic. Every suffix pattern in this file has to
@@ -158,6 +174,9 @@ export function findStaleLaw(text: string): StaleLawFinding[] {
   const findings: StaleLawFinding[] = []
 
   for (const rule of RULES) {
+    if (rule.context && !rule.context.test(text)) continue
+    if (rule.notContext && rule.notContext.test(text)) continue
+
     const subject = new RegExp(rule.subject.source, rule.subject.flags.replace('g', '') + 'g')
     let match: RegExpExecArray | null
     let fired = false

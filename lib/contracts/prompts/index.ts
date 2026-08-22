@@ -133,6 +133,12 @@ export interface PromptLang {
 
 export interface PromptBundle {
   systemPrompt: string
+  /**
+   * Appended after systemPrompt for one-sided documents. Placed last so it
+   * outweighs the contract-shaped instructions above it rather than competing
+   * with them.
+   */
+  unilateralOverride: string
   selfCheckPrompt: string
   qualityGateLang: QualityGateLang
   placeholders: PlaceholderTokens

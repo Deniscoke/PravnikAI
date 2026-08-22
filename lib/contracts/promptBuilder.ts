@@ -97,7 +97,11 @@ export function buildPrompt(input: PromptInput): BuiltPrompt {
   }
 
   return {
-    systemPrompt: assembleSystemPrompt(schema.metadata.aiInstructions, jurisdiction),
+    systemPrompt: assembleSystemPrompt(
+      schema.metadata.aiInstructions,
+      jurisdiction,
+      schema.metadata.documentKind,
+    ),
     userPrompt: userPromptParts.join('\n\n---\n\n'),
   }
 }

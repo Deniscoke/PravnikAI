@@ -196,6 +196,16 @@ export interface SchemaMetadata {
   legalBasis: string[]
   sensitivity: SchemaSensitivity
   outputStructure: OutputStructure
+  /**
+   * Whether this is an agreement between parties or a one-sided act.
+   *
+   * The Czech drafting prompt is written for contracts throughout — "smluvni
+   * strany", "datum uzavreni smlouvy", a signature block per party. None of
+   * that belongs on a notice of termination or a power of attorney, which one
+   * side makes and the other only receives. Defaults to 'contract' so every
+   * existing schema keeps its behaviour.
+   */
+  documentKind?: 'contract' | 'unilateral'
   /** Appended verbatim to the system prompt when generating this contract type */
   aiInstructions: string
   /** Short description shown in UI select / chip grid (native language). */
@@ -227,6 +237,8 @@ export type ContractFamily =
   | 'services'
   | 'loan'
   | 'gift'
+  /** Jednostranne ukonceni najmu — not a lease, and not a contract at all. */
+  | 'tenancy-notice'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

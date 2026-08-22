@@ -22,6 +22,7 @@ import { NDA_PROFILE } from './profiles/nda'
 import { EMPLOYMENT_AGREEMENT_PROFILE } from './profiles/employmentAgreement'
 import { LOAN_PROFILE } from './profiles/loan'
 import { GIFT_PROFILE } from './profiles/gift'
+import { TENANCY_NOTICE_PROFILE } from './profiles/tenancyNotice'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -37,6 +38,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'employment-agreement': EMPLOYMENT_AGREEMENT_PROFILE,
   loan: LOAN_PROFILE,
   gift: GIFT_PROFILE,
+  'tenancy-notice': TENANCY_NOTICE_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -66,6 +68,16 @@ interface FamilySignals {
   decisive: string[]
   /** Weaker vocabulary, scored only when no decisive phrase appears. */
   supporting: string[]
+  /**
+   * Families this one overrides when both name themselves in the same text.
+   *
+   * Some documents necessarily quote another type: a notice of termination
+   * identifies the lease it ends, so both "výpověď z nájmu" and "nájemní
+   * smlouva" appear. That is nesting, not ambiguity, and treating it as
+   * ambiguity would drop the review back to the generic rules on exactly the
+   * documents where the specific ones matter most.
+   */
+  beats?: LegalProfileKey[]
 }
 
 const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
@@ -86,6 +98,14 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     // contains the phrase in order to deny it ("nezakládá pracovní poměr").
     decisive: ['pracovní smlouva', 'pracovní smlouvu'],
     supporting: ['pracovní poměr', 'zaměstnanec', 'zaměstnavatel', 'zkušební doba', 'mzda'],
+  },
+  {
+    // Before 'tenancy' — a notice quotes the lease it terminates and would
+    // otherwise be checked against the rules for the lease itself.
+    family: 'tenancy-notice',
+    decisive: ['výpověď z nájmu', 'výpověď nájmu', 'vypovídá nájem', 'výpovědi z nájmu'],
+    supporting: ['výpověď'],
+    beats: ['tenancy'],
   },
   {
     family: 'tenancy',
@@ -160,8 +180,14 @@ export function resolveContractFamily(text: string): LegalProfileKey | null {
   const named = FAMILY_SIGNALS.filter(({ decisive }) =>
     decisive.some((phrase) => containsPhrase(haystack, normalize(phrase))),
   )
-  if (named.length === 1) return named[0].family
-  if (named.length > 1) return null
+
+  // Drop any family that a more specific one explicitly overrides. What remains
+  // is either a single answer or genuine ambiguity.
+  const overridden = new Set(named.flatMap(({ beats }) => beats ?? []))
+  const surviving = named.filter(({ family }) => !overridden.has(family))
+
+  if (surviving.length === 1) return surviving[0].family
+  if (surviving.length > 1) return null
 
   const scores = FAMILY_SIGNALS.map(({ family, supporting }) => ({
     family,

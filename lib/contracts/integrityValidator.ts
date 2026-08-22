@@ -111,6 +111,13 @@ const ESSENTIAL_KEYWORDS: Record<string, KeywordCheck[]> = {
     { term: 'obdarovan',  description: 'označení obdarovaného',          severity: 'error' },
     { term: 'podpis',     description: 'podpisový blok',                 severity: 'warning' },
   ],
+  'CZ:vypoved-z-najmu-bytu-v1': [
+    { term: 'vypovíd',  description: 'projev vůle vypovědět nájem',   severity: 'error' },
+    { term: 'nájm',     description: 'označení vypovídaného nájmu',   severity: 'error' },
+    { term: 'výpovědn', description: 'výpovědní doba',                severity: 'error' },
+    { term: 'doruč',    description: 'způsob doručení',               severity: 'warning' },
+    { term: 'podpis',   description: 'podpis vypovídající strany',    severity: 'warning' },
+  ],
   'CZ:nda-smlouva-v1': [
     { term: 'důvěrn',      description: 'definice důvěrných informací', severity: 'error' },
     { term: 'mlčenlivost', description: 'povinnost mlčenlivosti',       severity: 'error' },

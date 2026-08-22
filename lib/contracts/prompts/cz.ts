@@ -60,6 +60,30 @@ Vrať výhradně text smlouvy — bez komentářů, bez vysvětlení, bez metada
 Strukturuj dokument pomocí nadpisů (Článek I., Článek II., ...) nebo § 1, § 2.
 Na konci smlouvy ponech podpisové bloky se jmény smluvních stran.`
 
+/**
+ * Appended after SYSTEM_PROMPT for one-sided documents.
+ *
+ * Everything above it is written for contracts — parties who agree, a place
+ * and date of conclusion, a signature block each. A notice of termination has
+ * none of that: one side acts, the other only receives. Rather than maintain a
+ * second full prompt, this block sits last and overrides the handful of
+ * instructions that would otherwise turn a notice into something that reads
+ * like a contract nobody countersigned.
+ */
+const UNILATERAL_OVERRIDE = `
+
+## TENTO DOKUMENT NENÍ SMLOUVA — má přednost před pokyny výše
+
+Generuješ jednostranné právní jednání. Činí je jedna strana; druhá je pouze jeho adresátem a nic nepodepisuje.
+
+- Nepiš „smluvní strany", „strany se dohodly" ani „uzavírají". Jedna strana projevuje vůli vůči druhé.
+- Podpisový blok uveď POUZE pro jednající osobu. Adresát dokument nepodepisuje.
+- Neuváděj „datum a místo uzavření smlouvy" — uveď datum vyhotovení dokumentu.
+- Nepřidávej ustanovení, která patří do smlouvy: rozhodné právo, salvátorskou klauzuli, řešení sporů ani ujednání o počtu vyhotovení jako u dvoustranné smlouvy.
+- Struktura je krátká a věcná: označení adresáta a jednajícího, samotné právní jednání, důvod (vyžaduje-li jej zákon), zákonné poučení (vyžaduje-li je zákon), datum a podpis.
+- Vždy uveď způsob doručení. U jednostranných jednání jsou právní účinky zpravidla vázány na doručení druhé straně, nikoli na vyhotovení dokumentu.
+- Nevymýšlej právní důvod ani poučení. Pokud zákon vyžaduje uvedení důvodu a ten není v zadání, použij placeholder.`
+
 const SELF_CHECK_PROMPT = `Jsi zkušený český transakční právník provádějící finální revizi návrhu smlouvy.
 
 ## Tvůj úkol
@@ -84,6 +108,7 @@ Dostaneš návrh české smlouvy. Proveď tyto kontroly a v případě nalezený
 
 export const cz: PromptBundle = {
   systemPrompt: SYSTEM_PROMPT,
+  unilateralOverride: UNILATERAL_OVERRIDE,
   selfCheckPrompt: SELF_CHECK_PROMPT,
 
   placeholders: {

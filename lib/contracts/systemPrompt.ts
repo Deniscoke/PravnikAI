@@ -17,9 +17,22 @@ import { getPromptBundle } from './prompts'
  * Builds the complete system prompt for a contract type.
  * Appends the schema's aiInstructions under a Czech "Specific provisions" header.
  */
-export function buildSystemPrompt(aiInstructions: string, _jurisdiction?: Jurisdiction): string {
+export function buildSystemPrompt(
+  aiInstructions: string,
+  _jurisdiction?: Jurisdiction,
+  documentKind: 'contract' | 'unilateral' = 'contract',
+): string {
   const bundle = getPromptBundle()
-  return `${bundle.systemPrompt}\n\n## Specifická ustanovení pro tento typ smlouvy\n\n${aiInstructions}`
+
+  // The override goes last, after the contract-shaped base prompt, so it
+  // outweighs the instructions it contradicts instead of competing with them.
+  const override = documentKind === 'unilateral' ? bundle.unilateralOverride : ''
+  const heading =
+    documentKind === 'unilateral'
+      ? '## Specifická ustanovení pro tento dokument'
+      : '## Specifická ustanovení pro tento typ smlouvy'
+
+  return `${bundle.systemPrompt}${override}\n\n${heading}\n\n${aiInstructions}`
 }
 
 /** Returns the Stage 3 self-check (premium polish) prompt. */
