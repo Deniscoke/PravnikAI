@@ -31,6 +31,7 @@ import { WITHDRAWAL_PROFILE } from './profiles/withdrawal'
 import { COMPLAINT_PROFILE } from './profiles/complaint'
 import { PRE_ACTION_DEMAND_PROFILE } from './profiles/preActionDemand'
 import { SERVICE_PROVISION_PROFILE } from './profiles/serviceProvision'
+import { DEBT_ACKNOWLEDGMENT_PROFILE } from './profiles/debtAcknowledgment'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -55,6 +56,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   complaint: COMPLAINT_PROFILE,
   'pre-action-demand': PRE_ACTION_DEMAND_PROFILE,
   'service-provision': SERVICE_PROVISION_PROFILE,
+  'debt-acknowledgment': DEBT_ACKNOWLEDGMENT_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -219,6 +221,23 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     ],
     supporting: ['reklamac', 'vadneho plneni', 'vytknut', 'odstraneni vady'],
     beats: ['sale', 'services', 'withdrawal'],
+  },
+  {
+    // Beats 'pre-action-demand' because an acknowledgment is very often written
+    // in answer to one and says so; and 'loan', because it names the zápůjčka
+    // the debt came from.
+    family: 'debt-acknowledgment',
+    decisive: [
+      'uznání dluhu',
+      'uznání závazku',
+      'uznávám dluh',
+      'uznávám svůj dluh',
+      'uznávám tímto',
+      'uznáváme tímto',
+      'uznávám co do důvodu',
+    ],
+    supporting: ['uznání', 'jistina', 'promlčec'],
+    beats: ['loan', 'sale', 'pre-action-demand'],
   },
   {
     // "Výzva k plnění" alone would collide with an odstoupení, which quotes the

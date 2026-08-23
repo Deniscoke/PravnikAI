@@ -258,6 +258,8 @@ export type ContractFamily =
   | 'pre-action-demand'
   /** Smlouva o poskytovani sluzeb — an activity, not a dilo and not employment. */
   | 'service-provision'
+  /** Uznani dluhu — reverses the burden of proof and restarts limitation at ten years. */
+  | 'debt-acknowledgment'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 
