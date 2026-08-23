@@ -254,6 +254,8 @@ export type ContractFamily =
   | 'withdrawal'
   /** Reklamace — rights from defective performance, rewritten by 374/2022 Sb. */
   | 'complaint'
+  /** Predzalobni vyzva — the condition for recovering costs under § 142a OSR. */
+  | 'pre-action-demand'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

@@ -128,6 +128,40 @@ export const CASH_PAYMENT_LIMIT_CZK: LegalFact<number> = {
   source: 'https://www.zakonyprolidi.cz/cs/2004-254',
 }
 
+// ─── Prodlení s placením (nař. vl. č. 351/2013 Sb.) ──────────────────────────
+
+/**
+ * Points added to the ČNB repo rate to give the statutory default interest.
+ *
+ * Deliberately only the spread. The rate itself is repo + 8, where "repo" is
+ * the rate on the first day of the calendar half-year IN WHICH THE DEFAULT
+ * BEGAN — so it is neither a constant nor a figure that can be looked up once
+ * and reused. Freezing a percentage here would put a number in every demand
+ * letter that goes wrong twice a year and is wrong from the start for any debt
+ * that fell due in an earlier half-year.
+ */
+export const DEFAULT_INTEREST_SPREAD_POINTS: LegalFact<number> = {
+  value: 8,
+  law: '§ 2 odst. 1 nař. vl. č. 351/2013 Sb.',
+  effectiveFrom: '2014-01-01',
+  lastVerified: '2026-08-23',
+  source: 'https://www.zakonyprolidi.cz/cs/2013-351',
+  note:
+    'Sazba = repo sazba ČNB pro první den kalendářního pololetí, v němž došlo ' +
+    'k prodlení, + 8 procentních bodů. Repo sazbu je nutné dohledat u ČNB — ' +
+    'nikdy ji sem nezmrazuj.',
+}
+
+/** Minimum costs of asserting each claim between businesses. */
+export const LATE_PAYMENT_MIN_COSTS_CZK: LegalFact<number> = {
+  value: 1_200,
+  law: '§ 3 nař. vl. č. 351/2013 Sb.',
+  effectiveFrom: '2014-01-01',
+  lastVerified: '2026-08-23',
+  source: 'https://www.zakonyprolidi.cz/cs/2013-351',
+  note: 'Jen u vzájemného závazku podnikatelů, popř. podnikatele a veřejného zadavatele.',
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Formats a Czech-koruna amount the way the UI and prompts write it. */
@@ -148,4 +182,6 @@ export const ALL_LEGAL_FACTS: ReadonlyArray<{ key: string; fact: LegalFact<numbe
   { key: 'MIN_VACATION_WEEKS', fact: MIN_VACATION_WEEKS },
   { key: 'RENT_DEPOSIT_MAX_MULTIPLE', fact: RENT_DEPOSIT_MAX_MULTIPLE },
   { key: 'CASH_PAYMENT_LIMIT_CZK', fact: CASH_PAYMENT_LIMIT_CZK },
+  { key: 'DEFAULT_INTEREST_SPREAD_POINTS', fact: DEFAULT_INTEREST_SPREAD_POINTS },
+  { key: 'LATE_PAYMENT_MIN_COSTS_CZK', fact: LATE_PAYMENT_MIN_COSTS_CZK },
 ]

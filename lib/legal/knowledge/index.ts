@@ -29,6 +29,7 @@ import { EMPLOYMENT_NOTICE_PROFILE } from './profiles/employmentNotice'
 import { AGREEMENT_TERMINATION_PROFILE } from './profiles/agreementTermination'
 import { WITHDRAWAL_PROFILE } from './profiles/withdrawal'
 import { COMPLAINT_PROFILE } from './profiles/complaint'
+import { PRE_ACTION_DEMAND_PROFILE } from './profiles/preActionDemand'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -51,6 +52,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'agreement-termination': AGREEMENT_TERMINATION_PROFILE,
   withdrawal: WITHDRAWAL_PROFILE,
   complaint: COMPLAINT_PROFILE,
+  'pre-action-demand': PRE_ACTION_DEMAND_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -199,6 +201,15 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     ],
     supporting: ['reklamac', 'vadneho plneni', 'vytknut', 'odstraneni vady'],
     beats: ['sale', 'services', 'withdrawal'],
+  },
+  {
+    // "Výzva k plnění" alone would collide with an odstoupení, which quotes the
+    // demand it had to send first under § 2003. "Předžalobní" collides with
+    // nothing — no other document uses the word.
+    family: 'pre-action-demand',
+    decisive: ['předžalobní', 'předžalobní výzva', 'výzva před podáním žaloby'],
+    supporting: ['dlužná částka', 'úrok z prodlení', 'jistina', 'věřitel', 'dlužník'],
+    beats: ['sale', 'services', 'loan'],
   },
   {
     family: 'power-of-attorney',
