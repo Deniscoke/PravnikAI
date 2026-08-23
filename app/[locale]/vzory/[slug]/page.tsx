@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { CONTRACT_GUIDES, getContractGuide } from '@/lib/seo/guides'
+import { CONTRACT_GUIDES, getContractGuide, guideCopy } from '@/lib/seo/guides'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()
@@ -59,6 +59,8 @@ export default async function ContractGuidePage({ params }: Props) {
     })),
   }
 
+  const copy = guideCopy(guide)
+
   return (
     <main className="legal-page">
       <BreadcrumbJsonLd
@@ -83,10 +85,10 @@ export default async function ContractGuidePage({ params }: Props) {
 
         <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', margin: 'var(--space-lg) 0' }}>
           <Link href={`/${locale}/generator`} className="glass-btn glass-btn--primary" style={{ textDecoration: 'none' }}>
-            Vytvořit návrh smlouvy
+            {copy.generateCta}
           </Link>
           <Link href={`/${locale}/review`} className="glass-btn" style={{ textDecoration: 'none' }}>
-            Zkontrolovat existující smlouvu
+            {copy.reviewCta}
           </Link>
         </div>
 
@@ -142,7 +144,7 @@ export default async function ContractGuidePage({ params }: Props) {
         <section>
           <h2>Jak si připravit návrh v {SITE_NAME}</h2>
           <ol>
-            <li>Vyberte typ smlouvy &mdash; {guide.generatorHint}.</li>
+            <li>{copy.pickTypeStep} &mdash; {guide.generatorHint}.</li>
             <li>Vyplňte údaje o stranách, předmětu a ceně. Povinná pole vás nepustí dál prázdná.</li>
             <li>Projděte si výstup, doplňte označená místa a exportujte do DOCX nebo PDF.</li>
           </ol>
@@ -169,7 +171,7 @@ export default async function ContractGuidePage({ params }: Props) {
           </p>
           <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', marginTop: 'var(--space-sm)' }}>
             <Link href={`/${locale}/generator`} className="glass-btn glass-btn--primary" style={{ textDecoration: 'none' }}>
-              Vytvořit návrh smlouvy
+              {copy.generateCta}
             </Link>
             <Link href={`/${locale}/duvera`} className="glass-btn glass-btn--ghost" style={{ textDecoration: 'none' }}>
               Jak to funguje a jaké to má limity

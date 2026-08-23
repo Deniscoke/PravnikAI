@@ -132,7 +132,7 @@ Jsou krátké a formálně přísné, takže poměr užitku k práci je výborn�
 | Zrušení dohody (DPP/DPČ) | § 77 odst. 4 ZP | ✅ | Patnáct dní, i bez důvodu. |
 | Odstoupení od smlouvy | § 2001–2005 NOZ | ✅ | Musí existovat důvod ve smlouvě nebo v zákoně. |
 | Odstoupení spotřebitele do 14 dnů | § 1829 NOZ | ✅ | Jen u smluv uzavřených distančně. |
-| Reklamace | § 2165 a násl. NOZ | ⏳ | Lhůty po novele 374/2022 Sb. |
+| Reklamace | § 2165 a násl. NOZ | ✅ | Lhůty po novele 374/2022 Sb. |
 | Předžalobní výzva | § 142a OSŘ | ⏳ | Podmínka náhrady nákladů řízení. |
 
 ---
@@ -144,7 +144,7 @@ Jsou krátké a formálně přísné, takže poměr užitku k práci je výborn�
 3. **Jednostranné úkony (výpovědi)** — krátké dokumenty, obrovské hledanosti,
    a přesně tam, kde lidé nejčastěji udělají formální chybu.
 
-Z bodu 3 zbývají **reklamace** a **předžalobní výzva**; ostatní jednostranné úkony
+Z bodu 3 zbývá už jen **předžalobní výzva**; ostatní jednostranné úkony
 jsou hotové včetně znalostního profilu, schématu a landing page.
 4. **Zpracovatelská smlouva GDPR** — jiný typ zákazníka (B2B), opakovaná potřeba.
 5. **Nájem prostoru sloužícího podnikání** — jakmile bude kapacita na druhý

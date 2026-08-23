@@ -28,6 +28,7 @@ import { DATA_PROCESSING_PROFILE } from './profiles/dataProcessing'
 import { EMPLOYMENT_NOTICE_PROFILE } from './profiles/employmentNotice'
 import { AGREEMENT_TERMINATION_PROFILE } from './profiles/agreementTermination'
 import { WITHDRAWAL_PROFILE } from './profiles/withdrawal'
+import { COMPLAINT_PROFILE } from './profiles/complaint'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -49,6 +50,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'employment-notice': EMPLOYMENT_NOTICE_PROFILE,
   'agreement-termination': AGREEMENT_TERMINATION_PROFILE,
   withdrawal: WITHDRAWAL_PROFILE,
+  complaint: COMPLAINT_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -178,6 +180,25 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     decisive: ['odstoupení od smlouvy', 'odstupuji od smlouvy', 'odstoupení od kupní smlouvy'],
     supporting: [],
     beats: ['sale', 'services', 'tenancy', 'loan', 'gift', 'nda', 'employment'],
+  },
+  {
+    // Decisive keywords are all first person. A kupni smlouva routinely carries
+    // an article headed "Reklamace", so the bare noun would drag every purchase
+    // contract into this profile; "reklamuji" only ever appears in the letter.
+    // Beats 'withdrawal' because § 2171 is the special rule for walking away
+    // from a consumer sale over a defect — § 2001 is the general one.
+    family: 'complaint',
+    decisive: [
+      'reklamuji',
+      'reklamujeme',
+      'uplatnuji reklamaci',
+      'uplatnujeme reklamaci',
+      'vytykam vadu',
+      'vytykame vadu',
+      'uplatnuji prava z vadneho plneni',
+    ],
+    supporting: ['reklamac', 'vadneho plneni', 'vytknut', 'odstraneni vady'],
+    beats: ['sale', 'services', 'withdrawal'],
   },
   {
     family: 'power-of-attorney',

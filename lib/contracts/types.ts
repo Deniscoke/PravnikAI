@@ -94,8 +94,11 @@ export interface FieldValidation {
 export interface ConditionalRule {
   /** ID of the controlling field */
   fieldId: string
-  /** The value that activates this section/field */
-  value: string | boolean
+  /**
+   * The value that activates this section/field. An array means "any of
+   * these" — for a field that belongs to several branches at once.
+   */
+  value: string | boolean | ReadonlyArray<string>
 }
 
 export interface ContractField {
@@ -249,6 +252,8 @@ export type ContractFamily =
   | 'agreement-termination'
   /** Odstoupeni od smlouvy — cancels the obligation from the beginning. */
   | 'withdrawal'
+  /** Reklamace — rights from defective performance, rewritten by 374/2022 Sb. */
+  | 'complaint'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

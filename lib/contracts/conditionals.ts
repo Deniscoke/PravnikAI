@@ -55,14 +55,23 @@ export function resolveControlValue(
  *
  * Values are compared as strings because form data is always string-valued,
  * while a schema may declare a numeric or boolean condition.
+ *
+ * An array means "any of these". Some fields belong to several branches at
+ * once — on a reklamace the § 2171 ground is needed for a discount and for
+ * withdrawal alike — and the alternative was declaring the same field twice,
+ * which then has to be kept in step by hand.
  */
 export function isConditionMet(
-  conditional: { fieldId: string; value: string | number | boolean } | undefined,
+  conditional:
+    | { fieldId: string; value: string | number | boolean | ReadonlyArray<string> }
+    | undefined,
   data: NormalizedFormData,
   currentSectionId?: string,
 ): boolean {
   if (!conditional) return true
-  return (
-    resolveControlValue(data, conditional.fieldId, currentSectionId) === String(conditional.value)
-  )
+  const actual = resolveControlValue(data, conditional.fieldId, currentSectionId)
+  if (Array.isArray(conditional.value)) {
+    return conditional.value.some((candidate) => actual === String(candidate))
+  }
+  return actual === String(conditional.value)
 }

@@ -10,6 +10,7 @@
 export type { ContractGuide, GuideSection, GuideFaq } from './types'
 
 import type { ContractGuide } from './types'
+import { getAllSchemas } from '@/lib/contracts/contractSchemas'
 import { KUPNI_SMLOUVA } from './kupniSmlouva'
 import { NAJEMNI_SMLOUVA } from './najemniSmlouva'
 import { SMLOUVA_O_DILO } from './smlouvaODilo'
@@ -25,6 +26,7 @@ import { VYPOVED_Z_PRACOVNIHO_POMERU } from './vypovedZPracovnihoPomeru'
 import { VYPOVED_Z_NAJMU } from './vypovedZNajmu'
 import { ZRUSENI_DOHODY } from './zruseniDohody'
 import { ODSTOUPENI_OD_SMLOUVY } from './odstoupeniOdSmlouvy'
+import { REKLAMACE } from './reklamace'
 
 export const CONTRACT_GUIDES: ReadonlyArray<ContractGuide> = [
   KUPNI_SMLOUVA,
@@ -42,9 +44,41 @@ export const CONTRACT_GUIDES: ReadonlyArray<ContractGuide> = [
   VYPOVED_Z_NAJMU,
   ZRUSENI_DOHODY,
   ODSTOUPENI_OD_SMLOUVY,
+  REKLAMACE,
 ]
 
 /** Looks a guide up by its URL segment. */
 export function getContractGuide(slug: string): ContractGuide | undefined {
   return CONTRACT_GUIDES.find((guide) => guide.slug === slug)
+}
+
+/**
+ * Wording for a page that may not be about a contract at all.
+ *
+ * A reklamace, a výpověď and a plná moc are one-sided acts, so a button reading
+ * "Vytvořit návrh smlouvy" is simply wrong on a third of these pages. The
+ * schema already records which is which via documentKind, and the guides test
+ * guarantees generatorHint names a real one — so derive it rather than letting
+ * each page guess.
+ */
+export function guideCopy(guide: ContractGuide): {
+  generateCta: string
+  reviewCta: string
+  pickTypeStep: string
+} {
+  const schema = getAllSchemas().find((s) => s.metadata.name === guide.generatorHint)
+
+  if (schema?.metadata.documentKind === 'unilateral') {
+    return {
+      generateCta: 'Vytvořit dokument',
+      reviewCta: 'Zkontrolovat existující dokument',
+      pickTypeStep: 'Vyberte typ dokumentu',
+    }
+  }
+
+  return {
+    generateCta: 'Vytvořit návrh smlouvy',
+    reviewCta: 'Zkontrolovat existující smlouvu',
+    pickTypeStep: 'Vyberte typ smlouvy',
+  }
 }

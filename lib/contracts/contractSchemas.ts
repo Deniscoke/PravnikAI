@@ -31,6 +31,7 @@ import { zpracovatelskaSmlouva } from './schemas/cz/zpracovatelskaSmlouva'
 import { vypovedZPracovnihoPomeru } from './schemas/cz/vypovedZPracovnihoPomeru'
 import { zruseniDohody } from './schemas/cz/zruseniDohody'
 import { odstoupeniOdSmlouvy } from './schemas/cz/odstoupeniOdSmlouvy'
+import { reklamace } from './schemas/cz/reklamace'
 
 // ─── Registry ────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
   [vypovedZPracovnihoPomeru.metadata.schemaId]: vypovedZPracovnihoPomeru,
   [zruseniDohody.metadata.schemaId]: zruseniDohody,
   [odstoupeniOdSmlouvy.metadata.schemaId]: odstoupeniOdSmlouvy,
+  [reklamace.metadata.schemaId]: reklamace,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

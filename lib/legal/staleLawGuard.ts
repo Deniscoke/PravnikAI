@@ -176,6 +176,49 @@ const RULES: StaleLawRule[] = [
       'Záruka za jakost je dobrovolný závazek navíc.',
     changedOn: '2023-01-06',
   },
+  {
+    // The three-working-day rule for deciding on a complaint is not in § 19 at
+    // all any more, yet it is repeated on practically every e-shop page.
+    id: 'stale-complaint-three-working-days',
+    subject: /reklamac/i,
+    staleValue: /(tří|třech|3)\s*pracovní\S*\s*dn/i,
+    window: 200,
+    claim: 'Prodávající musí o reklamaci rozhodnout do tří pracovních dnů.',
+    correction:
+      'Tuto povinnost § 19 zák. č. 634/1992 Sb. neobsahuje. Platí, že reklamace ' +
+      'musí být vyřízena a spotřebitel o tom informován do 30 dnů ode dne ' +
+      'uplatnění (§ 19 odst. 3 téhož zákona).',
+    changedOn: '2023-01-06',
+  },
+  {
+    // Before the novela the lapse had to be routed through § 2002; now the
+    // consumer protection act grants the right directly, which is stronger.
+    id: 'stale-complaint-lapse-as-material-breach',
+    subject: /reklamac/i,
+    staleValue: /podstatn\S*\s+porušení\S*\s*smlouvy|podstatné\s+porušení/i,
+    assertsLimit: /30\s*dn|třiceti\s*dn|třicetidenní|marn\S*\s+uplynut/i,
+    window: 240,
+    claim: 'Marné uplynutí třicetidenní lhůty je podstatným porušením smlouvy.',
+    correction:
+      'Po marném uplynutí lhůty může spotřebitel od smlouvy odstoupit nebo ' +
+      'požadovat přiměřenou slevu přímo podle § 19 odst. 4 zák. č. 634/1992 Sb. ' +
+      'Konstrukce přes podstatné porušení smlouvy je překonaná.',
+    changedOn: '2023-01-06',
+  },
+  {
+    id: 'stale-defect-presumption-six-months',
+    subject: /domněnk|prokazuj|prokáz|má\s+se\s+za\s+to/i,
+    staleValue: /(šest\S*|6)\s*měsíc|půl\s*roku|šestiměsíč/i,
+    assertsLimit: /vad|převzet/i,
+    context: /reklamac|vadné\s+plnění|spotřebitel|kupující/i,
+    window: 200,
+    claim: 'Domněnka, že věc byla vadná už při převzetí, trvá šest měsíců.',
+    correction:
+      'Od 6. 1. 2023 činí tato doba jeden rok — projeví-li se vada do jednoho ' +
+      'roku od převzetí, má se za to, že věc byla vadná už při převzetí ' +
+      '(§ 2161 odst. 5 zák. č. 89/2012 Sb.).',
+    changedOn: '2023-01-06',
+  },
 ]
 
 /**
