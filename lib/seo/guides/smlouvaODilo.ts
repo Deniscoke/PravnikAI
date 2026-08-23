@@ -58,6 +58,7 @@ export const SMLOUVA_O_DILO: ContractGuide = {
       title: 'Vágní popis díla',
       body:
         '„Rekonstrukce koupelny“ bez specifikace rozsahu a materiálů je nejčastější zdroj sporu o to, co bylo součástí ceny.',
+      law: '§ 2586 NOZ',
     },
     {
       title: 'Vícepráce bez písemného dodatku',
@@ -75,11 +76,13 @@ export const SMLOUVA_O_DILO: ContractGuide = {
       title: 'Převzetí bez protokolu',
       body:
         'Bez protokolu se obtížně prokazuje, kdy bylo dílo předáno a s jakými výhradami. Od převzetí přitom běží lhůty.',
+      law: '§ 2604 a § 2605 NOZ',
     },
     {
       title: 'Zaměňování záruky a odpovědnosti za vady',
       body:
         'Odpovědnost za vady plyne ze zákona. Záruka za jakost vzniká jen výslovným ujednáním — „zákonná záruka 24 měsíců“ u díla mezi podnikateli neplatí automaticky.',
+      law: '§ 2113 ve spojení s § 2615 NOZ',
     },
   ],
 

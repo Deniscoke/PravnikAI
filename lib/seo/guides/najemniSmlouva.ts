@@ -2,7 +2,7 @@ import type { ContractGuide } from './types'
 
 export const NAJEMNI_SMLOUVA: ContractGuide = {
   slug: 'najemni-smlouva',
-  generatorHint: 'Nájemní smlouva',
+  generatorHint: 'Nájemní smlouva na byt',
   metaTitle: 'Nájemní smlouva na byt — vzor a návrh podle českého práva',
   metaDescription:
     'Co musí nájemní smlouva na byt obsahovat podle § 2235 a násl. občanského zákoníku, jaká je maximální jistota, časté chyby a jak si připravit vlastní návrh.',

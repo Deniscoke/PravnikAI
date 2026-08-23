@@ -56,11 +56,13 @@ export const NDA_SMLOUVA: ContractGuide = {
       title: 'Definice „vše, co si sdělíme“',
       body:
         'Neomezená definice se špatně vymáhá — u sporu je nutné prokázat, co konkrétně bylo důvěrné a že to bylo porušeno.',
+      law: '§ 553 NOZ',
     },
     {
       title: 'Chybějící výjimky',
       body:
         'Bez výjimky pro veřejně známé informace a zákonnou povinnost se příjemce zavazuje k něčemu, co nemůže splnit.',
+      law: '§ 504 NOZ',
     },
     {
       title: 'Nepřiměřená smluvní pokuta',
@@ -72,11 +74,13 @@ export const NDA_SMLOUVA: ContractGuide = {
       title: 'Časově neomezená mlčenlivost',
       body:
         'Závazek „navždy“ bývá u běžných obchodních informací považován za nepřiměřený. Uveďte konkrétní dobu.',
+      law: '§ 580 NOZ',
     },
     {
       title: 'Nezavázaní spolupracovníci',
       body:
         'Pokud příjemce zpřístupní informace zaměstnancům či subdodavatelům, musí být vázáni stejně — jinak ochrana končí u první třetí osoby.',
+      law: '§ 1769 NOZ',
     },
   ],
 

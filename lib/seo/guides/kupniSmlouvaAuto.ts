@@ -44,7 +44,7 @@ export const KUPNI_SMLOUVA_AUTO: ContractGuide = {
       title: 'Předání vozidla a přechod vlastnictví',
       body:
         'Datum a místo předání, seznam předávaných věcí (klíče, technický průkaz, servisní knížka, sada kol) a okamžik, kdy přechází vlastnické právo a nebezpečí škody.',
-      law: '§ 1099, § 2121 NOZ',
+      law: '§ 2087 NOZ',
     },
     {
       title: 'Závazek k přepisu v registru vozidel',
@@ -65,11 +65,13 @@ export const KUPNI_SMLOUVA_AUTO: ContractGuide = {
       title: 'Věta „kupující byl seznámen se stavem vozidla"',
       body:
         'Sama o sobě prodávajícího nezbaví odpovědnosti. Účinná je jen konkrétní specifikace vad — obecná formulace u soudu neobstojí.',
+      law: '§ 1916 odst. 2 NOZ',
     },
     {
       title: 'Zamlčený stav tachometru nebo havárie',
       body:
         'Zamlčení podstatné vady může vést k odstoupení od smlouvy i k odpovědnosti za škodu. U vozidel po havárii to platí dvojnásob.',
+      law: '§ 583 a § 1728 odst. 2 NOZ',
     },
     {
       title: 'Prodej podnikatelem bez respektu k právům spotřebitele',

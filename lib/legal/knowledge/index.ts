@@ -26,6 +26,8 @@ import { TENANCY_NOTICE_PROFILE } from './profiles/tenancyNotice'
 import { POWER_OF_ATTORNEY_PROFILE } from './profiles/powerOfAttorney'
 import { DATA_PROCESSING_PROFILE } from './profiles/dataProcessing'
 import { EMPLOYMENT_NOTICE_PROFILE } from './profiles/employmentNotice'
+import { AGREEMENT_TERMINATION_PROFILE } from './profiles/agreementTermination'
+import { WITHDRAWAL_PROFILE } from './profiles/withdrawal'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -45,6 +47,8 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'power-of-attorney': POWER_OF_ATTORNEY_PROFILE,
   'data-processing': DATA_PROCESSING_PROFILE,
   'employment-notice': EMPLOYMENT_NOTICE_PROFILE,
+  'agreement-termination': AGREEMENT_TERMINATION_PROFILE,
+  withdrawal: WITHDRAWAL_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -87,6 +91,19 @@ interface FamilySignals {
 }
 
 const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
+  {
+    // Before 'employment-agreement' — a termination quotes the dohoda it ends.
+    family: 'agreement-termination',
+    decisive: [
+      'výpověď dohody',
+      'zrušení dohody o provedení práce',
+      'zrušení dohody o pracovní činnosti',
+      'vypovídám dohodu o provedení práce',
+      'vypovídám dohodu o pracovní činnosti',
+    ],
+    supporting: [],
+    beats: ['employment-agreement'],
+  },
   {
     // Before 'employment' — a dohoda shares almost all of its vocabulary.
     family: 'employment-agreement',
@@ -153,6 +170,14 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     family: 'gift',
     decisive: ['darovací smlouva', 'darovací smlouvu'],
     supporting: ['dárce', 'obdarovan', 'darování', 'bezplatně převádí'],
+  },
+  {
+    // Beats every contract type: a withdrawal names the contract it cancels, so
+    // otherwise the review would check it against that contract's own rules.
+    family: 'withdrawal',
+    decisive: ['odstoupení od smlouvy', 'odstupuji od smlouvy', 'odstoupení od kupní smlouvy'],
+    supporting: [],
+    beats: ['sale', 'services', 'tenancy', 'loan', 'gift', 'nda', 'employment'],
   },
   {
     family: 'power-of-attorney',

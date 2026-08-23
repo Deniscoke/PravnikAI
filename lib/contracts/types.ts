@@ -245,6 +245,10 @@ export type ContractFamily =
   | 'data-processing'
   /** Vypoved z pracovniho pomeru — one-sided, and asymmetric between the sides. */
   | 'employment-notice'
+  /** Zruseni dohody DPP/DPC — fifteen days, either side, no ground needed. */
+  | 'agreement-termination'
+  /** Odstoupeni od smlouvy — cancels the obligation from the beginning. */
+  | 'withdrawal'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

@@ -29,6 +29,8 @@ import { vypovedZNajmu } from './schemas/cz/vypovedZNajmu'
 import { plnaMoc } from './schemas/cz/plnaMoc'
 import { zpracovatelskaSmlouva } from './schemas/cz/zpracovatelskaSmlouva'
 import { vypovedZPracovnihoPomeru } from './schemas/cz/vypovedZPracovnihoPomeru'
+import { zruseniDohody } from './schemas/cz/zruseniDohody'
+import { odstoupeniOdSmlouvy } from './schemas/cz/odstoupeniOdSmlouvy'
 
 // ─── Registry ────────────────────────────────────────────────────────────────
 
@@ -50,6 +52,8 @@ export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
   [plnaMoc.metadata.schemaId]: plnaMoc,
   [zpracovatelskaSmlouva.metadata.schemaId]: zpracovatelskaSmlouva,
   [vypovedZPracovnihoPomeru.metadata.schemaId]: vypovedZPracovnihoPomeru,
+  [zruseniDohody.metadata.schemaId]: zruseniDohody,
+  [odstoupeniOdSmlouvy.metadata.schemaId]: odstoupeniOdSmlouvy,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
