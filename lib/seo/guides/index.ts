@@ -20,6 +20,7 @@ import { DOHODA_O_PROVEDENI_PRACE } from './dohodaOProvedeniPrace'
 import { SMLOUVA_O_ZAPUJCCE } from './smlouvaOZapujcce'
 import { DAROVACI_SMLOUVA } from './darovaciSmlouva'
 import { PLNA_MOC } from './plnaMoc'
+import { ZPRACOVATELSKA_SMLOUVA } from './zpracovatelskaSmlouva'
 
 export const CONTRACT_GUIDES: ReadonlyArray<ContractGuide> = [
   KUPNI_SMLOUVA,
@@ -32,6 +33,7 @@ export const CONTRACT_GUIDES: ReadonlyArray<ContractGuide> = [
   SMLOUVA_O_ZAPUJCCE,
   DAROVACI_SMLOUVA,
   PLNA_MOC,
+  ZPRACOVATELSKA_SMLOUVA,
 ]
 
 /** Looks a guide up by its URL segment. */

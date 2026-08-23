@@ -241,6 +241,8 @@ export type ContractFamily =
   | 'tenancy-notice'
   /** Plna moc — a one-sided grant of authority, not an agreement. */
   | 'power-of-attorney'
+  /** Zpracovatelska smlouva — content prescribed by Article 28 GDPR. */
+  | 'data-processing'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

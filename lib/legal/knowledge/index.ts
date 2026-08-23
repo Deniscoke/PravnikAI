@@ -24,6 +24,7 @@ import { LOAN_PROFILE } from './profiles/loan'
 import { GIFT_PROFILE } from './profiles/gift'
 import { TENANCY_NOTICE_PROFILE } from './profiles/tenancyNotice'
 import { POWER_OF_ATTORNEY_PROFILE } from './profiles/powerOfAttorney'
+import { DATA_PROCESSING_PROFILE } from './profiles/dataProcessing'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -41,6 +42,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   gift: GIFT_PROFILE,
   'tenancy-notice': TENANCY_NOTICE_PROFILE,
   'power-of-attorney': POWER_OF_ATTORNEY_PROFILE,
+  'data-processing': DATA_PROCESSING_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -143,6 +145,19 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     family: 'power-of-attorney',
     decisive: ['plná moc', 'plnou moc', 'plné moci'],
     supporting: ['zmocnitel', 'zmocněnec', 'zmocňuji'],
+  },
+  {
+    // Before 'nda' — a DPA routinely contains a confidentiality article, and
+    // being checked against the NDA profile would miss every Article 28 item.
+    family: 'data-processing',
+    decisive: [
+      'zpracovatelská smlouva',
+      'zpracovatelskou smlouvu',
+      'smlouva o zpracování osobních údajů',
+      'zpracování osobních údajů podle čl. 28',
+    ],
+    supporting: ['zpracovatel', 'správce osobních údajů', 'gdpr', 'subjekt údajů'],
+    beats: ['nda'],
   },
 ]
 
