@@ -123,17 +123,17 @@ uživatele a buduje důvěru víc než další formulář.
 Nejsou to smlouvy, ale lidé je hledají stejně často a dnes je nemáme.
 Jsou krátké a formálně přísné, takže poměr užitku k práci je výborný.
 
-| Dokument | Právní základ | Pozor na |
-|---|---|---|
-| Výpověď z nájmu bytu (pronajímatel) | § 2288–2291 NOZ | Musí obsahovat důvod **a poučení o právu podat námitky a navrhnout přezkum soudem**, jinak je vadná. |
-| Výpověď z nájmu bytu (nájemce) | § 2287 NOZ | Bez důvodu, tříměsíční lhůta. |
-| Výpověď z pracovního poměru (zaměstnanec) | § 50 ZP | Bez důvodu; od 1. 6. 2025 běží lhůta od doručení. |
-| Výpověď z pracovního poměru (zaměstnavatel) | § 52 ZP | Jen z taxativních důvodů — vysoké riziko chyby. |
-| Zrušení dohody (DPP/DPČ) | § 77 odst. 4 ZP | Patnáct dní, i bez důvodu. |
-| Odstoupení od smlouvy | § 2001–2005 NOZ | Musí existovat důvod ve smlouvě nebo v zákoně. |
-| Odstoupení spotřebitele do 14 dnů | § 1829 NOZ | Jen u smluv uzavřených distančně. |
-| Reklamace | § 2165 a násl. NOZ | Lhůty po novele 374/2022 Sb. |
-| Předžalobní výzva | § 142a OSŘ | Podmínka náhrady nákladů řízení. |
+| Dokument | Právní základ | Stav | Pozor na |
+|---|---|---|---|
+| Výpověď z nájmu bytu (pronajímatel) | § 2288–2291 NOZ | ✅ | Musí obsahovat důvod **a poučení o právu podat námitky a navrhnout přezkum soudem**, jinak je vadná. |
+| Výpověď z nájmu bytu (nájemce) | § 2287 NOZ | ✅ | Bez důvodu, tříměsíční lhůta. |
+| Výpověď z pracovního poměru (zaměstnanec) | § 50 ZP | ✅ | Bez důvodu; od 1. 6. 2025 běží lhůta od doručení. |
+| Výpověď z pracovního poměru (zaměstnavatel) | § 52 ZP | ✅ | Jen z taxativních důvodů — vysoké riziko chyby. |
+| Zrušení dohody (DPP/DPČ) | § 77 odst. 4 ZP | ✅ | Patnáct dní, i bez důvodu. |
+| Odstoupení od smlouvy | § 2001–2005 NOZ | ✅ | Musí existovat důvod ve smlouvě nebo v zákoně. |
+| Odstoupení spotřebitele do 14 dnů | § 1829 NOZ | ✅ | Jen u smluv uzavřených distančně. |
+| Reklamace | § 2165 a násl. NOZ | ⏳ | Lhůty po novele 374/2022 Sb. |
+| Předžalobní výzva | § 142a OSŘ | ⏳ | Podmínka náhrady nákladů řízení. |
 
 ---
 
@@ -143,6 +143,9 @@ Jsou krátké a formálně přísné, takže poměr užitku k práci je výborn�
 2. **Zápůjčka + darovací** — vysoká poptávka, nízké riziko, blízko kupní smlouvě.
 3. **Jednostranné úkony (výpovědi)** — krátké dokumenty, obrovské hledanosti,
    a přesně tam, kde lidé nejčastěji udělají formální chybu.
+
+Z bodu 3 zbývají **reklamace** a **předžalobní výzva**; ostatní jednostranné úkony
+jsou hotové včetně znalostního profilu, schématu a landing page.
 4. **Zpracovatelská smlouva GDPR** — jiný typ zákazníka (B2B), opakovaná potřeba.
 5. **Nájem prostoru sloužícího podnikání** — jakmile bude kapacita na druhý
    nájemní režim.
