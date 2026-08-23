@@ -239,6 +239,8 @@ export type ContractFamily =
   | 'gift'
   /** Jednostranne ukonceni najmu — not a lease, and not a contract at all. */
   | 'tenancy-notice'
+  /** Plna moc — a one-sided grant of authority, not an agreement. */
+  | 'power-of-attorney'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

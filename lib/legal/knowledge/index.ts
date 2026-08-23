@@ -23,6 +23,7 @@ import { EMPLOYMENT_AGREEMENT_PROFILE } from './profiles/employmentAgreement'
 import { LOAN_PROFILE } from './profiles/loan'
 import { GIFT_PROFILE } from './profiles/gift'
 import { TENANCY_NOTICE_PROFILE } from './profiles/tenancyNotice'
+import { POWER_OF_ATTORNEY_PROFILE } from './profiles/powerOfAttorney'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -39,6 +40,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   loan: LOAN_PROFILE,
   gift: GIFT_PROFILE,
   'tenancy-notice': TENANCY_NOTICE_PROFILE,
+  'power-of-attorney': POWER_OF_ATTORNEY_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -136,6 +138,11 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     family: 'gift',
     decisive: ['darovací smlouva', 'darovací smlouvu'],
     supporting: ['dárce', 'obdarovan', 'darování', 'bezplatně převádí'],
+  },
+  {
+    family: 'power-of-attorney',
+    decisive: ['plná moc', 'plnou moc', 'plné moci'],
+    supporting: ['zmocnitel', 'zmocněnec', 'zmocňuji'],
   },
 ]
 
