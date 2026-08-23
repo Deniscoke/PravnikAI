@@ -75,7 +75,16 @@ describe('the notice of termination, which is where this surfaced', () => {
     schemaId: schema.metadata.schemaId,
     parties: schema.parties.map((p) => ({
       partyId: p.id,
-      fields: { name: 'Jan Novák', address: 'Dlouhá 12, Praha' },
+      fields: {
+        name: 'Jan Novák',
+        address: 'Dlouhá 12, Praha',
+        ico: '',
+        birthNumber: '',
+        representative: '',
+        bankAccount: '',
+        email: '',
+        phone: '',
+      },
     })),
     sections: {
       'kdo-vypovida': { noticeGiver: 'pronajimatel', leaseTerm: 'neurcita' },

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { CONTRACT_GUIDES, getContractGuide } from '@/lib/seo/contractGuides'
+import { CONTRACT_GUIDES, getContractGuide } from '@/lib/seo/guides'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()

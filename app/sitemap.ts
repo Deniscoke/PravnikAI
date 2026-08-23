@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getSiteUrl } from '@/lib/seo/site'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { CONTRACT_GUIDES } from '@/lib/seo/contractGuides'
+import { CONTRACT_GUIDES } from '@/lib/seo/guides'
 
 const APP_URL = getSiteUrl()
 
