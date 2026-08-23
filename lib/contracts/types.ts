@@ -243,6 +243,8 @@ export type ContractFamily =
   | 'power-of-attorney'
   /** Zpracovatelska smlouva — content prescribed by Article 28 GDPR. */
   | 'data-processing'
+  /** Vypoved z pracovniho pomeru — one-sided, and asymmetric between the sides. */
+  | 'employment-notice'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

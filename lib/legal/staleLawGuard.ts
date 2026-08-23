@@ -111,6 +111,21 @@ const RULES: StaleLawRule[] = [
     changedOn: '2025-06-01',
   },
   {
+    id: 'stale-severance-twelve-injury',
+    subject: /odstupn\S*/i,
+    // Only fires where the text ties it to injury or occupational disease.
+    staleValue: /pracovní\S*\s+úraz|nemoc\S*\s+z\s+povolání/i,
+    assertsLimit: /dvanáctinásob|12násob|12\s*×|dvanácti\S*\s+měsíčn/i,
+    window: 220,
+    claim: 'Dvanáctinásobné odstupné při pracovním úrazu nebo nemoci z povolání.',
+    correction:
+      'Od 1. 6. 2025 náleží dvanáctinásobek průměrného výdělku pouze při skončení ' +
+      'poměru z důvodu dosažení nejvyšší přípustné expozice na pracovišti ' +
+      '(§ 67 odst. 3 zák. č. 262/2006 Sb., ve znění zák. č. 120/2025 Sb.). ' +
+      'U pracovního úrazu a nemoci z povolání je nahradila jednorázová náhrada.',
+    changedOn: '2025-06-01',
+  },
+  {
     id: 'stale-minimum-wage',
     subject: /minimáln[ií]\s+mzd/i,
     // Exactly the monthly minimum wages that have applied since 2020, and

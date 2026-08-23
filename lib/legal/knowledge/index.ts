@@ -25,6 +25,7 @@ import { GIFT_PROFILE } from './profiles/gift'
 import { TENANCY_NOTICE_PROFILE } from './profiles/tenancyNotice'
 import { POWER_OF_ATTORNEY_PROFILE } from './profiles/powerOfAttorney'
 import { DATA_PROCESSING_PROFILE } from './profiles/dataProcessing'
+import { EMPLOYMENT_NOTICE_PROFILE } from './profiles/employmentNotice'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -43,6 +44,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'tenancy-notice': TENANCY_NOTICE_PROFILE,
   'power-of-attorney': POWER_OF_ATTORNEY_PROFILE,
   'data-processing': DATA_PROCESSING_PROFILE,
+  'employment-notice': EMPLOYMENT_NOTICE_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -95,6 +97,17 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
       'dohody o pracovní činnosti',
     ],
     supporting: ['dpp', 'dpč'],
+  },
+  {
+    // Before 'employment' — a notice quotes the contract it terminates.
+    family: 'employment-notice',
+    decisive: [
+      'výpověď z pracovního poměru',
+      'výpovědi z pracovního poměru',
+      'vypovídám pracovní poměr',
+    ],
+    supporting: [],
+    beats: ['employment'],
   },
   {
     family: 'employment',
