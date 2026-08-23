@@ -256,6 +256,8 @@ export type ContractFamily =
   | 'complaint'
   /** Predzalobni vyzva — the condition for recovering costs under § 142a OSR. */
   | 'pre-action-demand'
+  /** Smlouva o poskytovani sluzeb — an activity, not a dilo and not employment. */
+  | 'service-provision'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

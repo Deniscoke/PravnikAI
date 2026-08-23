@@ -33,6 +33,7 @@ import { zruseniDohody } from './schemas/cz/zruseniDohody'
 import { odstoupeniOdSmlouvy } from './schemas/cz/odstoupeniOdSmlouvy'
 import { reklamace } from './schemas/cz/reklamace'
 import { predzalobniVyzva } from './schemas/cz/predzalobniVyzva'
+import { smlouvaOPoskytovaniSluzeb } from './schemas/cz/smlouvaOPoskytovaniSluzeb'
 
 // ─── Registry ────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
   [odstoupeniOdSmlouvy.metadata.schemaId]: odstoupeniOdSmlouvy,
   [reklamace.metadata.schemaId]: reklamace,
   [predzalobniVyzva.metadata.schemaId]: predzalobniVyzva,
+  [smlouvaOPoskytovaniSluzeb.metadata.schemaId]: smlouvaOPoskytovaniSluzeb,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

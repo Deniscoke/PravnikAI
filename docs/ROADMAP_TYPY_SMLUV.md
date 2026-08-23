@@ -39,6 +39,8 @@ kontroly, generátor k němu chybí.
 
 ## 3. Vlna 1 — nejvyšší poměr dopadu k práci
 
+**Hotovo — všech sedm typů má znalostní profil, schéma, landing page i regresní testy.**
+
 | # | Typ | Právní základ | Proč |
 |---|---|---|---|
 | 1 | **Dohoda o provedení práce (DPP)** | § 75 ZP | Nejběžnější pracovněprávní dokument v ČR — brigády, studenti, částečné úvazky. Profil hotový. |
@@ -144,8 +146,9 @@ Jsou krátké a formálně přísné, takže poměr užitku k práci je výborn�
 3. **Jednostranné úkony (výpovědi)** — krátké dokumenty, obrovské hledanosti,
    a přesně tam, kde lidé nejčastěji udělají formální chybu.
 
-Bod 3 je hotový — všechny jednostranné úkony mají znalostní profil, schéma,
-landing page i regresní testy. Z vlny 1 zbývá **smlouva o poskytování služeb**.
+Body 1–3 jsou hotové. Další na řadě je **vlna 2** — nájem prostoru sloužícího
+podnikání, smlouva o smlouvě budoucí, uznání dluhu, licenční smlouva a dohoda
+o rozvázání pracovního poměru.
 4. **Zpracovatelská smlouva GDPR** — jiný typ zákazníka (B2B), opakovaná potřeba.
 5. **Nájem prostoru sloužícího podnikání** — jakmile bude kapacita na druhý
    nájemní režim.

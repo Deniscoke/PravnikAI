@@ -162,6 +162,30 @@ export const LATE_PAYMENT_MIN_COSTS_CZK: LegalFact<number> = {
   note: 'Jen u vzájemného závazku podnikatelů, popř. podnikatele a veřejného zadavatele.',
 }
 
+// ─── Nelegální práce (zák. č. 435/2004 Sb.) ──────────────────────────────────
+
+/**
+ * Ceiling for allowing dependent work outside an employment relationship —
+ * švarcsystém. It falls on the client, not the provider.
+ */
+export const ILLEGAL_WORK_FINE_MAX_CZK: LegalFact<number> = {
+  value: 10_000_000,
+  law: '§ 140 odst. 4 písm. f) zák. č. 435/2004 Sb.',
+  effectiveFrom: '2012-01-01',
+  lastVerified: '2026-08-23',
+  source: 'https://www.zakonyprolidi.cz/cs/2004-435',
+  note: 'Vedle pokuty lze uložit zákaz činnosti až na 2 roky a zveřejnění rozhodnutí.',
+}
+
+/** Floor for the same offence — the part that makes it bite on small cases. */
+export const ILLEGAL_WORK_FINE_MIN_CZK: LegalFact<number> = {
+  value: 50_000,
+  law: '§ 140 odst. 4 písm. f) zák. č. 435/2004 Sb.',
+  effectiveFrom: '2012-01-01',
+  lastVerified: '2026-08-23',
+  source: 'https://www.zakonyprolidi.cz/cs/2004-435',
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Formats a Czech-koruna amount the way the UI and prompts write it. */
@@ -184,4 +208,6 @@ export const ALL_LEGAL_FACTS: ReadonlyArray<{ key: string; fact: LegalFact<numbe
   { key: 'CASH_PAYMENT_LIMIT_CZK', fact: CASH_PAYMENT_LIMIT_CZK },
   { key: 'DEFAULT_INTEREST_SPREAD_POINTS', fact: DEFAULT_INTEREST_SPREAD_POINTS },
   { key: 'LATE_PAYMENT_MIN_COSTS_CZK', fact: LATE_PAYMENT_MIN_COSTS_CZK },
+  { key: 'ILLEGAL_WORK_FINE_MAX_CZK', fact: ILLEGAL_WORK_FINE_MAX_CZK },
+  { key: 'ILLEGAL_WORK_FINE_MIN_CZK', fact: ILLEGAL_WORK_FINE_MIN_CZK },
 ]

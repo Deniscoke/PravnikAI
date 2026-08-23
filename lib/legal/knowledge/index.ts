@@ -30,6 +30,7 @@ import { AGREEMENT_TERMINATION_PROFILE } from './profiles/agreementTermination'
 import { WITHDRAWAL_PROFILE } from './profiles/withdrawal'
 import { COMPLAINT_PROFILE } from './profiles/complaint'
 import { PRE_ACTION_DEMAND_PROFILE } from './profiles/preActionDemand'
+import { SERVICE_PROVISION_PROFILE } from './profiles/serviceProvision'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -53,6 +54,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   withdrawal: WITHDRAWAL_PROFILE,
   complaint: COMPLAINT_PROFILE,
   'pre-action-demand': PRE_ACTION_DEMAND_PROFILE,
+  'service-provision': SERVICE_PROVISION_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -154,6 +156,22 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     family: 'nda',
     decisive: ['dohoda o mlčenlivosti', 'smlouva o mlčenlivosti', 'non-disclosure'],
     supporting: ['mlčenlivost', 'nda', 'důvěrné informace', 'obchodní tajemství'],
+  },
+  {
+    // Before 'services', which is dílo. The two share "objednatel" and half
+    // their vocabulary, and the difference — an activity versus a result — is
+    // exactly what decides whether § 2586 and the handover regime apply.
+    // Deliberately no `beats`: a document naming itself both ways is genuinely
+    // hybrid, and falling back to the common rules is the honest answer.
+    family: 'service-provision',
+    decisive: [
+      'smlouva o poskytování služeb',
+      'smlouvu o poskytování služeb',
+      'smlouvy o poskytování služeb',
+      'servisní smlouva',
+      'servisní smlouvu',
+    ],
+    supporting: ['poskytovatel', 'poskytování služeb'],
   },
   {
     family: 'services',
