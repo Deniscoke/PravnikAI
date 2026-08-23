@@ -260,6 +260,8 @@ export type ContractFamily =
   | 'service-provision'
   /** Uznani dluhu — reverses the burden of proof and restarts limitation at ten years. */
   | 'debt-acknowledgment'
+  /** Dohoda o rozvazani pracovniho pomeru — no notice period, no protected period. */
+  | 'mutual-termination'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

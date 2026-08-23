@@ -32,6 +32,7 @@ import { COMPLAINT_PROFILE } from './profiles/complaint'
 import { PRE_ACTION_DEMAND_PROFILE } from './profiles/preActionDemand'
 import { SERVICE_PROVISION_PROFILE } from './profiles/serviceProvision'
 import { DEBT_ACKNOWLEDGMENT_PROFILE } from './profiles/debtAcknowledgment'
+import { MUTUAL_TERMINATION_PROFILE } from './profiles/mutualTermination'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -57,6 +58,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'pre-action-demand': PRE_ACTION_DEMAND_PROFILE,
   'service-provision': SERVICE_PROVISION_PROFILE,
   'debt-acknowledgment': DEBT_ACKNOWLEDGMENT_PROFILE,
+  'mutual-termination': MUTUAL_TERMINATION_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -122,6 +124,22 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
       'dohody o pracovní činnosti',
     ],
     supporting: ['dpp', 'dpč'],
+  },
+  {
+    // Before 'employment' and 'employment-notice'. A dohoda names the
+    // pracovni smlouva it ends and shares its whole vocabulary; and it is not
+    // a vypoved, so the employment-notice checklist would demand a statutory
+    // ground and a notice period that a dohoda never has.
+    family: 'mutual-termination',
+    decisive: [
+      'dohoda o rozvázání pracovního poměru',
+      'dohody o rozvázání pracovního poměru',
+      'dohoda o ukončení pracovního poměru',
+      'dohody o ukončení pracovního poměru',
+      'dohoda o skončení pracovního poměru',
+    ],
+    supporting: [],
+    beats: ['employment', 'employment-notice'],
   },
   {
     // Before 'employment' — a notice quotes the contract it terminates.

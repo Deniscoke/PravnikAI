@@ -35,6 +35,7 @@ import { reklamace } from './schemas/cz/reklamace'
 import { predzalobniVyzva } from './schemas/cz/predzalobniVyzva'
 import { smlouvaOPoskytovaniSluzeb } from './schemas/cz/smlouvaOPoskytovaniSluzeb'
 import { uznaniDluhu } from './schemas/cz/uznaniDluhu'
+import { dohodaORozvazani } from './schemas/cz/dohodaORozvazani'
 
 // ─── Registry ────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
   [predzalobniVyzva.metadata.schemaId]: predzalobniVyzva,
   [smlouvaOPoskytovaniSluzeb.metadata.schemaId]: smlouvaOPoskytovaniSluzeb,
   [uznaniDluhu.metadata.schemaId]: uznaniDluhu,
+  [dohodaORozvazani.metadata.schemaId]: dohodaORozvazani,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
