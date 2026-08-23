@@ -50,6 +50,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
       consequence: 'neprihlizi-se',
       law: '§ 2239 zák. č. 89/2012 Sb.',
       detect: /smluvn[íi]\s+pokut/i,
+      detectSample: 'Sjednává se smluvní pokuta 0,5 % denně',
       reviewCheck:
         'Přítomnost jakékoli smluvní pokuty vůči nájemci — za prodlení s nájemným, ' +
         'za předčasné ukončení, za porušení domovního řádu. Zákon k ní nepřihlíží. ' +
@@ -66,6 +67,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
       consequence: 'neprihlizi-se',
       law: RENT_DEPOSIT_MAX_MULTIPLE.law,
       detect: /jistot\S*|kauc\S*/i,
+      detectSample: 'Jistota činí trojnásobek měsíčního nájemného',
       reviewCheck:
         `Kauce vyšší než ${RENT_DEPOSIT_MAX_MULTIPLE.value} měsíční nájmy; ujednání ` +
         'vylučující úroky z jistoty nebo umožňující ji nevrátit.',
@@ -82,6 +84,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2235 odst. 1 a § 553 zák. č. 89/2012 Sb.',
       detect: /byt\S*/i,
+      detectSample: 'Byt č. 4 o velikosti 2+kk',
       reviewCheck: 'Byt označený jen adresou domu bez určení konkrétní jednotky.',
     },
     {
@@ -94,6 +97,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2235 odst. 1 a § 2246 zák. č. 89/2012 Sb.',
       detect: /nájemn[ée]/i,
+      detectSample: 'Nájemné činí 18 000 Kč měsíčně',
       reviewCheck:
         'Jedna souhrnná částka „nájemné včetně všeho" bez rozlišení služeb — ' +
         'znemožňuje vyúčtování a je v neprospěch nájemce.',
@@ -137,6 +141,7 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
       consequence: 'neplatnost',
       law: '§ 2288–2291 zák. č. 89/2012 Sb.',
       detect: /výpovědn\S*/i,
+      detectSample: 'Výpovědní důvody podle § 2288 NOZ',
       reviewCheck:
         'Ujednání dávající pronajímateli právo vypovědět nájem „bez udání důvodu", ' +
         'kratší výpovědní doba, nebo chybějící poučení o námitkách — výpověď je pak vadná.',

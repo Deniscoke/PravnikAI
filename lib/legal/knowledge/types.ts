@@ -113,6 +113,16 @@ export interface LegalRule {
    * false negative becomes a confidently reported missing clause.
    */
   detect?: RegExp
+  /**
+   * A phrase the pattern must match, kept beside it.
+   *
+   * Required wherever `detect` is set. A pattern that silently matches nothing
+   * is invisible on inspection and turns the audit into a false-positive
+   * machine: it reports present elements as missing. Seven patterns were in
+   * that state before anyone noticed, all because JavaScript's \w stops at the
+   * first Czech diacritic. The sample makes the pattern testable.
+   */
+  detectSample?: string
 }
 
 /**

@@ -14,6 +14,7 @@ import React, { useState, useCallback } from 'react'
 import { useTranslations } from '@/lib/i18n/client'
 import { getSchema } from '@/lib/contracts/contractSchemas'
 import { runFullValidation } from '@/lib/contracts/validators'
+import { isConditionMet } from '@/lib/contracts/conditionals'
 import type {
   ContractSchema,
   ContractField,
@@ -100,27 +101,21 @@ export function DynamicContractForm({ schemaId, onSuccess, onError, onGenerating
 
   // ── Conditional visibility ───────────────────────────────────────────────
 
-  const isSectionVisible = (section: ContractSection): boolean => {
-    if (!section.conditional) return true
-    const { fieldId, value } = section.conditional
-    const [sId, fId] = fieldId.includes('.') ? fieldId.split('.') : [null, fieldId]
-    const controlValue = sId ? sectionData[sId]?.[fId] : findValueAnywhere(fieldId)
-    return controlValue === value
-  }
+  // Both use the shared resolver. The field-level check used to look only
+  // inside its own section, so a field controlled from elsewhere never
+  // appeared — and on a notice of termination that field was the statutory
+  // ground the document is void without.
+  const asFormData = (): NormalizedFormData => ({
+    schemaId: schema.metadata.schemaId,
+    parties: [],
+    sections: sectionData,
+  })
 
-  const isFieldVisible = (sectionId: string, field: ContractField): boolean => {
-    if (!field.conditional) return true
-    const { fieldId, value } = field.conditional
-    const controlValue = sectionData[sectionId]?.[fieldId] ?? ''
-    return controlValue === String(value)
-  }
+  const isSectionVisible = (section: ContractSection): boolean =>
+    isConditionMet(section.conditional, asFormData())
 
-  const findValueAnywhere = (fieldId: string): string => {
-    for (const values of Object.values(sectionData)) {
-      if (fieldId in values) return values[fieldId]
-    }
-    return ''
-  }
+  const isFieldVisible = (sectionId: string, field: ContractField): boolean =>
+    isConditionMet(field.conditional, asFormData(), sectionId)
 
   // ── Submit ───────────────────────────────────────────────────────────────
 

@@ -39,6 +39,7 @@ export const NDA_PROFILE: ContractLegalProfile = {
       consequence: 'neprihlizi-se',
       law: '§ 553 a § 1746 odst. 2 zák. č. 89/2012 Sb.',
       detect: /důvěrn\S*\s+informac/i,
+      detectSample: 'Důvěrné informace zahrnují obchodní plány',
       reviewCheck:
         'Definice typu „veškeré informace, které strana obdrží" bez jakéhokoli omezení — ' +
         'pro neurčitost k ní nemusí být přihlédnuto a celá povinnost padá.',
@@ -66,6 +67,7 @@ export const NDA_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 1730 odst. 2 zák. č. 89/2012 Sb.',
       detect: /mlčenlivost|účel/i,
+      detectSample: 'Povinnost mlčenlivosti se sjednává pro účel spolupráce',
       reviewCheck: 'Chybí vymezení účelu — povinnost mlčenlivosti pak nemá měřítko.',
     },
 

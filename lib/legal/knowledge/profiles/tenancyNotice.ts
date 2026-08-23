@@ -42,6 +42,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
       consequence: 'neplatnost',
       law: '§ 2286 odst. 1 a § 570 zák. č. 89/2012 Sb.',
       detect: /doruč|dojde|dojití|předán/i,
+      detectSample: 'Výpověď se doručuje doporučeně s dodejkou',
       reviewCheck:
         'Chybí údaj o způsobu doručení. U výpovědi jsou účinky vázány na dojití, ' +
         'takže doručení je třeba umět prokázat.',
@@ -69,6 +70,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 553 zák. č. 89/2012 Sb.',
       detect: /nájemní\s+smlouv|byt\s*č|smlouvy\s+ze\s+dne/i,
+      detectSample: 'Nájemní smlouva ze dne 1. 3. 2025',
       reviewCheck: 'Chybí identifikace vypovídané nájemní smlouvy nebo bytu.',
     },
 
@@ -85,6 +87,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
       law: '§ 2286 odst. 2 zák. č. 89/2012 Sb.',
       appliesWhen: 'Výpověď dává pronajímatel.',
       detect: /námitk|přezkoum\S*\s+(oprávněnosti|soudem)|soudní\s+přezkum/i,
+      detectSample: 'Nájemce má právo vznést námitky a navrhnout přezkoumání soudem',
       reviewCheck:
         'Nejzávažnější a nejčastější vada výpovědi z nájmu. Chybí-li poučení ' +
         'o právu vznést námitky a navrhnout přezkoumání soudem, je celá výpověď ' +
@@ -101,6 +104,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
       law: '§ 2288 zák. č. 89/2012 Sb.',
       appliesWhen: 'Výpověď dává pronajímatel.',
       detect: /důvod/i,
+      detectSample: 'Důvod výpovědi: hrubé porušení povinností nájemce',
       reviewCheck:
         'Výpověď pronajímatele bez uvedení důvodu, nebo s důvodem, který § 2288 ' +
         'nezná. Ujednání ve smlouvě, které pronajímateli dovoluje vypovědět nájem ' +
@@ -111,6 +115,7 @@ export const TENANCY_NOTICE_PROFILE: ContractLegalProfile = {
       kind: 'mandatory',
       label: 'výpovědní doba',
       detect: /výpovědn\S*\s+dob/i,
+      detectSample: 'Výpovědní doba činí tři měsíce',
       requirement:
         'Výpovědní doba činí tři měsíce, nejde-li o výpověď bez výpovědní doby ' +
         'podle § 2291.',

@@ -35,6 +35,7 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2586 odst. 1 a § 553 zák. č. 89/2012 Sb.',
       detect: /předmět\S*\s+díla|dílem\s+se\s+rozumí|specifikac\S*\s+díla/i,
+      detectSample: 'Předmětem díla je rekonstrukce koupelny',
       reviewCheck:
         'Dílo popsané obecně („rekonstrukce koupelny") bez rozsahu prací, materiálů ' +
         'a kvalitativních parametrů — nejčastější příčina sporů u stavebních zakázek.',
@@ -50,6 +51,7 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2586 odst. 2 a § 2610 zák. č. 89/2012 Sb.',
       detect: /cen\S*|úplat\S*|odměn\S*/i,
+      detectSample: 'Cena díla činí 150 000 Kč',
       reviewCheck:
         'Nehlas chybějící číselnou cenu jako důvod neplatnosti — smlouva je platná ' +
         'a uplatní se cena obvyklá. Skutečným rizikem je spor o její výši.',
@@ -100,6 +102,7 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 2610 odst. 2 zák. č. 89/2012 Sb.',
       detect: /termín\S*|lhůt\S*/i,
+      detectSample: 'Termín dokončení díla: 30. 6. 2027',
       reviewCheck:
         'Chybí termín, nebo je vázán na neurčitou událost bez pevného data.',
     },
@@ -160,6 +163,7 @@ export const SERVICES_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 2615–2619 zák. č. 89/2012 Sb.',
       detect: /vad\S*/i,
+      detectSample: 'Zhotovitel odpovídá za vady díla',
     },
     {
       id: 'services-vady-stavba',

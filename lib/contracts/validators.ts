@@ -13,6 +13,7 @@ import {
   RENT_DEPOSIT_MAX_MULTIPLE,
   formatCzk,
 } from '@/lib/legal/czechLegalFacts'
+import { isConditionMet, resolveControlValue } from './conditionals'
 import type {
   ContractSchema,
   NormalizedFormData,
@@ -57,19 +58,12 @@ export function validateUI(
     const sectionData = data.sections[section.id] ?? {}
 
     // Check conditional — skip section if condition not met
-    if (section.conditional) {
-      const { fieldId, value: requiredValue } = section.conditional
-      const controllingValue = getFieldValueFromData(data, fieldId)
-      if (controllingValue !== requiredValue) continue
-    }
+    if (!isConditionMet(section.conditional, data)) continue
 
     for (const field of section.fields) {
-      // Check conditional — skip field if condition not met
-      if (field.conditional) {
-        const { fieldId, value: requiredValue } = field.conditional
-        const controllingValue = sectionData[fieldId] ?? ''
-        if (controllingValue !== requiredValue) continue
-      }
+      // Skip a field whose condition is not met — it does not apply, so it is
+      // neither shown nor required.
+      if (!isConditionMet(field.conditional, data, section.id)) continue
 
       const value = (sectionData[field.id] ?? '').trim()
 
@@ -174,18 +168,12 @@ export function validateInputQuality(
 
   // ── Section fields ────────────────────────────────────────────────────────
   for (const section of schema.sections) {
-    if (section.conditional) {
-      const { fieldId, value: reqVal } = section.conditional
-      if (getFieldValueFromData(data, fieldId) !== String(reqVal)) continue
-    }
+    if (!isConditionMet(section.conditional, data)) continue
 
     const sectionData = data.sections[section.id] ?? {}
 
     for (const field of section.fields) {
-      if (field.conditional) {
-        const { fieldId, value: reqVal } = field.conditional
-        if ((sectionData[fieldId] ?? '') !== String(reqVal)) continue
-      }
+      if (!isConditionMet(field.conditional, data, section.id)) continue
 
       const value = (sectionData[field.id] ?? '').trim()
       if (!value) continue
@@ -614,19 +602,13 @@ export function assessGenerationReadiness(
   // when paying cash, and the model answered with a [DOPLNIT] placeholder.
   const missingOptional: string[] = []
   for (const section of schema.sections) {
-    if (section.conditional) {
-      const { fieldId, value: requiredValue } = section.conditional
-      if (getFieldValueFromData(data, fieldId) !== requiredValue) continue
-    }
+    if (!isConditionMet(section.conditional, data)) continue
 
     const sectionData = data.sections[section.id] ?? {}
 
     for (const field of section.fields) {
       if (field.required) continue
-      if (field.conditional) {
-        const { fieldId, value: requiredValue } = field.conditional
-        if ((sectionData[fieldId] ?? '') !== String(requiredValue)) continue
-      }
+      if (!isConditionMet(field.conditional, data, section.id)) continue
       const value = (sectionData[field.id] ?? '').trim()
       if (!value) {
         missingOptional.push(`${section.id}.${field.id}`)
@@ -673,15 +655,7 @@ export function runFullValidation(
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
+/** @deprecated Kept for callers outside the conditional path. */
 function getFieldValueFromData(data: NormalizedFormData, fieldId: string): string {
-  // fieldId may be "sectionId.fieldId" or just "fieldId"
-  const parts = fieldId.split('.')
-  if (parts.length === 2) {
-    return data.sections[parts[0]]?.[parts[1]] ?? ''
-  }
-  // Search all sections
-  for (const section of Object.values(data.sections)) {
-    if (fieldId in section) return section[fieldId]
-  }
-  return ''
+  return resolveControlValue(data, fieldId)
 }

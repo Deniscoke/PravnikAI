@@ -45,6 +45,7 @@ export const LOAN_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2390 zák. č. 89/2012 Sb.',
       detect: /předal\S*|převzal\S*|byla\s+poukázána|připsán\S*\s+na\s+účet|obdržel\S*/i,
+      detectSample: 'Zapůjčitel předal vydlužiteli částku v hotovosti',
       reviewCheck:
         'Chybí potvrzení o předání peněz nebo ujednání o způsobu jejich poskytnutí. ' +
         'Bez něj nelze prokázat, že zápůjčka vůbec vznikla — a to je nejčastější ' +
@@ -60,6 +61,7 @@ export const LOAN_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2390 a § 553 zák. č. 89/2012 Sb.',
       detect: /výše\s+zápůjčky|částk\S*|Kč|EUR/i,
+      detectSample: 'Výše zápůjčky činí 100 000 Kč',
       reviewCheck: 'Chybí výše zápůjčky nebo měna.',
     },
     {
@@ -70,6 +72,7 @@ export const LOAN_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2390 zák. č. 89/2012 Sb.',
       detect: /vrátit|vrácení|splat\S*/i,
+      detectSample: 'Vydlužitel se zavazuje částku vrátit',
     },
 
     // ─── Splatnost ───────────────────────────────────────────────────────────
@@ -83,6 +86,7 @@ export const LOAN_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 2393 zák. č. 89/2012 Sb.',
       detect: /do\s+\d{1,2}\.\s*\d{1,2}\.\s*\d{4}|splátk\S*|splatnost/i,
+      detectSample: 'Zápůjčka bude vrácena do 31. 12. 2027',
       reviewCheck: 'Chybí datum vrácení i splátkový kalendář.',
     },
     {

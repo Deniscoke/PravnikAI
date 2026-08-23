@@ -80,6 +80,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
       kind: 'essential',
       label: 'vymezení sjednané práce',
       detect: /sjednan\S*\s+prác|pracovní\s+úkol|druh\S*\s+prác/i,
+      detectSample: 'Sjednaná práce: lektor kurzu angličtiny',
       requirement:
         'Musí být vymezen sjednaný pracovní úkol nebo druh práce, který má ' +
         'zaměstnanec vykonat.',
@@ -111,6 +112,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
       law: '§ 75 zák. č. 262/2006 Sb.',
       appliesWhen: 'Jde o dohodu o provedení práce (DPP), nikoli o pracovní činnosti.',
       detect: /300\s*hodin/i,
+      detectSample: 'Rozsah práce nepřesáhne 300 hodin ročně',
       reviewCheck:
         `Sjednaný rozsah nad ${DPP_MAX_HOURS_PER_YEAR} hodin ročně, nebo úplně chybějící ` +
         'ujednání o rozsahu — bez něj nelze ověřit dodržení zákonného limitu.',
@@ -141,6 +143,7 @@ export const EMPLOYMENT_AGREEMENT_PROFILE: ContractLegalProfile = {
       consequence: 'neplatnost',
       law: MINIMUM_HOURLY_WAGE_CZK.law,
       detect: /odměn\S*|za\s+hodinu|Kč\s*\/\s*hod/i,
+      detectSample: 'Odměna činí 450 Kč za hodinu',
       reviewCheck:
         `Hodinová odměna nižší než ${MINIMUM_HOURLY_WAGE_CZK.value.toLocaleString('cs-CZ')} Kč. ` +
         'Vyšší sazba není vadou — zkontroluj jen, zda není pod minimem.',

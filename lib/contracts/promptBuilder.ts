@@ -30,6 +30,7 @@
 import { buildSystemPrompt as assembleSystemPrompt } from './systemPrompt'
 import { getPromptBundle, type PromptLang } from './prompts'
 import { renderKnowledgeForDrafting } from '@/lib/legal/knowledge'
+import { isConditionMet, resolveControlValue } from './conditionals'
 import type {
   ContractSchema,
   NormalizedFormData,
@@ -183,21 +184,13 @@ function buildDataSection(
   let anySectionHadData = false
 
   for (const section of schema.sections) {
-    if (section.conditional) {
-      const { fieldId, value: requiredValue } = section.conditional
-      const currentValue = resolveDataValue(data, fieldId)
-      if (currentValue !== String(requiredValue)) continue
-    }
+    if (!isConditionMet(section.conditional, data)) continue
 
     const sectionData = data.sections[section.id] ?? {}
     const filledRows: string[] = []
 
     for (const field of section.fields) {
-      if (field.conditional) {
-        const { fieldId, value: requiredValue } = field.conditional
-        const currentValue = sectionData[fieldId] ?? ''
-        if (currentValue !== String(requiredValue)) continue
-      }
+      if (!isConditionMet(field.conditional, data, section.id)) continue
 
       const compositeId = `${section.id}.${field.id}`
       if (missingSet.has(compositeId)) continue
@@ -524,17 +517,7 @@ function formatFieldValue(field: ContractField, raw: string, jurisdiction: Juris
 }
 
 function resolveDataValue(data: NormalizedFormData, fieldId: string): string {
-  const parts = fieldId.split('.')
-
-  if (parts.length === 2) {
-    return data.sections[parts[0]]?.[parts[1]] ?? ''
-  }
-
-  for (const sectionData of Object.values(data.sections)) {
-    if (fieldId in sectionData) return sectionData[fieldId]
-  }
-
-  return ''
+  return resolveControlValue(data, fieldId)
 }
 
 // ─── Legacy compatibility ──────────────────────────────────────────────────────

@@ -68,6 +68,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. a) zák. č. 262/2006 Sb.',
       detect: /druh\s+práce|pracovní\s+pozic|funkc\S*/i,
+      detectSample: 'Druh práce: softwarový inženýr',
       reviewCheck:
         'Druh práce vymezený tak široce, že umožňuje přidělit jakoukoli práci ' +
         '(„dle potřeb zaměstnavatele") — obchází ochranu při převedení na jinou práci.',
@@ -80,6 +81,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. b) zák. č. 262/2006 Sb.',
       detect: /místo\s+výkonu\s+práce|pracoviště/i,
+      detectSample: 'Místo výkonu práce: Praha 1',
       reviewCheck:
         'Místo určené jako „území České republiky" — zbavuje zaměstnance nároku ' +
         'na cestovní náhrady.',
@@ -92,6 +94,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 34 odst. 1 písm. c) a § 36 zák. č. 262/2006 Sb.',
       detect: /den\s+nástupu|nástup\S*\s+do\s+práce|datum\s+nástupu/i,
+      detectSample: 'Den nástupu do práce: 1. 9. 2026',
     },
 
     // ─── Mzda ────────────────────────────────────────────────────────────────
@@ -107,6 +110,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       consequence: 'neplatnost',
       law: MINIMUM_MONTHLY_WAGE_CZK.law,
       detect: /mzd\S*|plat\S*/i,
+      detectSample: 'Mzda činí 45 000 Kč měsíčně',
       reviewCheck:
         `Sjednaná mzda pod ${formatCzk(MINIMUM_MONTHLY_WAGE_CZK.value)} u plného úvazku. ` +
         'Zkontroluj i zaručenou mzdu — může být výrazně vyšší než minimální.',
@@ -164,6 +168,7 @@ export const EMPLOYMENT_PROFILE: ContractLegalProfile = {
       consequence: 'neplatnost',
       law: '§ 51 zák. č. 262/2006 Sb., ve znění zák. č. 120/2025 Sb.',
       detect: /výpovědn\S*\s+dob/i,
+      detectSample: 'Výpovědní doba činí dva měsíce',
       reviewCheck:
         'Text uvádí, že výpovědní doba začíná prvním dnem následujícího měsíce — ' +
         'to je úprava platná do 31. 5. 2025 a dnes je nesprávná. Rovněž zkontroluj, ' +

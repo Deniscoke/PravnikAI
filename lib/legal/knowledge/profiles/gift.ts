@@ -44,6 +44,7 @@ export const GIFT_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2055 a § 553 zák. č. 89/2012 Sb.',
       detect: /předmět\S*\s+dar|daruje|dar\S*\s+(nemovitost|věc|částk)/i,
+      detectSample: 'Předmětem daru je osobní automobil',
       reviewCheck: 'Dar popsaný jen druhově, bez identifikačních údajů.',
     },
     {
@@ -57,6 +58,7 @@ export const GIFT_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2055 odst. 1 zák. č. 89/2012 Sb.',
       detect: /bezplatn\S*|bez\s+(jakéhokoli\S*\s+)?protiplnění|bez\s+úplaty/i,
+      detectSample: 'Dárce bezplatně převádí vlastnické právo',
       reviewCheck:
         'Chybí výslovné vyjádření bezplatnosti, nebo naopak text obsahuje ' +
         'protiplnění — pak nejde o darování a použijí se jiná pravidla.',
@@ -71,6 +73,7 @@ export const GIFT_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2055 odst. 1 zák. č. 89/2012 Sb.',
       detect: /přijímá|dar\s+přijal|obdarovan\S*\s+přijímá/i,
+      detectSample: 'Obdarovaný dar přijímá',
       reviewCheck: 'Chybí projev vůle obdarovaného dar přijmout.',
     },
 

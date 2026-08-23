@@ -84,6 +84,19 @@ describe('rule bookkeeping', () => {
     expect(offenders.map((r) => r.id)).toEqual([])
   })
 
+  it('every detect pattern carries a sample it must match', () => {
+    // Without this a pattern can be unmatchable and look fine.
+    const missing = ALL_RULES.filter((r) => r.detect && !r.detectSample)
+    expect(missing.map((r) => r.id)).toEqual([])
+  })
+
+  it('every detect pattern actually matches its own sample', () => {
+    const broken = ALL_RULES.filter(
+      (r) => r.detect && r.detectSample && !r.detect.test(r.detectSample),
+    )
+    expect(broken.map((r) => `${r.id}: ${r.detect?.source}`)).toEqual([])
+  })
+
   it('every detect pattern is anchored to something, not a bare wildcard', () => {
     for (const rule of ALL_RULES) {
       if (!rule.detect) continue

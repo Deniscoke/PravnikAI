@@ -37,6 +37,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2079 odst. 1 a § 553 zák. č. 89/2012 Sb.',
       detect: /předmět\S*\s+koupě|předmět\S*\s+smlouvy|prodávající\s+prodává/i,
+      detectSample: 'Předmět koupě: notebook Lenovo',
       reviewCheck:
         'Předmět popsaný jen druhově („osobní automobil", „byt v Praze") bez ' +
         'identifikačních údajů — smlouva pak nemusí vzniknout pro neurčitost.',
@@ -51,6 +52,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
       consequence: 'nevznikne',
       law: '§ 2079 odst. 1 a § 2080 zák. č. 89/2012 Sb.',
       detect: /kupní\s+cen|cena\s+činí|celková\s+cena/i,
+      detectSample: 'Kupní cena činí 250 000 Kč',
       reviewCheck:
         'Cena „bude dohodnuta později" bez způsobu určení; chybějící údaj o DPH ' +
         'u podnikatele; cena bez uvedení měny.',
@@ -98,6 +100,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
       consequence: 'doporuceni',
       law: '§ 1099, § 2082, § 2132 zák. č. 89/2012 Sb.',
       detect: /vlastnick\S*\s+práv|přechod\S*\s+vlastnic/i,
+      detectSample: 'Vlastnické právo přechází předáním věci',
       reviewCheck:
         'Chybí ujednání o okamžiku přechodu vlastnictví a nebezpečí škody — u dodání ' +
         'na dálku je to častý zdroj sporu.',
@@ -146,6 +149,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
       consequence: 'doporuceni',
       law: '§ 2099–2117 zák. č. 89/2012 Sb.',
       detect: /vad\S*/i,
+      detectSample: 'Odpovědnost za vady se řídí § 2099 NOZ',
     },
     {
       id: 'sale-vady-nemovitost',
@@ -195,6 +199,7 @@ export const SALE_PROFILE: ContractLegalProfile = {
       consequence: 'riziko',
       law: '§ 1920 a § 2123 zák. č. 89/2012 Sb.',
       detect: /zástavn\S*|věcn\S*\s+břemen|exekuc\S*|práv\S*\s+třetích\s+osob/i,
+      detectSample: 'Na věci neváznou zástavní práva ani exekuce',
       reviewCheck:
         'Chybí prohlášení o právních vadách — u nemovitosti a vozidla patří mezi ' +
         'nejzávažnější opomenutí.',
