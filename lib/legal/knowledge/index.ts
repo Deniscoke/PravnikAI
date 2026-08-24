@@ -33,6 +33,7 @@ import { PRE_ACTION_DEMAND_PROFILE } from './profiles/preActionDemand'
 import { SERVICE_PROVISION_PROFILE } from './profiles/serviceProvision'
 import { DEBT_ACKNOWLEDGMENT_PROFILE } from './profiles/debtAcknowledgment'
 import { MUTUAL_TERMINATION_PROFILE } from './profiles/mutualTermination'
+import { BUSINESS_PREMISES_LEASE_PROFILE } from './profiles/businessPremisesLease'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -59,6 +60,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'service-provision': SERVICE_PROVISION_PROFILE,
   'debt-acknowledgment': DEBT_ACKNOWLEDGMENT_PROFILE,
   'mutual-termination': MUTUAL_TERMINATION_PROFILE,
+  'business-premises-lease': BUSINESS_PREMISES_LEASE_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -165,6 +167,21 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     family: 'tenancy-notice',
     decisive: ['výpověď z nájmu', 'výpověď nájmu', 'vypovídá nájem', 'výpovědi z nájmu'],
     supporting: ['výpověď'],
+    beats: ['tenancy'],
+  },
+  {
+    // Before 'tenancy'. A business lease is also a "nájemní smlouva", and
+    // the byt checklist would import a deposit cap, a notice regime and an
+    // objections instruction that § 2302 replaces wholesale.
+    family: 'business-premises-lease',
+    decisive: [
+      'prostoru sloužícího podnikání',
+      'prostor sloužící podnikání',
+      'nájem nebytových prostor',
+      'nájmu nebytových prostor',
+      'nájem provozovny',
+    ],
+    supporting: ['provozovn', 'nebytov', 'zákaznické základny'],
     beats: ['tenancy'],
   },
   {

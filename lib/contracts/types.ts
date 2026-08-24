@@ -262,6 +262,8 @@ export type ContractFamily =
   | 'debt-acknowledgment'
   /** Dohoda o rozvazani pracovniho pomeru — no notice period, no protected period. */
   | 'mutual-termination'
+  /** Najem prostoru slouziciho podnikani — § 2302+, not the byt regime. */
+  | 'business-premises-lease'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 
