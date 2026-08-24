@@ -146,9 +146,9 @@ Jsou krátké a formálně přísné, takže poměr užitku k práci je výborn�
 3. **Jednostranné úkony (výpovědi)** — krátké dokumenty, obrovské hledanosti,
    a přesně tam, kde lidé nejčastěji udělají formální chybu.
 
-Body 1–3 jsou hotové. Z **vlny 2** jsou hotové uznání dluhu, dohoda o rozvázání
-pracovního poměru a nájem prostoru sloužícího podnikání; zbývá smlouva o smlouvě
-budoucí a licenční smlouva.
+Body 1–3 jsou hotové. Z **vlny 2** zbývá už jen **licenční smlouva** — uznání dluhu,
+dohoda o rozvázání pracovního poměru, nájem prostoru sloužícího podnikání i smlouva
+o smlouvě budoucí jsou hotové.
 4. **Zpracovatelská smlouva GDPR** — jiný typ zákazníka (B2B), opakovaná potřeba.
 5. **Nájem prostoru sloužícího podnikání** — jakmile bude kapacita na druhý
    nájemní režim.

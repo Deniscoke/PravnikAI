@@ -34,6 +34,7 @@ import { SERVICE_PROVISION_PROFILE } from './profiles/serviceProvision'
 import { DEBT_ACKNOWLEDGMENT_PROFILE } from './profiles/debtAcknowledgment'
 import { MUTUAL_TERMINATION_PROFILE } from './profiles/mutualTermination'
 import { BUSINESS_PREMISES_LEASE_PROFILE } from './profiles/businessPremisesLease'
+import { PRELIMINARY_CONTRACT_PROFILE } from './profiles/preliminaryContract'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -61,6 +62,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'debt-acknowledgment': DEBT_ACKNOWLEDGMENT_PROFILE,
   'mutual-termination': MUTUAL_TERMINATION_PROFILE,
   'business-premises-lease': BUSINESS_PREMISES_LEASE_PROFILE,
+  'preliminary-contract': PRELIMINARY_CONTRACT_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -168,6 +170,22 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     decisive: ['výpověď z nájmu', 'výpověď nájmu', 'vypovídá nájem', 'výpovědi z nájmu'],
     supporting: ['výpověď'],
     beats: ['tenancy'],
+  },
+  {
+    // Beats the types it promises. A preliminary contract necessarily names
+    // the future one — "budoucí kupní smlouva" contains "kupní smlouva" — so
+    // without this it would be checked against the rules for a sale that has
+    // not been concluded yet.
+    family: 'preliminary-contract',
+    decisive: [
+      'smlouva o smlouvě budoucí',
+      'smlouvu o smlouvě budoucí',
+      'smlouvy o smlouvě budoucí',
+      'budoucí kupní smlouv',
+      'budoucí nájemní smlouv',
+    ],
+    supporting: ['budoucí smlouv', 'budoucí kupujíc', 'budoucí prodávajíc'],
+    beats: ['sale', 'tenancy', 'business-premises-lease', 'services', 'service-provision'],
   },
   {
     // Before 'tenancy'. A business lease is also a "nájemní smlouva", and

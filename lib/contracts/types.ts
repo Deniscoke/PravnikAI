@@ -264,6 +264,8 @@ export type ContractFamily =
   | 'mutual-termination'
   /** Najem prostoru slouziciho podnikani — § 2302+, not the byt regime. */
   | 'business-premises-lease'
+  /** Smlouva o smlouve budouci — dies silently if nobody calls in time. */
+  | 'preliminary-contract'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 
