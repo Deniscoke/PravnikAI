@@ -22,6 +22,15 @@ interface AuthContextValue {
   signOut: () => Promise<void>
 }
 
+/*
+ * A signed-out default rather than undefined.
+ *
+ * Throwing outside a provider would catch a misplaced consumer sooner, but the
+ * failure it prevents is cosmetic — a component would show the signed-out state
+ * — while the failure it introduces is a hard render error. The two consumers
+ * that exist, UserMenu and PricingSection, are both inside a provider, and a
+ * test keeps AuthProvider out of the root layout so the pairing stays visible.
+ */
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
@@ -64,6 +73,6 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   )
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   return useContext(AuthContext)
 }

@@ -30,8 +30,14 @@ describe('the root layout stays static', () => {
     )
   })
 
-  it('seeds the auth context empty, so the context is still defined', () => {
-    expect(rootLayout).toMatch(/initialUser=\{null\}/)
+  it('does not pull the Supabase browser client onto every page', () => {
+    // AuthProvider imports it, and it is 204 kB — a quarter of the JavaScript
+    // on a guide page that has no auth UI at all.
+    // Matching the import, not the word — the layout carries a comment
+    // explaining why the provider is absent, and that must stay readable.
+    expect(rootLayout, 'AuthProvider in the root layout loads Supabase everywhere').not.toMatch(
+      /^import .*AuthProvider/m,
+    )
   })
 })
 

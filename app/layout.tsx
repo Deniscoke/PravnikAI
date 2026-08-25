@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import { AuthProvider } from '@/components/auth/AuthProvider'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { CookieConsent } from '@/components/CookieConsent'
 import { FeedbackButton } from '@/components/beta/FeedbackButton'
@@ -110,12 +109,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         <BetaBanner />
         <ThemeToggle />
-        <AuthProvider initialUser={null}>
-          {children}
+        {/*
+          No AuthProvider here on purpose. It imports the Supabase browser
+          client, which is 204 kB that a page of text has no use for — a
+          quarter of the JavaScript on every guide. The five surfaces with auth
+          UI wrap themselves in ServerAuthProvider instead.
+        */}
+        {children}
           <CookieConsent />
           {/* Available to signed-out visitors too — they bounce before registering */}
           <FeedbackButton />
-        </AuthProvider>
         {/* Cookieless, GDPR-friendly traffic analytics (no consent banner needed) */}
         <Analytics />
       </body>
