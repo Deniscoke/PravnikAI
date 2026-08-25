@@ -11,6 +11,7 @@ export type { ContractGuide, GuideSection, GuideFaq } from './types'
 
 import type { ContractGuide } from './types'
 import { getAllSchemas } from '@/lib/contracts/contractSchemas'
+import type { ContractCategory } from '@/lib/contracts/types'
 import { KUPNI_SMLOUVA } from './kupniSmlouva'
 import { NAJEMNI_SMLOUVA } from './najemniSmlouva'
 import { SMLOUVA_O_DILO } from './smlouvaODilo'
@@ -18,6 +19,7 @@ import { NDA_SMLOUVA } from './ndaSmlouva'
 import { PRACOVNI_SMLOUVA } from './pracovniSmlouva'
 import { KUPNI_SMLOUVA_AUTO } from './kupniSmlouvaAuto'
 import { DOHODA_O_PROVEDENI_PRACE } from './dohodaOProvedeniPrace'
+import { DOHODA_O_PRACOVNI_CINNOSTI } from './dohodaOPracovniCinnosti'
 import { SMLOUVA_O_ZAPUJCCE } from './smlouvaOZapujcce'
 import { DAROVACI_SMLOUVA } from './darovaciSmlouva'
 import { PLNA_MOC } from './plnaMoc'
@@ -43,6 +45,7 @@ export const CONTRACT_GUIDES: ReadonlyArray<ContractGuide> = [
   PRACOVNI_SMLOUVA,
   KUPNI_SMLOUVA_AUTO,
   DOHODA_O_PROVEDENI_PRACE,
+  DOHODA_O_PRACOVNI_CINNOSTI,
   SMLOUVA_O_ZAPUJCCE,
   DAROVACI_SMLOUVA,
   PLNA_MOC,
@@ -60,6 +63,66 @@ export const CONTRACT_GUIDES: ReadonlyArray<ContractGuide> = [
   SMLOUVA_O_SMLOUVE_BUDOUCI,
   LICENCNI_SMLOUVA,
 ]
+
+/**
+ * The contract type a guide sends people to.
+ *
+ * Guides and schemas are joined by name rather than by id — the guides test
+ * guarantees every generatorHint matches one — so this lookup is total in
+ * practice and returns undefined only while a guide is being written.
+ */
+function schemaFor(guide: ContractGuide) {
+  return getAllSchemas().find((s) => s.metadata.name === guide.generatorHint)
+}
+
+/** Category a guide belongs to, taken from the contract type it leads to. */
+export function guideCategory(guide: ContractGuide): ContractCategory {
+  return schemaFor(guide)?.metadata.category ?? 'civil'
+}
+
+/**
+ * Guides grouped for the /vzory hub, in a fixed order.
+ *
+ * The order is deliberate rather than alphabetical: civil law covers the
+ * documents most people arrive looking for, and putting employment third keeps
+ * the two lease-shaped categories away from each other.
+ */
+export const GUIDE_CATEGORY_ORDER: ReadonlyArray<ContractCategory> = [
+  'civil',
+  'employment',
+  'realestate',
+  'commercial',
+]
+
+export function guidesByCategory(): ReadonlyArray<{
+  category: ContractCategory
+  guides: ReadonlyArray<ContractGuide>
+}> {
+  return GUIDE_CATEGORY_ORDER.map((category) => ({
+    category,
+    guides: CONTRACT_GUIDES.filter((guide) => guideCategory(guide) === category),
+  })).filter((group) => group.guides.length > 0)
+}
+
+/**
+ * Other guides worth linking from this one.
+ *
+ * Same category first, because that is where a reader's next question usually
+ * lives — someone reading about a notice of termination is more likely to want
+ * the contract it ends than a licence agreement. Without this every guide is an
+ * island: a crawler reaching one has no path to the other twenty-two, and a
+ * reader who landed on the wrong one has to go back to search.
+ */
+export function relatedGuides(guide: ContractGuide, limit = 4): ReadonlyArray<ContractGuide> {
+  const category = guideCategory(guide)
+  const sameCategory = CONTRACT_GUIDES.filter(
+    (other) => other.slug !== guide.slug && guideCategory(other) === category,
+  )
+  const rest = CONTRACT_GUIDES.filter(
+    (other) => other.slug !== guide.slug && guideCategory(other) !== category,
+  )
+  return [...sameCategory, ...rest].slice(0, limit)
+}
 
 /** Looks a guide up by its URL segment. */
 export function getContractGuide(slug: string): ContractGuide | undefined {

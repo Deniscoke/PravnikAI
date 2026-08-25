@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { CONTRACT_GUIDES, getContractGuide, guideCopy } from '@/lib/seo/guides'
+import { CONTRACT_GUIDES, getContractGuide, guideCopy, relatedGuides } from '@/lib/seo/guides'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()
@@ -60,13 +60,14 @@ export default async function ContractGuidePage({ params }: Props) {
   }
 
   const copy = guideCopy(guide)
+  const related = relatedGuides(guide)
 
   return (
     <main className="legal-page">
       <BreadcrumbJsonLd
         items={[
           { name: 'Domů', path: `/${locale}` },
-          { name: 'Vzory smluv', path: `/${locale}/vzory/${guide.slug}` },
+          { name: 'Vzory smluv', path: `/${locale}/vzory` },
           { name: guide.h1, path: `/${locale}/vzory/${guide.slug}` },
         ]}
       />
@@ -177,6 +178,23 @@ export default async function ContractGuidePage({ params }: Props) {
               Jak to funguje a jaké to má limity
             </Link>
           </div>
+        </section>
+
+        <section>
+          <h2>Související vzory</h2>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {related.map((other) => (
+              <li key={other.slug} style={{ marginBottom: 'var(--space-sm)' }}>
+                <Link href={`/${locale}/vzory/${other.slug}`} style={{ textDecoration: 'none' }}>
+                  {other.h1}
+                </Link>
+                <span style={{ fontSize: '0.85rem', opacity: 0.8 }}> — {other.legalBasis}</span>
+              </li>
+            ))}
+          </ul>
+          <p>
+            <Link href={`/${locale}/vzory`}>Přehled všech vzorů</Link>
+          </p>
         </section>
 
         <section>

@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { CONTRACT_GUIDES, getContractGuide } from '../guides'
+import { CONTRACT_GUIDES, getContractGuide, guidesByCategory, relatedGuides } from '../guides'
 import { getAllSchemas } from '@/lib/contracts/contractSchemas'
 
 const schemaNames = new Set(getAllSchemas().map((schema) => schema.metadata.name))
@@ -39,6 +39,33 @@ describe('every guide leads somewhere', () => {
   it('is reachable by slug', () => {
     for (const guide of CONTRACT_GUIDES) {
       expect(getContractGuide(guide.slug)).toBe(guide)
+    }
+  })
+})
+
+describe('every contract type has an organic entry point', () => {
+  it('leaves no schema without a guide', () => {
+    // A type with no guide can only be found by someone already on the site.
+    // DPC sat in that state through five contract types being added, which is
+    // exactly how long it took anyone to notice.
+    const hints = new Set(CONTRACT_GUIDES.map((guide) => guide.generatorHint))
+    const orphaned = getAllSchemas()
+      .map((schema) => schema.metadata.name)
+      .filter((name) => !hints.has(name))
+    expect(orphaned, 'contract types with no landing page').toEqual([])
+  })
+
+  it('places every guide in exactly one category group', () => {
+    const grouped = guidesByCategory().flatMap((group) => group.guides)
+    expect(grouped.length).toBe(CONTRACT_GUIDES.length)
+    expect(new Set(grouped.map((g) => g.slug)).size).toBe(CONTRACT_GUIDES.length)
+  })
+
+  it('links every guide to siblings, so none is an island', () => {
+    for (const guide of CONTRACT_GUIDES) {
+      const related = relatedGuides(guide)
+      expect(related.length, `${guide.slug} has no related guides`).toBeGreaterThan(0)
+      expect(related.map((r) => r.slug), `${guide.slug} links to itself`).not.toContain(guide.slug)
     }
   })
 })
