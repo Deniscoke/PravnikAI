@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const DISMISS_KEY = 'pravo365-beta-banner-dismissed'
 
@@ -8,32 +8,38 @@ const DISMISS_KEY = 'pravo365-beta-banner-dismissed'
  * Sets expectations before anyone hits a limit: the product is in beta, daily
  * AI capacity is capped, and feedback is wanted. Dismissible, remembered locally
  * so it does not nag on every visit.
+ *
+ * WHY IT RENDERS UNCONDITIONALLY
+ *
+ * It used to start hidden and appear in a useEffect. That cost 0.248 CLS on
+ * every page of the site — the banner arrived after first paint and pushed the
+ * whole document down. Google fails anything above 0.1.
+ *
+ * localStorage cannot be read on the server, so the decision is made before
+ * paint instead: an inline script in the document head sets
+ * data-beta-dismissed on <html>, and CSS hides the banner when it is there.
+ * The markup is identical on both sides, so nothing moves either way — the
+ * same trick the theme switch already uses to avoid a flash.
  */
 export function BetaBanner() {
-  const [visible, setVisible] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
 
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(DISMISS_KEY) !== '1') setVisible(true)
-    } catch {
-      // Private mode or storage disabled — show it, it is harmless.
-      setVisible(true)
-    }
-  }, [])
-
-  if (!visible) return null
+  if (dismissed) return null
 
   function dismiss() {
-    setVisible(false)
+    setDismissed(true)
     try {
       localStorage.setItem(DISMISS_KEY, '1')
     } catch {
       // Not remembering the choice is acceptable.
     }
+    // Keeps the banner down on the next navigation before React runs.
+    document.documentElement.setAttribute('data-beta-dismissed', '1')
   }
 
   return (
     <div
+      className="beta-banner"
       role="note"
       style={{
         display: 'flex',

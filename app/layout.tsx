@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { Inter, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
@@ -41,6 +42,29 @@ export const metadata: Metadata = {
   },
 }
 
+/*
+ * Self-hosted at build time rather than fetched from fonts.googleapis.com.
+ *
+ * The stylesheet link was render-blocking and sat on a third-party host, so
+ * first paint depended on Google's CDN answering — and the swap when the face
+ * finally arrived is a layout-shift risk on every page. next/font emits the
+ * files from our own origin with the metrics inlined, which removes the
+ * blocking request, the extra DNS and TLS handshakes, and the reflow.
+ */
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-inter',
+})
+
+const playfair = Playfair_Display({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '600', '700'],
+  display: 'swap',
+  variable: '--font-playfair',
+})
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Get initial user for SSR hydration — prevents auth flash
   const supabase = await createClient()
@@ -53,7 +77,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const t = getMessages(headerLocale)
 
   return (
-    <html lang={t.meta.htmlLang} data-theme="light" suppressHydrationWarning>
+    <html
+      lang={t.meta.htmlLang}
+      data-theme="light"
+      className={`${inter.variable} ${playfair.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         {/* Prevent flash of wrong theme on load */}
         <script dangerouslySetInnerHTML={{ __html: `
@@ -61,15 +90,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             try {
               var t = localStorage.getItem('glass-theme');
               if (t) document.documentElement.setAttribute('data-theme', t);
+              // Same pass decides the beta banner. Reading it here rather than
+              // in an effect is what keeps the page from shifting once React
+              // hydrates — see components/beta/BetaBanner.tsx.
+              if (localStorage.getItem('pravo365-beta-banner-dismissed') === '1') {
+                document.documentElement.setAttribute('data-beta-dismissed', '1');
+              }
             } catch(e) {}
           })();
         `}} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>
         {/* Animated background blobs — visible on all pages */}
