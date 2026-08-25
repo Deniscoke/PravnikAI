@@ -226,6 +226,20 @@ const RULES: StaleLawRule[] = [
  * matched — not that the text is legally correct, only that it does not repeat
  * one of the known outdated rules.
  */
+/**
+ * The rules themselves, for the lawyer review packet.
+ *
+ * Each one asserts that a widely repeated statement of Czech law is
+ * superseded. A wrong entry here contradicts a correct contract, so the list
+ * has to be reviewable without reading the matching logic around it.
+ */
+export const STALE_LAW_CLAIMS: ReadonlyArray<{
+  id: string
+  claim: string
+  correction: string
+  changedOn: string
+}> = RULES.map(({ id, claim, correction, changedOn }) => ({ id, claim, correction, changedOn }))
+
 export function findStaleLaw(text: string): StaleLawFinding[] {
   if (!text) return []
 
