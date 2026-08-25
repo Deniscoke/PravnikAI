@@ -23,19 +23,18 @@ interface AuthContextValue {
 }
 
 /*
- * A signed-out default rather than undefined.
+ * Deliberately undefined rather than a signed-out default.
  *
- * Throwing outside a provider would catch a misplaced consumer sooner, but the
- * failure it prevents is cosmetic — a component would show the signed-out state
- * — while the failure it introduces is a hard render error. The two consumers
- * that exist, UserMenu and PricingSection, are both inside a provider, and a
- * test keeps AuthProvider out of the root layout so the pairing stays visible.
+ * The root layout no longer provides a context — it imported the Supabase
+ * browser client and shipped 204 kB to every page of text to do it. That makes
+ * a misplaced consumer easy to write, and with a default value the symptom is
+ * a component quietly showing the signed-out state forever, on a page where
+ * nobody is looking for a bug.
+ *
+ * Failing at first render says which component and which page. The pages that
+ * need the context wrap themselves in ServerAuthProvider.
  */
-const AuthContext = createContext<AuthContextValue>({
-  user: null,
-  loading: true,
-  signOut: async () => {},
-})
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 interface AuthProviderProps {
   children: React.ReactNode
@@ -74,5 +73,12 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
 }
 
 export function useAuth(): AuthContextValue {
-  return useContext(AuthContext)
+  const value = useContext(AuthContext)
+  if (!value) {
+    throw new Error(
+      'useAuth was called outside an AuthProvider. The root layout no longer ' +
+        'provides one — wrap the page in ServerAuthProvider.',
+    )
+  }
+  return value
 }

@@ -17,7 +17,10 @@
  */
 
 import React from 'react'
-import { render, screen, waitFor, cleanup } from '@testing-library/react'
+import { screen, waitFor, cleanup } from '@testing-library/react'
+// The layout wraps this page in ServerAuthProvider; a component test has no
+// layout, so the provider comes from here instead.
+import { renderWithAuth as render } from '@/test-utils'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 
