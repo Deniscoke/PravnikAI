@@ -266,6 +266,8 @@ export type ContractFamily =
   | 'business-premises-lease'
   /** Smlouva o smlouve budouci — dies silently if nobody calls in time. */
   | 'preliminary-contract'
+  /** Licencni smlouva — copyright cannot be transferred, only licensed. */
+  | 'licence'
 
 // ─── Top-Level Schema ─────────────────────────────────────────────────────────
 

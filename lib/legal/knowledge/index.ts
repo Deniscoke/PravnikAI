@@ -35,6 +35,7 @@ import { DEBT_ACKNOWLEDGMENT_PROFILE } from './profiles/debtAcknowledgment'
 import { MUTUAL_TERMINATION_PROFILE } from './profiles/mutualTermination'
 import { BUSINESS_PREMISES_LEASE_PROFILE } from './profiles/businessPremisesLease'
 import { PRELIMINARY_CONTRACT_PROFILE } from './profiles/preliminaryContract'
+import { LICENCE_PROFILE } from './profiles/licence'
 
 export * from './types'
 export { COMMON_PROFILE }
@@ -63,6 +64,7 @@ export const CONTRACT_PROFILES: Record<LegalProfileKey, ContractLegalProfile> = 
   'mutual-termination': MUTUAL_TERMINATION_PROFILE,
   'business-premises-lease': BUSINESS_PREMISES_LEASE_PROFILE,
   'preliminary-contract': PRELIMINARY_CONTRACT_PROFILE,
+  licence: LICENCE_PROFILE,
 }
 
 export const ALL_PROFILES: ReadonlyArray<ContractLegalProfile> = Object.values(CONTRACT_PROFILES)
@@ -211,6 +213,22 @@ const FAMILY_SIGNALS: ReadonlyArray<FamilySignals> = [
     family: 'nda',
     decisive: ['dohoda o mlčenlivosti', 'smlouva o mlčenlivosti', 'non-disclosure'],
     supporting: ['mlčenlivost', 'nda', 'důvěrné informace', 'obchodní tajemství'],
+  },
+  {
+    // Before the two work/service families. A licence to a commissioned work
+    // necessarily names the smlouva o dílo it came from (§ 61 AZ), and the
+    // dílo checklist would then ask for handover and defect terms that have
+    // nothing to do with granting rights.
+    family: 'licence',
+    decisive: [
+      'licenční smlouva',
+      'licenční smlouvu',
+      'licenční smlouvy',
+      'poskytnutí licence',
+      'smlouva o poskytnutí licence',
+    ],
+    supporting: ['licenc', 'nabyvatel', 'autorské dílo', 'způsoby užití'],
+    beats: ['services', 'service-provision', 'nda'],
   },
   {
     // Before 'services', which is dílo. The two share "objednatel" and half

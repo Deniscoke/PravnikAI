@@ -63,34 +63,40 @@ export const CONSEQUENCE_LABEL: Record<LegalConsequence, string> = {
   doporuceni: 'DOPORUČENO (není zákonná povinnost)',
 }
 
-/** What kind of requirement this is — drives how it renders in each prompt. */
-export type RuleKind =
+/**
+ * Kinds the deterministic checks report as MISSING by name.
+ *
+ * The integrity check prints `rule.label ?? rule.id`, and that string goes
+ * straight into "Chybí esenciální prvek: …" on the user's screen. So for these
+ * kinds a label is not decoration — it is the difference between reading
+ * "kupní cena" and reading "sale-cena".
+ */
+export type AuditedRuleKind =
   /** Podstatná náležitost — without it there is no contract. */
   | 'essential'
   /** Form requirement (writing, one deed, authenticated signatures). */
   | 'form'
-  /** A clause that must not appear, or that the law strikes out. */
-  | 'prohibited'
   /** A mandatory floor or ceiling the parties cannot contract around. */
   | 'mandatory'
+
+/** Kinds that reach the user only as prose, never as a bare element name. */
+export type AdvisoryRuleKind =
+  /** A clause that must not appear, or that the law strikes out. */
+  | 'prohibited'
   /** A statutory default that applies unless the parties agree otherwise. */
   | 'default'
   /** Established drafting practice. */
   | 'recommended'
 
-export interface LegalRule {
+/** What kind of requirement this is — drives how it renders in each prompt. */
+export type RuleKind = AuditedRuleKind | AdvisoryRuleKind
+
+interface LegalRuleCommon {
   /** Stable identifier — referenced by tests and by review output. */
   id: string
-  kind: RuleKind
   /** The requirement itself, in Czech, phrased for a lay reader. */
   requirement: string
   consequence: LegalConsequence
-  /**
-   * Short name of the element, for messages that have no room for the full
-   * requirement — "kupní cena", "poučení o námitkách". Falls back to the rule
-   * id when absent, so it is only worth setting where a human will read it.
-   */
-  label?: string
   /** Provision this follows from. Always cite; never leave empty. */
   law: string
   /**
@@ -104,26 +110,55 @@ export interface LegalRule {
    * consumers). Rendered verbatim so the model does not over-apply it.
    */
   appliesWhen?: string
-  /**
-   * Pattern that finds this element in a finished contract, letting the
-   * deterministic audit answer "is it there?" without asking the model.
-   *
-   * Present only where a match is genuinely reliable. A loose pattern is worse
-   * than none: the audit is presented to the model as established fact, so a
-   * false negative becomes a confidently reported missing clause.
-   */
-  detect?: RegExp
-  /**
-   * A phrase the pattern must match, kept beside it.
-   *
-   * Required wherever `detect` is set. A pattern that silently matches nothing
-   * is invisible on inspection and turns the audit into a false-positive
-   * machine: it reports present elements as missing. Seven patterns were in
-   * that state before anyone noticed, all because JavaScript's \w stops at the
-   * first Czech diacritic. The sample makes the pattern testable.
-   */
-  detectSample?: string
 }
+
+/**
+ * A rule the deterministic audit can look for.
+ *
+ * `detect` and `detectSample` travel together by construction. A pattern that
+ * silently matches nothing is invisible on inspection and turns the audit into
+ * a false-positive machine — it reports present elements as missing. Seven
+ * patterns were in that state before anyone noticed, all because JavaScript's
+ * \w stops at the first Czech diacritic, so the sample keeps every pattern
+ * testable.
+ *
+ * Present only where a match is genuinely reliable. A loose pattern is worse
+ * than none: the audit is handed to the model as established fact.
+ */
+interface Detectable {
+  detect: RegExp
+  detectSample: string
+}
+
+/** Neither half of the pair, so a lone `detect` cannot typecheck. */
+interface Undetectable {
+  detect?: undefined
+  detectSample?: undefined
+}
+
+/**
+ * Short name of the element, for messages with no room for the full
+ * requirement — "kupní cena", "poučení o námitkách".
+ */
+interface Labelled {
+  label: string
+}
+
+interface OptionallyLabelled {
+  label?: string
+}
+
+/**
+ * A rule, shaped so that the one combination that misleads a user cannot be
+ * written: an audited kind that the audit can detect, and therefore can report
+ * missing by name, must carry that name. This was a test for four rounds and
+ * caught the same slip four times — a type catches it before the file saves.
+ */
+export type LegalRule =
+  | (LegalRuleCommon & { kind: AuditedRuleKind } & Detectable & Labelled)
+  | (LegalRuleCommon & { kind: AuditedRuleKind } & Undetectable & OptionallyLabelled)
+  | (LegalRuleCommon & { kind: AdvisoryRuleKind } & Detectable & OptionallyLabelled)
+  | (LegalRuleCommon & { kind: AdvisoryRuleKind } & Undetectable & OptionallyLabelled)
 
 /**
  * A provision that specifically does NOT govern this contract type.

@@ -38,6 +38,7 @@ import { uznaniDluhu } from './schemas/cz/uznaniDluhu'
 import { dohodaORozvazani } from './schemas/cz/dohodaORozvazani'
 import { najemProstoruPodnikani } from './schemas/cz/najemProstoruPodnikani'
 import { smlouvaOSmlouveBudouci } from './schemas/cz/smlouvaOSmlouveBudouci'
+import { licencniSmlouva } from './schemas/cz/licencniSmlouva'
 
 // ─── Registry ────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export const SCHEMA_REGISTRY: Record<string, ContractSchema> = {
   [dohodaORozvazani.metadata.schemaId]: dohodaORozvazani,
   [najemProstoruPodnikani.metadata.schemaId]: najemProstoruPodnikani,
   [smlouvaOSmlouveBudouci.metadata.schemaId]: smlouvaOSmlouveBudouci,
+  [licencniSmlouva.metadata.schemaId]: licencniSmlouva,
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
