@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { getSiteUrl } from '@/lib/seo/site'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
 import { CONTRACT_GUIDES, guideLastVerified } from '@/lib/seo/guides'
+import { COMPARISONS } from '@/lib/seo/comparisons'
 
 const APP_URL = getSiteUrl()
 
@@ -51,8 +52,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: guideLastVerified(guide),
   }))
 
+  // Comparisons answer the question people search before they search for a
+  // document type at all — "DPP nebo DPC" outranks either guide's own query.
+  const comparisonRoutes: RoutePriority[] = COMPARISONS.map((comparison) => ({
+    path: `/porovnani/${comparison.slug}`,
+    changeFrequency: 'monthly',
+    priority: 0.85,
+  }))
+
   for (const locale of ACTIVE_LOCALES) {
-    for (const route of [...ROUTES, ...guideRoutes]) {
+    for (const route of [...ROUTES, ...guideRoutes, ...comparisonRoutes]) {
       const url = `${APP_URL}/${locale}${route.path}`
 
       entries.push({

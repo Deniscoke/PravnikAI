@@ -5,6 +5,7 @@ import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
 import { CONTRACT_GUIDES, getContractGuide, guideCopy, relatedGuides } from '@/lib/seo/guides'
+import { comparisonsForGuide } from '@/lib/seo/comparisons'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()
@@ -61,6 +62,7 @@ export default async function ContractGuidePage({ params }: Props) {
 
   const copy = guideCopy(guide)
   const related = relatedGuides(guide)
+  const comparisons = comparisonsForGuide(guide.slug)
 
   return (
     <main className="legal-page">
@@ -179,6 +181,24 @@ export default async function ContractGuidePage({ params }: Props) {
             </Link>
           </div>
         </section>
+
+        {comparisons.length > 0 ? (
+          <section>
+            <h2>Nevíte, který dokument potřebujete?</h2>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {comparisons.map((comparison) => (
+                <li key={comparison.slug} style={{ marginBottom: 'var(--space-sm)' }}>
+                  <Link
+                    href={`/${locale}/porovnani/${comparison.slug}`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    {comparison.h1}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section>
           <h2>Související vzory</h2>

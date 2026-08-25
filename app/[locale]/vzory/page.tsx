@@ -5,6 +5,7 @@ import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { getMessages, isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
 import { CONTRACT_GUIDES, guidesByCategory } from '@/lib/seo/guides'
+import { COMPARISONS } from '@/lib/seo/comparisons'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const APP_URL = getSiteUrl()
@@ -118,6 +119,25 @@ export default async function GuideIndexPage({ params }: Props) {
             Zkontrolovat existující dokument
           </Link>
         </div>
+
+        <section>
+          <h2>Nevíte, který dokument potřebujete?</h2>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {COMPARISONS.map((comparison) => (
+              <li key={comparison.slug} style={{ marginBottom: 'var(--space-sm)' }}>
+                <Link
+                  href={`/${locale}/porovnani/${comparison.slug}`}
+                  style={{ fontWeight: 600, textDecoration: 'none' }}
+                >
+                  {comparison.h1}
+                </Link>
+                <p style={{ margin: '2px 0 0', fontSize: '0.9rem', opacity: 0.85 }}>
+                  {comparison.metaDescription}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         {groups.map(({ category, guides }) => (
           <section key={category}>
