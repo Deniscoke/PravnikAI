@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import HomePage from '@/components/home/HomePage'
+import { ServerAuthProvider } from '@/components/auth/ServerAuthProvider'
 import { HomeJsonLd } from '@/components/seo/HomeJsonLd'
 import {
   getSiteUrl,
@@ -56,7 +57,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   return (
     <>
       <HomeJsonLd locale={rawLocale} />
-      <HomePage />
+      <ServerAuthProvider>
+        <HomePage />
+      </ServerAuthProvider>
     </>
   )
 }

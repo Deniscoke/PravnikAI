@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getSiteUrl, SITE_NAME, SEO_KEYWORDS } from '@/lib/seo/site'
 import { getMessages, isValidLocale } from '@/lib/i18n'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import { ServerAuthProvider } from '@/components/auth/ServerAuthProvider'
 
 const APP_URL = getSiteUrl()
 
@@ -42,7 +43,7 @@ export default async function GeneratorLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  if (!isValidLocale(locale)) return children
+  if (!isValidLocale(locale)) return <ServerAuthProvider>{children}</ServerAuthProvider>
   const t = getMessages(locale)
   return (
     <>
@@ -52,7 +53,7 @@ export default async function GeneratorLayout({
           { name: t.generator.title, path: `/${locale}/generator` },
         ]}
       />
-      {children}
+      <ServerAuthProvider>{children}</ServerAuthProvider>
     </>
   )
 }

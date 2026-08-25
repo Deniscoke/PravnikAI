@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { getMessages, isValidLocale } from '@/lib/i18n'
+import { ServerAuthProvider } from '@/components/auth/ServerAuthProvider'
 
 const APP_URL = getSiteUrl()
 
@@ -30,5 +31,5 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return <ServerAuthProvider>{children}</ServerAuthProvider>
 }

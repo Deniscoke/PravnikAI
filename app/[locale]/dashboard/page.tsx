@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { HistoryList } from '@/components/dashboard/HistoryList'
 import { UserMenu } from '@/components/auth/UserMenu'
+import { ServerAuthProvider } from '@/components/auth/ServerAuthProvider'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { PricingSection } from '@/components/billing/PricingSection'
 import { BillingAlert } from '@/components/billing/BillingAlert'
@@ -59,6 +60,7 @@ export default async function DashboardPage({ params }: { params: DashboardParam
     .limit(50)
 
   return (
+    <ServerAuthProvider>
     <main style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', padding: '0 var(--space-md)' }}>
       <header style={{ maxWidth: 920, margin: '0 auto', padding: 'var(--space-xl) 0 var(--space-lg)' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
@@ -120,5 +122,6 @@ export default async function DashboardPage({ params }: { params: DashboardParam
         </div>
       </div>
     </main>
+    </ServerAuthProvider>
   )
 }

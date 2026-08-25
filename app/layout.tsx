@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { Inter, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -8,9 +7,9 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { CookieConsent } from '@/components/CookieConsent'
 import { FeedbackButton } from '@/components/beta/FeedbackButton'
 import { BetaBanner } from '@/components/beta/BetaBanner'
-import { createClient } from '@/lib/supabase/server'
 import { getSiteUrl, SEO_DESCRIPTION_DEFAULT, SITE_NAME } from '@/lib/seo/site'
-import { getMessages, coerceLocale } from '@/lib/i18n'
+import { getMessages } from '@/lib/i18n'
+import { DEFAULT_LOCALE } from '@/lib/contracts/types'
 
 const APP_URL = getSiteUrl()
 
@@ -65,16 +64,18 @@ const playfair = Playfair_Display({
   variable: '--font-playfair',
 })
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Get initial user for SSR hydration — prevents auth flash
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Resolve locale from middleware-injected header so <html lang> is correct.
-  // Falls back to 'cs' for routes outside the [locale] segment (e.g. /api).
-  const headerList = await headers()
-  const headerLocale = coerceLocale(headerList.get('x-locale'))
-  const t = getMessages(headerLocale)
+/*
+ * Deliberately reads neither cookies nor headers.
+ *
+ * Doing either here opts the whole application out of static generation, and
+ * the pages that suffer are the ones built for strangers arriving from search:
+ * twenty-four guides and five comparisons that are nothing but text. The user
+ * is read by ServerAuthProvider on the few surfaces that show auth UI, and the
+ * locale is a constant while ACTIVE_LOCALES holds only Czech — a test fails if
+ * a second locale is switched on and this is still hardcoded.
+ */
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const t = getMessages(DEFAULT_LOCALE)
 
   return (
     <html
@@ -109,7 +110,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         <BetaBanner />
         <ThemeToggle />
-        <AuthProvider initialUser={user ?? null}>
+        <AuthProvider initialUser={null}>
           {children}
           <CookieConsent />
           {/* Available to signed-out visitors too — they bounce before registering */}
