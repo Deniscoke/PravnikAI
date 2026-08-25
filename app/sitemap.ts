@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getSiteUrl } from '@/lib/seo/site'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { CONTRACT_GUIDES } from '@/lib/seo/guides'
+import { CONTRACT_GUIDES, guideLastVerified } from '@/lib/seo/guides'
 
 const APP_URL = getSiteUrl()
 
@@ -9,6 +9,16 @@ interface RoutePriority {
   path: string
   changeFrequency: 'weekly' | 'monthly' | 'yearly'
   priority: number
+  /**
+   * When this page's content last actually changed.
+   *
+   * Omitted means "the deploy", which is right for pages that move with the
+   * app. Stamping today's date on all thirty-odd URLs every day tells a
+   * crawler the whole site changes daily — which is noise, and noise is what
+   * a crawler learns to discount. A guide changes when the law behind it was
+   * last checked, and that date is recorded per contract type.
+   */
+  lastModified?: Date
 }
 
 const ROUTES: RoutePriority[] = [
@@ -38,6 +48,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     path: `/vzory/${guide.slug}`,
     changeFrequency: 'monthly',
     priority: 0.8,
+    lastModified: guideLastVerified(guide),
   }))
 
   for (const locale of ACTIVE_LOCALES) {
@@ -46,7 +57,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
       entries.push({
         url,
-        lastModified: now,
+        lastModified: route.lastModified ?? now,
         changeFrequency: route.changeFrequency,
         priority: route.priority,
         alternates: {

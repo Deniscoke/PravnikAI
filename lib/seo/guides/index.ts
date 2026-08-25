@@ -12,6 +12,7 @@ export type { ContractGuide, GuideSection, GuideFaq } from './types'
 import type { ContractGuide } from './types'
 import { getAllSchemas } from '@/lib/contracts/contractSchemas'
 import type { ContractCategory } from '@/lib/contracts/types'
+import { CONTRACT_PROFILES } from '@/lib/legal/knowledge'
 import { KUPNI_SMLOUVA } from './kupniSmlouva'
 import { NAJEMNI_SMLOUVA } from './najemniSmlouva'
 import { SMLOUVA_O_DILO } from './smlouvaODilo'
@@ -122,6 +123,20 @@ export function relatedGuides(guide: ContractGuide, limit = 4): ReadonlyArray<Co
     (other) => other.slug !== guide.slug && guideCategory(other) !== category,
   )
   return [...sameCategory, ...rest].slice(0, limit)
+}
+
+/**
+ * When the law behind a guide was last checked against the statute.
+ *
+ * Used as the sitemap's lastModified. It is the honest answer to "when did
+ * this page's content last change": the prose follows the profile, and the
+ * profile records the date a human read the provision. Falling back to the
+ * deploy date would claim a change that did not happen.
+ */
+export function guideLastVerified(guide: ContractGuide): Date | undefined {
+  const family = schemaFor(guide)?.metadata.contractFamily
+  const verified = family ? CONTRACT_PROFILES[family]?.lastVerified : undefined
+  return verified ? new Date(verified) : undefined
 }
 
 /** Looks a guide up by its URL segment. */
