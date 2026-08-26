@@ -109,12 +109,23 @@ export const MIN_VACATION_WEEKS: LegalFact<number> = {
 // ─── Občanský zákoník (zák. č. 89/2012 Sb.) ──────────────────────────────────
 
 /** Rental security deposit ceiling, as a multiple of the monthly rent. */
+/**
+ * Ceiling on the deposit — and, since 2020, on the deposit and any contractual
+ * penalty taken together.
+ *
+ * Two amendments moved this, and both are easy to state wrongly. The original
+ * code allowed a sixfold deposit; zák. č. 460/2016 Sb. cut it to threefold with
+ * effect from 28 February 2017 — which is why the date below is not the day the
+ * code took effect. Then zák. č. 163/2020 Sb. turned the ceiling into a
+ * COMBINED one: the deposit plus the right to a contractual penalty may not
+ * exceed it in the aggregate.
+ */
 export const RENT_DEPOSIT_MAX_MULTIPLE: LegalFact<number> = {
   value: 3,
-  law: '§ 2254 zák. č. 89/2012 Sb.',
-  effectiveFrom: '2014-01-01',
-  lastVerified: '2026-08-21',
-  source: 'https://www.zakonyprolidi.cz/cs/2012-89',
+  law: '§ 2254 odst. 1 zák. č. 89/2012 Sb.',
+  effectiveFrom: '2017-02-28',
+  lastVerified: '2026-08-26',
+  source: 'https://www.zakonyprolidi.cz/cs/2016-460 (bod 27)',
 }
 
 // ─── Omezení plateb v hotovosti (zák. č. 254/2004 Sb.) ───────────────────────

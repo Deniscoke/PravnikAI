@@ -28,7 +28,7 @@ je lepší mít ověřenou část 1 než rozečtenou část 4.
 | 1 | Zákonné hodnoty | 12 položek | Chyba se propíše do každého dokumentu, který aplikace kdy vytvořila |
 | 2 | Tvrzení o neplatnosti | 124 pravidel | Tady říkáme uživateli, že něco je neplatné nebo nevzniklo |
 | 3 | Ustanovení označená jako nepoužitelná | 9 typů | Tichá chyba — nesprávná položka nález nezpůsobí, ale POTLAČÍ |
-| 4 | Tvrzení o překonaném právu | 10 tvrzení | Tvrdíme, že rozšířený výklad je zastaralý |
+| 4 | Tvrzení o překonaném právu | 11 tvrzení | Tvrdíme, že rozšířený výklad je zastaralý |
 
 Doporučení a zvyklosti sepisování v dokumentu **nejsou**. Mohou být nesprávné,
 aniž by tím někdo utrpěl, a nemá smysl na ně platit hodiny.
@@ -48,7 +48,7 @@ do textu generovaných dokumentů i do kontrol.
 | `PROBATION_MAX_MONTHS_MANAGER` = **8** | § 35 zák. č. 262/2006 Sb. | 2025-06-01 | 2026-08-21 | — | ☐ ano ☐ oprava: |
 | `FIXED_TERM_MAX_YEARS` = **3** | § 39 odst. 2 zák. č. 262/2006 Sb. | 2012-01-01 | 2026-08-21 | Lze opakovat nejvýše dvakrát. | ☐ ano ☐ oprava: |
 | `MIN_VACATION_WEEKS` = **4** | § 213 zák. č. 262/2006 Sb. | 2007-01-01 | 2026-08-21 | — | ☐ ano ☐ oprava: |
-| `RENT_DEPOSIT_MAX_MULTIPLE` = **3** | § 2254 zák. č. 89/2012 Sb. | 2014-01-01 | 2026-08-21 | — | ☐ ano ☐ oprava: |
+| `RENT_DEPOSIT_MAX_MULTIPLE` = **3** | § 2254 odst. 1 zák. č. 89/2012 Sb. | 2017-02-28 | 2026-08-26 | — | ☐ ano ☐ oprava: |
 | `CASH_PAYMENT_LIMIT_CZK` = **270000** | zák. č. 254/2004 Sb., o omezení plateb v hotovosti | 2004-07-01 | 2026-08-21 | — | ☐ ano ☐ oprava: |
 | `DEFAULT_INTEREST_SPREAD_POINTS` = **8** | § 2 odst. 1 nař. vl. č. 351/2013 Sb. | 2014-01-01 | 2026-08-23 | Sazba = repo sazba ČNB pro první den kalendářního pololetí, v němž došlo k prodlení, + 8 procentních bodů. Repo sazbu je nutné dohledat u ČNB — nikdy ji sem nezmrazuj. | ☐ ano ☐ oprava: |
 | `LATE_PAYMENT_MIN_COSTS_CZK` = **1200** | § 3 nař. vl. č. 351/2013 Sb. | 2014-01-01 | 2026-08-23 | Jen u vzájemného závazku podnikatelů, popř. podnikatele a veřejného zadavatele. | ☐ ano ☐ oprava: |
@@ -61,7 +61,7 @@ do textu generovaných dokumentů i do kontrol.
 - https://mpsv.gov.cz/minimalni-mzda
 - zák. č. 120/2025 Sb. (flexinovela)
 - https://www.zakonyprolidi.cz/cs/2006-262
-- https://www.zakonyprolidi.cz/cs/2012-89
+- https://www.zakonyprolidi.cz/cs/2016-460 (bod 27)
 - https://www.zakonyprolidi.cz/cs/2004-254
 - https://www.zakonyprolidi.cz/cs/2013-351
 - https://www.zakonyprolidi.cz/cs/2004-435
@@ -191,19 +191,19 @@ Souhlasí? ☐ ano ☐ OPRAVIT: ______________________________________
 ### Nájemní smlouva (byt)
 
 Právní základ: § 2201–2234 (obecně) a § 2235–2301 (nájem bytu) zák. č. 89/2012 Sb.
-Naposledy ověřeno námi: 2026-08-21
+Naposledy ověřeno námi: 2026-08-26
 
-**§ 2235 odst. 2 zák. č. 89/2012 Sb.** — *ZÁKON K TOMU NEPŘIHLÍŽÍ (i když si to strany ujednaly)*
+**§ 2235 odst. 1 zák. č. 89/2012 Sb.** — *ZÁKON K TOMU NEPŘIHLÍŽÍ (i když si to strany ujednaly)*
 
 K ujednáním, která zkracují práva nájemce podle ustanovení o nájmu bytu, se nepřihlíží. Tato ochrana platí bez ohledu na to, co strany podepsaly.
 
-Ustanovení: § 2235 odst. 2 zák. č. 89/2012 Sb.
+Ustanovení: § 2235 odst. 1 zák. č. 89/2012 Sb.
 
 Souhlasí? ☐ ano ☐ OPRAVIT: ______________________________________
 
 **§ 2239 zák. č. 89/2012 Sb.** — *ZÁKON K TOMU NEPŘIHLÍŽÍ (i když si to strany ujednaly)*
 
-K ujednání ukládajícímu nájemci povinnost zaplatit pronajímateli smluvní pokutu se nepřihlíží. Totéž platí pro povinnost, která je vzhledem k okolnostem zjevně nepřiměřená.
+K ujednání ukládajícímu nájemci povinnost, která je vzhledem k okolnostem zjevně nepřiměřená, se nepřihlíží.
 
 Ustanovení: § 2239 zák. č. 89/2012 Sb.
 
@@ -211,9 +211,9 @@ Souhlasí? ☐ ano ☐ OPRAVIT: ______________________________________
 
 **jistota (kauce)** — *ZÁKON K TOMU NEPŘIHLÍŽÍ (i když si to strany ujednaly)*
 
-Jistota (kauce) nesmí přesáhnout 3násobek měsíčního nájemného. Při skončení nájmu ji pronajímatel vrátí a nájemce má právo na úroky od jejího poskytnutí.
+Jistota a právo na zaplacení smluvní pokuty nesmí V SOUHRNU přesáhnout 3násobek měsíčního nájemného. Sjednává-li se obojí, musí se do tohoto stropu vejít dohromady. Při skončení nájmu pronajímatel jistotu vrátí a nájemce má právo na úroky od jejího poskytnutí.
 
-Ustanovení: § 2254 zák. č. 89/2012 Sb.
+Ustanovení: § 2254 odst. 1 zák. č. 89/2012 Sb.
 
 Souhlasí? ☐ ano ☐ OPRAVIT: ______________________________________
 
@@ -1356,7 +1356,15 @@ Souhlasí? ☐ ano ☐ OPRAVIT: ______________________________________
 
 **Jistota až šestinásobek měsíčního nájemného.**
 
-Naše korekce: Od 1. 7. 2020 činí maximum 3násobek měsíčního nájemného (§ 2254 zák. č. 89/2012 Sb., ve znění zák. č. 163/2020 Sb.).
+Naše korekce: Od 28. 2. 2017 činí maximum 3násobek měsíčního nájemného (§ 2254 odst. 1 zák. č. 89/2012 Sb., ve znění zák. č. 460/2016 Sb.). Od 1. 7. 2020 je navíc tento strop SPOLEČNÝ pro jistotu a smluvní pokutu.
+
+Účinnost změny: 2017-02-28
+
+Souhlasí? ☐ ano ☐ OPRAVIT: ______________________________________
+
+**U nájmu bytu se ke smluvní pokutě nepřihlíží.**
+
+Naše korekce: Zákaz smluvní pokuty byl z § 2239 zák. č. 89/2012 Sb. VYPUŠTĚN zákonem č. 163/2020 Sb. s účinností od 1. 7. 2020. Smluvní pokutu lze sjednat; jistota a právo na její zaplacení však nesmí v souhrnu přesáhnout 3násobek měsíčního nájemného (§ 2254 odst. 1 zák. č. 89/2012 Sb.).
 
 Účinnost změny: 2020-07-01
 
@@ -1413,7 +1421,7 @@ naposledy ověřovali proti znění zákona.
 | Typ dokumentu | Právní základ | Ověřeno námi | Pravidel celkem | Z toho o neplatnosti |
 |---|---|---|---|---|
 | Kupní smlouva | § 2079–2183 zák. č. 89/2012 Sb. (občanský zákoník) | 2026-08-21 | 14 | 4 |
-| Nájemní smlouva (byt) | § 2201–2234 (obecně) a § 2235–2301 (nájem bytu) zák. č. 89/2012 Sb. | 2026-08-21 | 15 | 9 |
+| Nájemní smlouva (byt) | § 2201–2234 (obecně) a § 2235–2301 (nájem bytu) zák. č. 89/2012 Sb. | 2026-08-26 | 15 | 9 |
 | Pracovní smlouva | § 33–73 zák. č. 262/2006 Sb. (zákoník práce) | 2026-08-21 | 16 | 12 |
 | Smlouva o dílo | § 2586–2635 zák. č. 89/2012 Sb. (občanský zákoník) | 2026-08-21 | 15 | 3 |
 | Dohoda o mlčenlivosti (NDA) | § 1746 odst. 2 zák. č. 89/2012 Sb. (nepojmenovaná smlouva); § 504 a § 2985 tamtéž | 2026-08-21 | 12 | 3 |
@@ -1444,7 +1452,8 @@ naposledy ověřovali proti znění zákona.
 
 **Nájemní smlouva (byt)**
 - https://www.zakonyprolidi.cz/cs/2012-89 (§ 2235 a násl.)
-- zák. č. 163/2020 Sb. — snížení jistoty na trojnásobek, zákaz smluvní pokuty
+- zák. č. 460/2016 Sb. (od 28. 2. 2017) — jistota snížena ze šestinásobku na trojnásobek
+- zák. č. 163/2020 Sb. (od 1. 7. 2020) — ZRUŠEN zákaz smluvní pokuty v § 2239; § 2254 nově stanoví SPOLEČNÝ strop pro jistotu a smluvní pokutu
 - https://www.zakonyprolidi.cz/cs/2015-308 (nař. vlády o vymezení běžné údržby)
 
 **Pracovní smlouva**

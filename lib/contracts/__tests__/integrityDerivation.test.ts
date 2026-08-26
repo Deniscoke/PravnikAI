@@ -54,21 +54,37 @@ describe('every contract type is checked without being registered anywhere', () 
 })
 
 describe('a clause the law strikes out is caught by presence, not absence', () => {
-  it('flags a contractual penalty in a residential lease', () => {
+  it('flags a blanket ban on keeping animals in a residential lease', () => {
+    // This used to use a contractual penalty, which § 2239 disregarded until
+    // zák. č. 163/2020 Sb. struck those words out on 1 July 2020. The animal
+    // ban is the example that is still law: § 2258 gives the tenant the right
+    // outright, so a clause removing it is disregarded whatever was signed.
     const lease = `NÁJEMNÍ SMLOUVA
       Byt č. 4. Nájemné činí 18 000 Kč. Jistota činí trojnásobek nájemného.
       Výpovědní doba tři měsíce.
-      Při prodlení se sjednává smluvní pokuta 0,5 % denně.`
+      Nájemci se zakazuje chovat v bytě jakákoli zvířata.`
     const result = runIntegrityCheck(lease, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
     const issue = result.issues.find((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')
-    expect(issue?.message).toMatch(/2239/)
+    expect(issue?.message).toMatch(/2258/)
     expect(issue?.severity).toBe('error')
   })
 
-  it('does not flag the same clause in a sale contract', () => {
+  it('leaves a contractual penalty in a lease alone', () => {
+    // The mirror of the rule above, and the reason it was worth rewriting: a
+    // penalty is lawful here since 1 July 2020 and merely shares § 2254's
+    // ceiling with the deposit. Flagging it would tell a tenant a clause is
+    // void when it binds them.
+    const lease = `NÁJEMNÍ SMLOUVA
+      Byt č. 4. Nájemné činí 18 000 Kč.
+      Při prodlení se sjednává smluvní pokuta 0,5 % denně.`
+    const result = runIntegrityCheck(lease, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
+    expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)
+  })
+
+  it('does not flag an animal ban in a sale contract', () => {
     const sale = `KUPNÍ SMLOUVA
       Předmět koupě: notebook. Kupní cena 50 000 Kč.
-      Sjednává se smluvní pokuta 0,05 % denně.`
+      Kupujícímu se zakazuje chovat zvířata.`
     const result = runIntegrityCheck(sale, 'kupni-smlouva-v1', 'CZ', 'complete')
     expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)
   })

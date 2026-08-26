@@ -419,7 +419,7 @@ Podpis zaměstnance: _______________`
   })
 })
 
-describe('contractual penalty in a residential lease', () => {
+describe('a clause the law strikes out of a residential lease', () => {
   const lease = `NÁJEMNÍ SMLOUVA
 
 Článek I. — Předmět nájmu
@@ -431,30 +431,44 @@ Nájemné činí 18 000 Kč měsíčně. Jistota činí trojnásobek nájemného
 Článek III. — Výpovědní podmínky
 Výpovědní doba činí tři měsíce.
 
-Článek IV. — Sankce
-Při prodlení s úhradou nájemného se sjednává smluvní pokuta ve výši 0,5 % denně.
+Článek IV. — Užívání bytu
+Nájemci se zakazuje chovat v bytě jakákoli zvířata.
 
 Podpis pronajímatele: _______________
 Podpis nájemce: _______________`
 
-  it('flags it — § 2239 disregards the clause entirely', () => {
+  it('flags a blanket animal ban — § 2258 gives the right outright', () => {
     const result = runIntegrityCheck(lease, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
     const issue = result.issues.find((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')
     expect(issue).toBeDefined()
-    expect(issue?.message).toMatch(/2239/)
+    expect(issue?.message).toMatch(/2258/)
     expect(applyIntegrityDecision('complete', result)).toBe('review-needed')
   })
 
-  it('does not flag the same clause in a sale contract, where it is lawful', () => {
-    const sale = GOOD_KUPNI + '\n\nPři prodlení se sjednává smluvní pokuta ve výši 0,05 % denně.'
+  it('leaves a contractual penalty alone — lawful here since 1 July 2020', () => {
+    // § 2239 disregarded a penalty against a residential tenant until zák.
+    // č. 163/2020 Sb. removed those words. What remains is § 2254's ceiling,
+    // which the penalty shares with the deposit rather than being void.
+    const withPenalty = lease.replace(
+      'Nájemci se zakazuje chovat v bytě jakákoli zvířata.',
+      'Při prodlení s úhradou nájemného se sjednává smluvní pokuta ve výši 0,5 % denně.',
+    )
+    const result = runIntegrityCheck(withPenalty, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
+    expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)
+  })
+
+  it('does not flag an animal ban in a sale contract', () => {
+    const sale = `${GOOD_KUPNI}
+
+Kupujícímu se zakazuje chovat zvířata.`
     const result = runIntegrityCheck(sale, 'kupni-smlouva-v1', 'CZ', 'complete')
     expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)
   })
 
-  it('accepts a lease with no penalty clause', () => {
+  it('accepts a lease that limits the right instead of removing it', () => {
     const clean = lease.replace(
-      'Při prodlení s úhradou nájemného se sjednává smluvní pokuta ve výši 0,5 % denně.',
-      'Při prodlení s úhradou nájemného náleží pronajímateli zákonný úrok z prodlení.',
+      'Nájemci se zakazuje chovat v bytě jakákoli zvířata.',
+      'Chov zvířete nesmí působit obtíže nepřiměřené poměrům v domě.',
     )
     const result = runIntegrityCheck(clean, 'najemni-smlouva-byt-v1', 'CZ', 'complete')
     expect(result.issues.some((i) => i.code === 'PROHIBITED_CLAUSE_PRESENT')).toBe(false)

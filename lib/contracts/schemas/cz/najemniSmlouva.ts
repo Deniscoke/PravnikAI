@@ -49,10 +49,11 @@ export const najemniSmlouva: ContractSchema = {
       'v zadání — projdi ji celou a řiď se jí.\n\n' +
       'POKYNY KE ZPRACOVÁNÍ:\n' +
       '- Nájemce bytu požívá zvýšené zákonné ochrany. Ustanovení, které zkracuje jeho ' +
-      'zákonná práva, do smlouvy nevkládej — zákon k němu stejně nepřihlíží (§ 2235 odst. 2 NOZ)\n' +
+      'zákonná práva, do smlouvy nevkládej — zákon k němu stejně nepřihlíží (§ 2235 odst. 1 NOZ)\n' +
       '- Nájemné a jistotu uváděj číselně i slovy\n' +
-      '- Nikdy nevkládej smluvní pokutu k tíži nájemce — k takovému ujednání se ' +
-      'podle § 2239 NOZ nepřihlíží (nejde o neplatnost, ale o zdánlivé ujednání)\n' +
+      '- Smluvní pokutu k tíži nájemce vkládej jen tehdy, je-li v zadání. Pak hlídej, ' +
+      'aby se jistota a smluvní pokuta VEŠLY DOHROMADY do trojnásobku měsíčního ' +
+      'nájemného (§ 2254 odst. 1 NOZ) — strop je společný, ne dvojí\n' +
       '- Nevymýšlej sankce, lhůty ani povinnosti, které nejsou v zadání\n' +
       '- Nikdy nepoužívej slovenskou právní terminologii',
   },

@@ -154,10 +154,25 @@ describe('consequence discipline', () => {
 })
 
 describe('rules that shipped wrong before', () => {
-  it('treats a contractual penalty against a residential tenant as disregarded', () => {
-    const rule = CONTRACT_PROFILES.tenancy.rules.find((r) => r.id === 'tenancy-smluvni-pokuta')
-    expect(rule?.consequence).toBe('neprihlizi-se')
-    expect(rule?.law).toMatch(/2239/)
+  it('caps the deposit and any penalty together, rather than banning the penalty', () => {
+    // This test used to assert the opposite, and it was wrong for six years.
+    // § 2239 did disregard a contractual penalty against a residential tenant
+    // until zák. č. 163/2020 Sb. struck those words out on 1 July 2020; since
+    // then a penalty is lawful and § 2254 odst. 1 caps it TOGETHER with the
+    // deposit at three months' rent.
+    //
+    // A false prohibition is the more damaging direction of error. Telling a
+    // tenant a penalty is void reads as protective, and they act on it — by not
+    // paying something they in fact owe.
+    const banned = CONTRACT_PROFILES.tenancy.rules.find(
+      (r) => r.id === 'tenancy-smluvni-pokuta',
+    )
+    expect(banned, 'the repealed ban must not come back').toBeUndefined()
+
+    const deposit = CONTRACT_PROFILES.tenancy.rules.find((r) => r.id === 'tenancy-jistota')
+    expect(deposit?.law).toMatch(/2254/)
+    expect(deposit?.requirement, 'the ceiling is a combined one').toMatch(/SOUHRNU/)
+    expect(deposit?.requirement).toMatch(/smluvní pokuty/)
   })
 
   it('states the post-flexinovela probation limit, not the pre-2025 one', () => {

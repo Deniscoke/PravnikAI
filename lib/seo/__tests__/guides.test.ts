@@ -10,7 +10,13 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { CONTRACT_GUIDES, getContractGuide, guidesByCategory, relatedGuides } from '../guides'
+import {
+  CONTRACT_GUIDES,
+  getContractGuide,
+  guideLastVerified,
+  guidesByCategory,
+  relatedGuides,
+} from '../guides'
 import { getAllSchemas } from '@/lib/contracts/contractSchemas'
 
 const schemaNames = new Set(getAllSchemas().map((schema) => schema.metadata.name))
@@ -131,4 +137,24 @@ describe('editorial rules hold', () => {
       expect(text, `${guide.slug} contains Slovak wording`).not.toMatch(slovakisms)
     }
   })
+})
+
+describe('every guide can date itself', () => {
+  /**
+   * The guide pages publish Article schema carrying datePublished and
+   * dateModified, and both come from the legal profile's lastVerified. A guide
+   * whose family has no profile would still render — just silently without a
+   * date, on exactly the kind of page where Google weighs freshness most.
+   * Silent omission is the failure mode worth a test; a wrong date would at
+   * least be visible.
+   */
+  it.each(CONTRACT_GUIDES.map((guide) => [guide.slug, guide] as const))(
+    '%s resolves a verification date',
+    (slug, guide) => {
+      const verified = guideLastVerified(guide)
+      expect(verified, `${slug} has no lastVerified to publish`).toBeInstanceOf(Date)
+      expect(Number.isNaN(verified!.getTime()), `${slug} has an unparseable date`).toBe(false)
+      expect(verified!.getTime(), `${slug} is dated in the future`).toBeLessThanOrEqual(Date.now())
+    },
+  )
 })

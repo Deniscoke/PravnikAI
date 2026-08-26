@@ -8,10 +8,10 @@
 import { describe, it, expect } from 'vitest'
 import { auditContract, renderAudit } from '../structuralAudit'
 
-const LEASE_WITH_PENALTY = `NÁJEMNÍ SMLOUVA
+const LEASE_WITH_ANIMAL_BAN = `NÁJEMNÍ SMLOUVA
 Pronajímatel přenechává nájemci byt č. 4.
 Nájemné činí 18 000 Kč měsíčně. Jistota činí trojnásobek nájemného.
-Při prodlení s úhradou se sjednává smluvní pokuta ve výši 0,5 % denně.`
+Nájemci se zakazuje chovat v bytě jakákoli zvířata.`
 
 const NO_PRICE_SALE = `KUPNÍ SMLOUVA
 Prodávající prodává kupujícímu vozidlo VIN TMB123.`
@@ -22,20 +22,23 @@ Nájemné činí 18 000 Kč měsíčně. Jistota činí trojnásobek nájemného
 Při prodlení náleží pronajímateli zákonný úrok z prodlení.`
 
 describe('prohibited clauses', () => {
-  it('finds a contractual penalty in a residential lease', () => {
-    const audit = auditContract(LEASE_WITH_PENALTY, 'tenancy')
-    expect(audit.prohibitedPresent.map((f) => f.ruleId)).toContain('tenancy-smluvni-pokuta')
+  it('finds a blanket animal ban in a residential lease', () => {
+    // § 2258 gives the tenant the right outright, so a clause removing it is
+    // disregarded. This used to use a contractual penalty — a prohibition
+    // repealed on 1 July 2020 by zák. č. 163/2020 Sb.
+    const audit = auditContract(LEASE_WITH_ANIMAL_BAN, 'tenancy')
+    expect(audit.prohibitedPresent.map((f) => f.ruleId)).toContain('tenancy-zvirata')
   })
 
   it('does not invent one where there is none', () => {
     const audit = auditContract(CLEAN_LEASE, 'tenancy')
-    expect(audit.prohibitedPresent.map((f) => f.ruleId)).not.toContain('tenancy-smluvni-pokuta')
+    expect(audit.prohibitedPresent.map((f) => f.ruleId)).not.toContain('tenancy-zvirata')
   })
 
-  it('does not flag a penalty in a sale contract, where it is lawful', () => {
-    const sale = 'KUPNÍ SMLOUVA\nKupní cena činí 250 000 Kč. Sjednává se smluvní pokuta 0,05 % denně.'
+  it('does not flag an animal ban in a sale contract', () => {
+    const sale = 'KUPNÍ SMLOUVA\nKupní cena činí 250 000 Kč. Kupujícímu se zakazuje chovat zvířata.'
     const audit = auditContract(sale, 'sale')
-    expect(audit.prohibitedPresent.map((f) => f.ruleId)).not.toContain('tenancy-smluvni-pokuta')
+    expect(audit.prohibitedPresent.map((f) => f.ruleId)).not.toContain('tenancy-zvirata')
   })
 })
 
@@ -94,7 +97,7 @@ describe('renderAudit', () => {
   })
 
   it('separates what it found from what it did not', () => {
-    const rendered = renderAudit(auditContract(LEASE_WITH_PENALTY, 'tenancy'))
+    const rendered = renderAudit(auditContract(LEASE_WITH_ANIMAL_BAN, 'tenancy'))
     expect(rendered).toMatch(/V textu NALEZENO/)
     expect(rendered).toMatch(/vyhledáním v textu/)
     // Says outright that this was not the model's judgement.

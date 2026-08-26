@@ -2,11 +2,18 @@
  * Nájem bytu — § 2235 a násl. zák. č. 89/2012 Sb.
  *
  * The most one-sided regime in the code, deliberately. Almost every provision
- * of this section is mandatory in the tenant's favour: § 2235 odst. 2 disregards
+ * of this section is mandatory in the tenant's favour: § 2235 odst. 1 disregards
  * any clause that curtails the tenant's statutory rights, whatever the parties
  * signed. Landlord templates circulating online routinely contain clauses the
- * law simply ignores — a contractual penalty against the tenant being the most
- * common — which makes this the type where review adds the most value.
+ * law simply ignores, which makes this the type where review adds the most value.
+ *
+ * THE CONTRACTUAL PENALTY IS NO LONGER ONE OF THEM
+ *
+ * Until 1 July 2020 § 2239 disregarded any penalty imposed on a residential
+ * tenant, and this file said so for a long time after zák. č. 163/2020 Sb.
+ * struck those words out. That error ran the wrong way: it told a tenant a
+ * lawful clause was void, and a tenant who believes that does not pay. The
+ * penalty is now permitted and merely shares § 2254's ceiling with the deposit.
  */
 
 import type { ContractLegalProfile } from '../types'
@@ -19,10 +26,12 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
   characterisation:
     'Pronajímatel přenechává nájemci byt k zajištění jeho bytových potřeb, nájemce ' +
     'se zavazuje platit nájemné.',
-  lastVerified: '2026-08-21',
+  lastVerified: '2026-08-26',
   sources: [
     'https://www.zakonyprolidi.cz/cs/2012-89 (§ 2235 a násl.)',
-    'zák. č. 163/2020 Sb. — snížení jistoty na trojnásobek, zákaz smluvní pokuty',
+    'zák. č. 460/2016 Sb. (od 28. 2. 2017) — jistota snížena ze šestinásobku na trojnásobek',
+    'zák. č. 163/2020 Sb. (od 1. 7. 2020) — ZRUŠEN zákaz smluvní pokuty v § 2239; ' +
+      '§ 2254 nově stanoví SPOLEČNÝ strop pro jistotu a smluvní pokutu',
     'https://www.zakonyprolidi.cz/cs/2015-308 (nař. vlády o vymezení běžné údržby)',
   ],
   rules: [
@@ -34,43 +43,43 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
         'K ujednáním, která zkracují práva nájemce podle ustanovení o nájmu bytu, ' +
         'se nepřihlíží. Tato ochrana platí bez ohledu na to, co strany podepsaly.',
       consequence: 'neprihlizi-se',
-      law: '§ 2235 odst. 2 zák. č. 89/2012 Sb.',
+      law: '§ 2235 odst. 1 zák. č. 89/2012 Sb.',
       reviewCheck:
         'Jakékoli ujednání odchylující se od zákonné úpravy nájmu bytu v neprospěch ' +
         'nájemce — typicky kratší výpovědní doba pro pronajímatele, rozšířené výpovědní ' +
         'důvody, vzdání se práva na náhradu.',
     },
     {
-      id: 'tenancy-smluvni-pokuta',
+      id: 'tenancy-zjevne-neprimerene',
       kind: 'prohibited',
       requirement:
-        'K ujednání ukládajícímu nájemci povinnost zaplatit pronajímateli smluvní pokutu ' +
-        'se nepřihlíží. Totéž platí pro povinnost, která je vzhledem k okolnostem zjevně ' +
-        'nepřiměřená.',
+        'K ujednání ukládajícímu nájemci povinnost, která je vzhledem k okolnostem ' +
+        'zjevně nepřiměřená, se nepřihlíží.',
       consequence: 'neprihlizi-se',
       law: '§ 2239 zák. č. 89/2012 Sb.',
-      detect: /smluvn[íi]\s+pokut/i,
-      detectSample: 'Sjednává se smluvní pokuta 0,5 % denně',
       reviewCheck:
-        'Přítomnost jakékoli smluvní pokuty vůči nájemci — za prodlení s nájemným, ' +
-        'za předčasné ukončení, za porušení domovního řádu. Zákon k ní nepřihlíží. ' +
-        'Pronajímateli zůstává právo na zákonný úrok z prodlení.',
+        'Povinnosti zjevně nepřiměřené okolnostem — zákaz návštěv, souhlas pronajímatele ' +
+        's běžným užíváním bytu, plošná sankce za drobné porušení. NEHLAS zde samotnou ' +
+        'smluvní pokutu: ta je od 1. 7. 2020 dovolená, jen podléhá stropu podle § 2254.',
     },
     {
       id: 'tenancy-jistota',
       kind: 'mandatory',
       label: 'jistota (kauce)',
       requirement:
-        `Jistota (kauce) nesmí přesáhnout ${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního ` +
-        'nájemného. Při skončení nájmu ji pronajímatel vrátí a nájemce má právo na úroky ' +
-        'od jejího poskytnutí.',
+        `Jistota a právo na zaplacení smluvní pokuty nesmí V SOUHRNU přesáhnout ` +
+        `${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního nájemného. Sjednává-li se ` +
+        'obojí, musí se do tohoto stropu vejít dohromady. Při skončení nájmu pronajímatel ' +
+        'jistotu vrátí a nájemce má právo na úroky od jejího poskytnutí.',
       consequence: 'neprihlizi-se',
       law: RENT_DEPOSIT_MAX_MULTIPLE.law,
       detect: /jistot\S*|kauc\S*/i,
       detectSample: 'Jistota činí trojnásobek měsíčního nájemného',
       reviewCheck:
-        `Kauce vyšší než ${RENT_DEPOSIT_MAX_MULTIPLE.value} měsíční nájmy; ujednání ` +
-        'vylučující úroky z jistoty nebo umožňující ji nevrátit.',
+        `Jistota a smluvní pokuta dohromady vyšší než ${RENT_DEPOSIT_MAX_MULTIPLE.value} ` +
+        'měsíční nájmy; ujednání vylučující úroky z jistoty nebo umožňující ji nevrátit. ' +
+        'Počítej OBOJÍ dohromady — samotná jistota ve výši tří nájmů vedle smluvní pokuty ' +
+        'strop už překračuje.',
     },
 
     // ─── Podstatné náležitosti ───────────────────────────────────────────────
@@ -150,10 +159,14 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
       id: 'tenancy-vypoved-najemce',
       kind: 'default',
       requirement:
-        'Nájemce může nájem na dobu neurčitou vypovědět kdykoli bez udání důvodu ' +
-        's tříměsíční výpovědní dobou.',
+        'Nájem na dobu NEURČITOU může nájemce vypovědět kdykoli bez udání důvodu ' +
+        's tříměsíční výpovědní dobou. Nájem na dobu URČITOU jen tehdy, změní-li se ' +
+        'okolnosti, z nichž strany zřejmě vycházely, natolik, že po nájemci nelze ' +
+        'rozumně požadovat, aby v nájmu pokračoval — a změnu je nutné ve výpovědi uvést.',
       consequence: 'doporuceni',
-      law: '§ 2287 zák. č. 89/2012 Sb.',
+      // § 2287 upravuje jen dobu určitou; právo vypovědět nájem na dobu
+      // neurčitou bez důvodu plyne z obecného § 2231.
+      law: '§ 2231 (doba neurčitá) a § 2287 (doba určitá) zák. č. 89/2012 Sb.',
     },
 
     // ─── Práva nájemce, která se ujednáním nezruší ───────────────────────────
@@ -165,9 +178,15 @@ export const TENANCY_PROFILE: ContractLegalProfile = {
         'ostatním obyvatelům domu obtíže nepřiměřené poměrům v domě.',
       consequence: 'neprihlizi-se',
       law: '§ 2258 zák. č. 89/2012 Sb.',
+      // Matches the ban, not the subject. "Chov zvířat" on its own is what a
+      // correct clause says too — only a clause forbidding it curtails the
+      // right, so the prohibition word has to be part of the pattern.
+      detect: /(zakaz|zákaz\S*|nesmí|není\s+oprávněn|zakazuje)[^.]{0,60}(zvíř|chov\S*\s+zvíř|domácí\S*\s+mazlíč)/i,
+      detectSample: 'Nájemci se zakazuje chovat v bytě jakákoli zvířata.',
       reviewCheck:
         'Paušální zákaz chovu zvířat — zkracuje zákonné právo nájemce, proto se k němu ' +
-        'nepřihlíží.',
+        'nepřihlíží. Podmíněné omezení (chov, který působí obtíže nepřiměřené poměrům ' +
+        'v domě) je naopak v souladu se zákonem.',
     },
     {
       id: 'tenancy-navstevy-osoby',

@@ -147,8 +147,28 @@ const RULES: StaleLawRule[] = [
     window: 160,
     claim: 'Jistota až šestinásobek měsíčního nájemného.',
     correction:
-      `Od 1. 7. 2020 činí maximum ${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního ` +
-      `nájemného (${RENT_DEPOSIT_MAX_MULTIPLE.law}, ve znění zák. č. 163/2020 Sb.).`,
+      `Od 28. 2. 2017 činí maximum ${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního ` +
+      `nájemného (${RENT_DEPOSIT_MAX_MULTIPLE.law}, ve znění zák. č. 460/2016 Sb.). ` +
+      'Od 1. 7. 2020 je navíc tento strop SPOLEČNÝ pro jistotu a smluvní pokutu.',
+    changedOn: RENT_DEPOSIT_MAX_MULTIPLE.effectiveFrom,
+  },
+  {
+    // The mirror image of the usual stale rule: here the model repeats a
+    // PROHIBITION that no longer exists. It is the more damaging direction,
+    // because the text sounds protective — a tenant told the penalty is void
+    // will not pay it, and will be wrong.
+    id: 'stale-tenancy-penalty-ban',
+    subject: /smluvn\S*\s+pokut/i,
+    context: /nájem|nájemc|pronajímatel|2239|2254/i,
+    staleValue: /nepřihlíž|zakázán|zakazuj|nelze\s+sjednat|nesmí\s+být\s+sjednán|neplatn\S*/i,
+    window: 200,
+    claim: 'U nájmu bytu se ke smluvní pokutě nepřihlíží.',
+    correction:
+      'Zákaz smluvní pokuty byl z § 2239 zák. č. 89/2012 Sb. VYPUŠTĚN zákonem ' +
+      'č. 163/2020 Sb. s účinností od 1. 7. 2020. Smluvní pokutu lze sjednat; ' +
+      `jistota a právo na její zaplacení však nesmí v souhrnu přesáhnout ` +
+      `${RENT_DEPOSIT_MAX_MULTIPLE.value}násobek měsíčního nájemného ` +
+      `(${RENT_DEPOSIT_MAX_MULTIPLE.law}).`,
     changedOn: '2020-07-01',
   },
   {

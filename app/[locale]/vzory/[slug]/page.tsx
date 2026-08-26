@@ -4,7 +4,13 @@ import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { CONTRACT_GUIDES, getContractGuide, guideCopy, relatedGuides } from '@/lib/seo/guides'
+import {
+  CONTRACT_GUIDES,
+  getContractGuide,
+  guideCopy,
+  guideLastVerified,
+  relatedGuides,
+} from '@/lib/seo/guides'
 import { comparisonsForGuide } from '@/lib/seo/comparisons'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
@@ -60,6 +66,35 @@ export default async function ContractGuidePage({ params }: Props) {
     })),
   }
 
+  /**
+   * Tells a crawler when the law behind this page was last checked.
+   *
+   * Google leans harder on freshness in the areas it calls "your money or your
+   * life", and Czech contract law is squarely one of them. The date is not
+   * decorative: it comes from the legal profile's own `lastVerified`, so it
+   * moves when somebody actually rechecks the statute and never otherwise.
+   * Stamping today's date on every render would be the easy version and would
+   * be a lie — the same lie the sitemap used to tell before it stopped
+   * claiming every page changed daily.
+   */
+  const verified = guideLastVerified(guide)
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    inLanguage: 'cs-CZ',
+    headline: guide.h1,
+    description: guide.metaDescription,
+    about: guide.legalBasis,
+    mainEntityOfPage: `${APP_URL}/${locale}/vzory/${guide.slug}`,
+    publisher: { '@type': 'Organization', name: SITE_NAME, url: APP_URL },
+    ...(verified
+      ? {
+          datePublished: verified.toISOString().slice(0, 10),
+          dateModified: verified.toISOString().slice(0, 10),
+        }
+      : {}),
+  }
+
   const copy = guideCopy(guide)
   const related = relatedGuides(guide)
   const comparisons = comparisonsForGuide(guide.slug)
@@ -75,6 +110,9 @@ export default async function ContractGuidePage({ params }: Props) {
       />
       <script type="application/ld+json" suppressHydrationWarning>
         {JSON.stringify(faqJsonLd)}
+      </script>
+      <script type="application/ld+json" suppressHydrationWarning>
+        {JSON.stringify(articleJsonLd)}
       </script>
 
       <div className="legal-card">

@@ -17,6 +17,7 @@ import { VYPOVED_NEBO_DOHODA } from './vypovedNeboDohoda'
 import { ODSTOUPENI_NEBO_VYPOVED } from './odstoupeniNeboVypoved'
 import { DILO_NEBO_SLUZBY } from './diloNeboSluzby'
 import { REKLAMACE_NEBO_ODSTOUPENI } from './reklamaceNeboOdstoupeni'
+import { NAJEM_BYTU_NEBO_PROSTORU } from './najemBytuNeboProstoru'
 
 export const COMPARISONS: ReadonlyArray<Comparison> = [
   DPP_NEBO_DPC,
@@ -24,6 +25,7 @@ export const COMPARISONS: ReadonlyArray<Comparison> = [
   ODSTOUPENI_NEBO_VYPOVED,
   DILO_NEBO_SLUZBY,
   REKLAMACE_NEBO_ODSTOUPENI,
+  NAJEM_BYTU_NEBO_PROSTORU,
 ]
 
 /** Looks a comparison up by its URL segment. */
