@@ -32,13 +32,13 @@ rankujete**. To je jediný zdroj pravdy o tom, jestli SEO práce zabírá.
 6. V Search Console vlevo → **Sitemapy**
 7. Do pole vepište `sitemap.xml` a dejte **Odeslat**
 8. Do pár hodin až dnů se objeví stav **Úspěch** a počet nalezených adres —
-   **mělo by jich být kolem 35**
+   **mělo by jich být 40**
 
 ### Co sledovat a kdy
 
 | Kdy | Kde | Co čekat |
 |---|---|---|
-| Za 2–3 dny | Sitemapy | Stav „Úspěch", ~35 adres |
+| Za 2–3 dny | Sitemapy | Stav „Úspěch", 40 adres |
 | Za 1–2 týdny | Indexování stránek | Stránky se přesouvají do „Indexováno" |
 | Za 3–6 týdnů | Výsledky vyhledávání | První zobrazení, zatím bez proklikú |
 | Za 2–4 měsíce | Výsledky vyhledávání | První pozice na dlouhé dotazy |
