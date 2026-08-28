@@ -80,31 +80,37 @@ function rgba(value: string): readonly [number, number, number, number] {
 
 const AA_BODY = 4.5
 
+/**
+ * The two surfaces text actually lands on.
+ *
+ * Measuring only the page background is not enough, and that gap shipped
+ * twice: amber cleared AA on the glass card and failed on the bare page, and
+ * the dark theme's subtle grey did the reverse — fine on the page, 4.11:1 on
+ * a card. Glass lightens a dark background and darkens a light one, so
+ * neither surface is universally the harder case. Both get checked.
+ */
+function surfaces(theme: 'dark' | 'light'): ReadonlyArray<readonly [string, Rgb]> {
+  const page = hex(token(theme, 'color-bg'))
+  const card = flatten(rgba(token(theme, 'glass-white')), page)
+  return [
+    ['page', page],
+    ['card', card],
+  ]
+}
+
+const TEXT_TOKENS = [['color-text'], ['color-text-muted'], ['color-text-subtle']]
+const ACCENT_TOKENS = [['accent-aqua'], ['accent-violet'], ['accent-rose'], ['accent-amber']]
+
 describe('light theme text is readable', () => {
-  // The page background, not the card. Cards sit on white glass and so are
-  // lighter, which only helps dark text — measuring against the darkest
-  // surface the text can land on is the conservative choice.
-  const pageBg = hex(token('light', 'color-bg'))
-
-  it.each([['color-text'], ['color-text-muted'], ['color-text-subtle']])(
-    '--%s clears AA for body text',
-    (name) => {
-      const ratio = contrast(flatten(rgba(token('light', name)), pageBg), pageBg)
-      expect(ratio, `--${name} is ${ratio.toFixed(2)}:1, needs ${AA_BODY}:1`).toBeGreaterThanOrEqual(
-        AA_BODY,
-      )
-    },
-  )
-
-  it.each([['accent-aqua'], ['accent-violet'], ['accent-rose'], ['accent-amber']])(
-    '--%s clears AA when used as text',
-    (name) => {
-      const ratio = contrast(flatten(rgba(token('light', name)), pageBg), pageBg)
-      expect(ratio, `--${name} is ${ratio.toFixed(2)}:1, needs ${AA_BODY}:1`).toBeGreaterThanOrEqual(
-        AA_BODY,
-      )
-    },
-  )
+  for (const [where, bg] of surfaces('light')) {
+    it.each([...TEXT_TOKENS, ...ACCENT_TOKENS])(`--%s clears AA on the ${where}`, (name) => {
+      const ratio = contrast(flatten(rgba(token('light', name)), bg), bg)
+      expect(
+        ratio,
+        `--${name} is ${ratio.toFixed(2)}:1 on the ${where}, needs ${AA_BODY}:1`,
+      ).toBeGreaterThanOrEqual(AA_BODY)
+    })
+  }
 })
 
 describe('text sitting on an accent clears AA', () => {
@@ -135,21 +141,13 @@ describe('text sitting on an accent clears AA', () => {
 })
 
 describe('dark theme text is readable', () => {
-  const pageBg = hex(token('dark', 'color-bg'))
-
-  it.each([['color-text'], ['color-text-muted'], ['color-text-subtle']])(
-    '--%s clears AA for body text',
-    (name) => {
-      const ratio = contrast(flatten(rgba(token('dark', name)), pageBg), pageBg)
-      expect(ratio, `--${name} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_BODY)
-    },
-  )
-
-  it.each([['accent-aqua'], ['accent-violet'], ['accent-rose'], ['accent-amber']])(
-    '--%s clears AA when used as text',
-    (name) => {
-      const ratio = contrast(flatten(rgba(token('dark', name)), pageBg), pageBg)
-      expect(ratio, `--${name} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_BODY)
-    },
-  )
+  for (const [where, bg] of surfaces('dark')) {
+    it.each([...TEXT_TOKENS, ...ACCENT_TOKENS])(`--%s clears AA on the ${where}`, (name) => {
+      const ratio = contrast(flatten(rgba(token('dark', name)), bg), bg)
+      expect(
+        ratio,
+        `--${name} is ${ratio.toFixed(2)}:1 on the ${where}, needs ${AA_BODY}:1`,
+      ).toBeGreaterThanOrEqual(AA_BODY)
+    })
+  }
 })

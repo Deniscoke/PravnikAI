@@ -40,7 +40,13 @@
   --color-surface:      rgba(255, 255, 255, 0.04);
   --color-text:         #ffffff;
   --color-text-muted:   rgba(255, 255, 255, 0.62);
-  --color-text-subtle:  rgba(255, 255, 255, 0.45);
+  /*
+    0.45 measured 4.11:1 on the glass cards this text actually sits on. It
+    cleared AA against the bare page background and failed everywhere a card
+    lightened the surface underneath it, which is why the test below measures
+    both.
+  */
+  --color-text-subtle:  rgba(255, 255, 255, 0.58);
   /*
     Text that sits ON an accent — the primary button, the step badges, the
     pricing pills. The accents invert between themes, so this has to invert
@@ -1091,7 +1097,13 @@ body {
   z-index: 1000;
   max-width: 520px;
   width: calc(100% - var(--space-xl));
-  background: var(--glass-dark-md);
+  /*
+    Opaque, not glass. The banner floats over an animated gradient background,
+    and on a translucent surface its link measured 3.97:1 in the light theme.
+    --color-overlay-surface exists for exactly this: panels that must stay
+    readable whatever is moving behind them.
+  */
+  background: var(--color-overlay-surface);
   backdrop-filter: var(--blur-lg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
