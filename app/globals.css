@@ -1058,11 +1058,23 @@ body {
 
 .legal-card li { margin-bottom: var(--space-xs); }
 
-.legal-card a {
+/*
+  Prose links inside a legal card — but NOT the buttons.
+
+  This rule is a class plus an element, so it outranked .glass-btn--primary's
+  single class and repainted the call to action in accent-aqua. Since that is
+  also the opening stop of the button's own gradient, the label came out the
+  exact colour of what it sat on: 1.00:1, invisible, on the primary button of
+  every guide and comparison page.
+
+  Excluding the button class keeps the cascade honest without raising
+  specificity elsewhere.
+*/
+.legal-card a:not(.glass-btn) {
   color: var(--accent-aqua);
   text-decoration: none;
 }
-.legal-card a:hover { text-decoration: underline; }
+.legal-card a:not(.glass-btn):hover { text-decoration: underline; }
 
 /* Legal data tables (Privacy purposes / retention) */
 .legal-table {

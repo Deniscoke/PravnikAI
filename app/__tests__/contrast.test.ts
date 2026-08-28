@@ -151,3 +151,67 @@ describe('dark theme text is readable', () => {
     })
   }
 })
+
+describe('no link rule repaints a button', () => {
+  /**
+   * The bug this guards is a cascade collision, not a colour choice, so the
+   * token checks above cannot see it.
+   *
+   * `.legal-card a { color: var(--accent-aqua) }` is a class plus an element,
+   * which outranks `.glass-btn--primary`'s single class. It repainted the call
+   * to action in accent-aqua — also the opening stop of that button's own
+   * gradient — so the label came out the exact colour of what it sat on. The
+   * measured ratio was 1.00:1 on the primary button of every guide and
+   * comparison page: not low contrast, but literally invisible text.
+   *
+   * Any descendant-`a` colour rule can do this again, so each one has to be
+   * listed here with a reason. Adding a rule without thinking about buttons
+   * fails the test rather than shipping.
+   */
+  const REVIEWED: ReadonlyArray<{ selector: string; why: string }> = [
+    {
+      selector: '.legal-card a:not(.glass-btn)',
+      why: 'guide and comparison pages render primary buttons inside the card',
+    },
+    { selector: '.footer-links a', why: 'the footer contains prose links only' },
+    { selector: '.footer-links a:hover', why: 'same, hover state' },
+    {
+      selector: '.cookie-banner__text a',
+      why: 'the banner button is a <button>, not an <a>, so it is unaffected',
+    },
+  ]
+
+  /** Selectors of the form `.something a…` that set a colour. */
+  function descendantLinkColourRules(): string[] {
+    const found: string[] = []
+    const pattern = /(^|\})\s*(\.[a-z][\w-]*\s+a[^{,]*)\{([^}]*)\}/gim
+    let match: RegExpExecArray | null
+    while ((match = pattern.exec(css)) !== null) {
+      if (/(^|[^-])color\s*:/.test(match[3])) found.push(match[2].trim())
+    }
+    return found
+  }
+
+  it('every descendant link colour rule has been reviewed', () => {
+    const reviewed = new Set(REVIEWED.map((r) => r.selector))
+    const unreviewed = descendantLinkColourRules().filter((s) => !reviewed.has(s))
+    expect(
+      unreviewed,
+      'these set a link colour and are not in REVIEWED. If one can contain a ' +
+        '.glass-btn, exclude it with :not(.glass-btn) — otherwise add it to the ' +
+        'list with a reason.',
+    ).toEqual([])
+  })
+
+  it('still finds the rules it is meant to be watching', () => {
+    // A regex that silently matches nothing would make the check above pass
+    // for the wrong reason.
+    expect(descendantLinkColourRules().length).toBeGreaterThan(0)
+  })
+
+  it('the legal card excludes buttons from its link colour', () => {
+    expect(css, 'the rule that shipped invisible button text must stay excluded').toMatch(
+      /\.legal-card a:not\(\.glass-btn\)\s*\{/,
+    )
+  })
+})
