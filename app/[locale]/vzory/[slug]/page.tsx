@@ -13,6 +13,7 @@ import {
 } from '@/lib/seo/guides'
 import { comparisonsForGuide } from '@/lib/seo/comparisons'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import { VerifiedOn } from '@/components/seo/VerifiedOn'
 
 const APP_URL = getSiteUrl()
 
@@ -122,6 +123,7 @@ export default async function ContractGuidePage({ params }: Props) {
 
         <h1>{guide.h1}</h1>
         <p className="legal-updated">{guide.legalBasis}</p>
+        <VerifiedOn date={verified} />
         <p>{guide.perex}</p>
 
         <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', margin: 'var(--space-lg) 0' }}>

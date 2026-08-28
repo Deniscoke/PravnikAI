@@ -12,6 +12,7 @@
 export type { Comparison, ComparisonRow, ComparisonChoice } from './types'
 
 import type { Comparison } from './types'
+import { getContractGuide, guideLastVerified } from '../guides'
 import { DPP_NEBO_DPC } from './dppNeboDpc'
 import { VYPOVED_NEBO_DOHODA } from './vypovedNeboDohoda'
 import { ODSTOUPENI_NEBO_VYPOVED } from './odstoupeniNeboVypoved'
@@ -46,4 +47,21 @@ export function comparisonsForGuide(guideSlug: string): ReadonlyArray<Comparison
     (comparison) =>
       comparison.leftGuideSlug === guideSlug || comparison.rightGuideSlug === guideSlug,
   )
+}
+
+/**
+ * When the law behind a comparison was last checked.
+ *
+ * A comparison rests on two profiles, so it is only as fresh as the STALER of
+ * them. Taking the newer date would let a page inherit a reassuring timestamp
+ * from the half nobody had to revisit, which is the kind of true-sounding
+ * number that is worse than none.
+ */
+export function comparisonLastVerified(comparison: Comparison): Date | undefined {
+  const dates = [comparison.leftGuideSlug, comparison.rightGuideSlug]
+    .map((slug) => getContractGuide(slug))
+    .map((guide) => (guide ? guideLastVerified(guide) : undefined))
+
+  if (dates.some((date) => date === undefined)) return undefined
+  return new Date(Math.min(...dates.map((date) => date!.getTime())))
 }

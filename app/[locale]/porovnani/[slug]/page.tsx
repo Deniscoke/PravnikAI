@@ -4,9 +4,10 @@ import { notFound } from 'next/navigation'
 import { getSiteUrl, SITE_NAME } from '@/lib/seo/site'
 import { isValidLocale } from '@/lib/i18n'
 import { ACTIVE_LOCALES, type Locale } from '@/lib/contracts/types'
-import { COMPARISONS, getComparison } from '@/lib/seo/comparisons'
+import { comparisonLastVerified, COMPARISONS, getComparison } from '@/lib/seo/comparisons'
 import { getContractGuide } from '@/lib/seo/guides'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import { VerifiedOn } from '@/components/seo/VerifiedOn'
 
 const APP_URL = getSiteUrl()
 
@@ -60,6 +61,24 @@ export default async function ComparisonPage({ params }: Props) {
   const leftGuide = getContractGuide(comparison.leftGuideSlug)
   const rightGuide = getContractGuide(comparison.rightGuideSlug)
 
+  const verified = comparisonLastVerified(comparison)
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    inLanguage: 'cs-CZ',
+    headline: comparison.h1,
+    description: comparison.metaDescription,
+    about: comparison.legalBasis,
+    mainEntityOfPage: `${APP_URL}/${locale}/porovnani/${comparison.slug}`,
+    publisher: { '@type': 'Organization', name: SITE_NAME, url: APP_URL },
+    ...(verified
+      ? {
+          datePublished: verified.toISOString().slice(0, 10),
+          dateModified: verified.toISOString().slice(0, 10),
+        }
+      : {}),
+  }
+
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -83,6 +102,9 @@ export default async function ComparisonPage({ params }: Props) {
       <script type="application/ld+json" suppressHydrationWarning>
         {JSON.stringify(faqJsonLd)}
       </script>
+      <script type="application/ld+json" suppressHydrationWarning>
+        {JSON.stringify(articleJsonLd)}
+      </script>
 
       <div className="legal-card">
         <Link href={`/${locale}/vzory`} className="legal-back">
@@ -91,6 +113,7 @@ export default async function ComparisonPage({ params }: Props) {
 
         <h1>{comparison.h1}</h1>
         <p className="legal-updated">{comparison.legalBasis}</p>
+        <VerifiedOn date={verified} />
         <p>{comparison.perex}</p>
 
         <section>

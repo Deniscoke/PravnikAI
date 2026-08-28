@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { COMPARISONS, comparisonsForGuide, getComparison } from '../comparisons'
-import { CONTRACT_GUIDES, getContractGuide } from '../guides'
+import { comparisonLastVerified, COMPARISONS, comparisonsForGuide, getComparison } from '../comparisons'
+import { CONTRACT_GUIDES, getContractGuide, guideLastVerified } from '../guides'
 
 describe('every comparison points at real guides', () => {
   it.each(COMPARISONS.map((c) => [c.slug, c] as const))('%s names two existing guides', (_s, c) => {
@@ -108,6 +108,28 @@ describe('a comparison answers the question', () => {
         ...c.faq.map((f) => f.answer),
       ].join(' ')
       expect(text, `${c.slug} contains Slovak wording`).not.toMatch(slovakisms)
+    }
+  })
+})
+
+describe('a comparison dates itself from its staler half', () => {
+  /**
+   * The page rests on two legal profiles, so the honest date is the older of
+   * the two. Taking the newer one would let a comparison look freshly checked
+   * because the half nobody revisited happened to have a recent stamp.
+   */
+  it.each(COMPARISONS.map((c) => [c.slug, c] as const))('%s resolves a date', (slug, comparison) => {
+    const verified = comparisonLastVerified(comparison)
+    expect(verified, `${slug} has no date to publish`).toBeInstanceOf(Date)
+    expect(verified!.getTime(), `${slug} is dated in the future`).toBeLessThanOrEqual(Date.now())
+  })
+
+  it('takes the older of the two guides, not the newer', () => {
+    for (const comparison of COMPARISONS) {
+      const both = [comparison.leftGuideSlug, comparison.rightGuideSlug]
+        .map((s) => getContractGuide(s)!)
+        .map((g) => guideLastVerified(g)!.getTime())
+      expect(comparisonLastVerified(comparison)!.getTime()).toBe(Math.min(...both))
     }
   })
 })
