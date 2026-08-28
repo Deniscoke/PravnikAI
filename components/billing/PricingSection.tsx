@@ -190,7 +190,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                   background: active
                     ? 'linear-gradient(135deg, var(--accent-aqua), var(--accent-violet))'
                     : 'transparent',
-                  color: active ? '#0b0e1a' : 'var(--color-text-muted)',
+                  color: active ? 'var(--on-accent)' : 'var(--color-text-muted)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
@@ -203,7 +203,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                     fontWeight: 700,
                     letterSpacing: '0.03em',
                     background: active ? 'rgba(0,0,0,0.18)' : 'rgba(94,231,223,0.15)',
-                    color: active ? '#0b0e1a' : 'var(--accent-aqua)',
+                    color: active ? 'var(--on-accent)' : 'var(--accent-aqua)',
                     padding: '1px 7px',
                     borderRadius: 'var(--radius-full)',
                   }}>
@@ -302,7 +302,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                   <span style={{
                     fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em',
                     background: 'linear-gradient(135deg, var(--accent-aqua), var(--accent-violet))',
-                    color: '#0b0e1a',
+                    color: 'var(--on-accent)',
                     padding: '3px 10px',
                     borderRadius: 'var(--radius-full)',
                   }}>
@@ -419,7 +419,7 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
                   background: (isPro && !isCurrent)
                     ? 'linear-gradient(135deg, var(--accent-aqua), var(--accent-violet))'
                     : 'var(--glass-white-md)',
-                  color: (isPro && !isCurrent) ? '#0b0e1a' : 'var(--color-text)',
+                  color: (isPro && !isCurrent) ? 'var(--on-accent)' : 'var(--color-text)',
                   boxShadow: (isPro && !isCurrent)
                     ? '0 4px 20px rgba(94,231,223,0.28)'
                     : 'none',

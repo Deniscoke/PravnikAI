@@ -41,6 +41,14 @@
   --color-text:         #ffffff;
   --color-text-muted:   rgba(255, 255, 255, 0.62);
   --color-text-subtle:  rgba(255, 255, 255, 0.45);
+  /*
+    Text that sits ON an accent — the primary button, the step badges, the
+    pricing pills. The accents invert between themes, so this has to invert
+    with them: near-black on the bright dark-theme accents, white on the deep
+    light-theme ones. Hardcoding either value gets one theme wrong, which is
+    exactly what several inline styles were doing.
+  */
+  --on-accent:          #0b0e1a;
 
   /* Spacing */
   --space-2xs:          4px;
@@ -111,6 +119,7 @@
   /* amber-800. b45309 measured 4.37:1 on the page background — it cleared AA
      on the lighter card surface only, which is not where a warning always sits. */
   --accent-amber:       #92400e;
+  --on-accent:          #ffffff;
 }
 
 /* ── Spinner animation ───────────────────────────────────────────────────── */
@@ -230,12 +239,8 @@ body {
 .glass-btn--primary {
   background: linear-gradient(135deg, var(--accent-aqua), var(--accent-violet));
   border-color: transparent;
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
-}
-[data-theme="dark"] .glass-btn--primary,
-:root:not([data-theme="light"]) .glass-btn--primary {
-  color: #0b0e1a;
 }
 .glass-btn--primary:hover { opacity: 0.9; filter: brightness(1.05); }
 
@@ -332,13 +337,11 @@ body {
   height: 28px;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--accent-aqua), var(--accent-violet));
-  color: #fff;
+  color: var(--on-accent);
   font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
 }
-[data-theme="dark"] .form-section__step,
-:root:not([data-theme="light"]) .form-section__step { color: #0b0e1a; }
 
 .party-block {
   margin-bottom: var(--space-lg);
@@ -689,14 +692,12 @@ body {
   height: 48px;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--accent-aqua), var(--accent-violet));
-  color: #fff;
+  color: var(--on-accent);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: var(--space-md);
 }
-[data-theme="dark"] .step-card__number,
-:root:not([data-theme="light"]) .step-card__number { color: #0b0e1a; }
 
 .step-connector {
   color: var(--color-text-muted);
@@ -1130,7 +1131,7 @@ body {
   font-weight: 600;
   font-family: var(--font-body);
   background: linear-gradient(135deg, var(--accent-aqua), var(--accent-violet));
-  color: #0b0e1a;
+  color: var(--on-accent);
   white-space: nowrap;
   transition: opacity 0.2s;
 }

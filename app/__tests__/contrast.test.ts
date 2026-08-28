@@ -79,7 +79,6 @@ function rgba(value: string): readonly [number, number, number, number] {
 }
 
 const AA_BODY = 4.5
-const AA_LARGE = 3
 
 describe('light theme text is readable', () => {
   // The page background, not the card. Cards sit on white glass and so are
@@ -108,17 +107,31 @@ describe('light theme text is readable', () => {
   )
 })
 
-describe('the primary button carries white text', () => {
-  const WHITE: Rgb = [255, 255, 255]
-
-  // .glass-btn--primary paints linear-gradient(135deg, aqua, violet) and puts
-  // white on top, so BOTH stops have to clear AA on their own. The gradient
-  // hid this: the violet end was always fine and the failure lived in the
-  // first half of every button.
-  it.each([['accent-aqua'], ['accent-violet']])('white on --%s clears AA', (name) => {
-    const ratio = contrast(WHITE, flatten(rgba(token('light', name)), WHITE))
-    expect(ratio, `white on --${name} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_BODY)
-  })
+describe('text sitting on an accent clears AA', () => {
+  /**
+   * --on-accent is the colour of anything painted over the aqua-to-violet
+   * gradient: the primary button, the step badges, the pricing pills. Both
+   * stops have to clear it on their own, because a gradient hides a failure
+   * that exists across only half of it — which is precisely how the light
+   * theme shipped white on a 3.68:1 cyan for months.
+   *
+   * It has to invert with the theme. Several inline styles hardcoded the
+   * dark-theme value, so the pills and the Pro button carried near-black text
+   * on a deep cyan in light mode at 3.59:1.
+   */
+  for (const theme of ['light', 'dark'] as const) {
+    it.each([['accent-aqua'], ['accent-violet']])(
+      `--on-accent on --%s clears AA in the ${theme} theme`,
+      (name) => {
+        const onAccent = hex(token(theme, 'on-accent'))
+        const ratio = contrast(onAccent, hex(token(theme, name)))
+        expect(
+          ratio,
+          `--on-accent on --${name} (${theme}) is ${ratio.toFixed(2)}:1`,
+        ).toBeGreaterThanOrEqual(AA_BODY)
+      },
+    )
+  }
 })
 
 describe('dark theme text is readable', () => {
@@ -139,10 +152,4 @@ describe('dark theme text is readable', () => {
       expect(ratio, `--${name} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_BODY)
     },
   )
-
-  // Dark mode flips the primary button to near-black text on the same accents.
-  it.each([['accent-aqua'], ['accent-violet']])('#0b0e1a on --%s clears AA', (name) => {
-    const ratio = contrast(hex('#0b0e1a'), flatten(rgba(token('dark', name)), [255, 255, 255]))
-    expect(ratio, `#0b0e1a on --${name} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_LARGE)
-  })
 })
