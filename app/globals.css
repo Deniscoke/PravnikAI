@@ -90,12 +90,27 @@
   --color-surface:      rgba(255, 255, 255, 0.55);
   --color-text:         #0f172a;
   --color-text-muted:   rgba(15, 23, 42, 0.66);
-  --color-text-subtle:  rgba(15, 23, 42, 0.5);
-  /* Accent colours — darkened for WCAG AA on light backgrounds */
-  --accent-aqua:        #0891b2;
+  /*
+    0.5 measured 3.37:1 on the card background the subtle text actually sits
+    on — below the 4.5:1 AA needs for body text, and Lighthouse said so on
+    every page. 0.6 clears it at 4.61:1, which is too little headroom when the
+    backing surface varies between the glass card and the plain page, so 0.65.
+  */
+  --color-text-subtle:  rgba(15, 23, 42, 0.65);
+  /*
+    Accent colours for light backgrounds. Aqua carries two jobs and failed
+    both: as link and kicker text it measured 3.5:1, and as the opening stop
+    of the primary button gradient it put white on 3.68:1. cyan-700 fixes the
+    pair at once — 5.09:1 as text, 5.36:1 under white — because darkening the
+    colour helps whichever side of it the text is on. The violet end of that
+    gradient was never the problem: white on it is 7.1:1.
+  */
+  --accent-aqua:        #0e7490;
   --accent-violet:      #6d28d9;
   --accent-rose:        #be185d;
-  --accent-amber:       #b45309;
+  /* amber-800. b45309 measured 4.37:1 on the page background — it cleared AA
+     on the lighter card surface only, which is not where a warning always sits. */
+  --accent-amber:       #92400e;
 }
 
 /* ── Spinner animation ───────────────────────────────────────────────────── */

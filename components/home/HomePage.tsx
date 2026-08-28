@@ -232,7 +232,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="footer-links">
-            <h4 className="footer-links__title">{t.home.footer.productHeading}</h4>
+            <h3 className="footer-links__title">{t.home.footer.productHeading}</h3>
             <Link href="#funkce">{t.home.footer.links.features}</Link>
             <Link href={`/${locale}/generator`}>{t.home.footer.links.generator}</Link>
             <Link href={`/${locale}/review`}>{t.home.footer.links.review}</Link>
@@ -242,7 +242,7 @@ export default function HomePage() {
             <Link href={`/${locale}/vzory/kupni-smlouva`}>Kupní smlouva — vzor</Link>
           </div>
           <div className="footer-links">
-            <h4 className="footer-links__title">{t.home.footer.legalHeading}</h4>
+            <h3 className="footer-links__title">{t.home.footer.legalHeading}</h3>
             <Link href={`/${locale}/terms`}>{t.home.footer.links.terms}</Link>
             <Link href={`/${locale}/privacy`}>{t.home.footer.links.privacy}</Link>
             <Link href={`/${locale}/gdpr`}>{t.home.footer.links.gdpr}</Link>
@@ -250,7 +250,7 @@ export default function HomePage() {
             <Link href={`/${locale}/duvera`}>Důvěra a bezpečnost</Link>
           </div>
           <div className="footer-links">
-            <h4 className="footer-links__title">{t.home.footer.contactHeading}</h4>
+            <h3 className="footer-links__title">{t.home.footer.contactHeading}</h3>
             <a href="mailto:info.indiweb@gmail.com">info.indiweb@gmail.com</a>
             <a href="tel:+420728523267">+420 728 523 267</a>
             <a href="mailto:info.indiweb@gmail.com">{t.home.footer.support}</a>
