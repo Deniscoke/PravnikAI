@@ -239,8 +239,20 @@ export function PricingSection({ currentTier }: PricingSectionProps) {
             <article
               aria-label={`Tarif ${plan.name}`}
               style={{
+                /*
+                  The Pro card needs an OPAQUE base, unlike the others.
+                  It is wrapped below in a gradient-border div — a saturated
+                  aqua-to-violet fill with 2px of padding, meant to show only
+                  as an edge. A tint at 9-13% alpha does not cover it, so the
+                  full gradient came through the whole card and the dark card
+                  text landed on it. In the light theme "19 €" measured 1.14:1,
+                  which is invisible, on the one card built to be bought.
+
+                  The other tiers sit on the page background, where translucent
+                  glass is exactly right, so only this one changes.
+                */
                 background: isPro
-                  ? 'linear-gradient(160deg, rgba(94,231,223,0.09) 0%, rgba(180,144,245,0.13) 100%)'
+                  ? 'linear-gradient(160deg, rgba(94,231,223,0.09) 0%, rgba(180,144,245,0.13) 100%), var(--color-overlay-surface)'
                   : 'var(--glass-white)',
                 backdropFilter: 'var(--blur-md)',
                 WebkitBackdropFilter: 'var(--blur-md)',
